@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard — CERDAS JUARA Bimbel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<style>
+  :root{
+    --primary:#3478D4;
+    --primary-dark:#173B67;
+    --success:#10b981;
+    --danger:#ef4444;
+    --warning:#f59e0b;
+    --bg:#F5F7FB;
+  }
+  *{box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);margin:0;color:#1f2937}
+  .sidebar{width:260px;background:linear-gradient(180deg,#173B67 0%,#245A91 100%);color:#fff;min-height:100vh;position:fixed;left:0;top:0;transition:transform .3s;z-index:40}
+  .sidebar.collapsed{transform:translateX(-100%)}
+  .main{margin-left:260px;min-height:100vh;transition:margin .3s}
+  .main.full{margin-left:0}
+  .menu-item{display:flex;align-items:center;gap:12px;padding:11px 20px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;font-size:14px}
+  .menu-item:hover{background:rgba(255,255,255,.1)}
+  .menu-item.active{background:rgba(255,255,255,.15);border-left-color:#fbbf24}
+  .menu-item i{width:20px;text-align:center}
+  .topbar{background:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.05);position:sticky;top:0;z-index:30}
+  .stat-card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05);transition:transform .2s}
+  .stat-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.08)}
+  .stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff}
+  .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-weight:500;font-size:14px;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:hover{background:var(--primary-dark)}
+  .btn-success{background:var(--success);color:#fff}
+  .btn-danger{background:var(--danger);color:#fff}
+  .btn-warning{background:var(--warning);color:#fff}
+  .btn-secondary{background:#e5e7eb;color:#374151}
+  .btn-sm{padding:5px 10px;font-size:12px}
+  .btn-icon{padding:6px 10px;border-radius:6px}
+  .card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:20px}
+  .card-title{font-size:16px;font-weight:600;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;padding:12px;background:#f9fafb;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;border-bottom:1px solid #e5e7eb}
+  td{padding:12px;border-bottom:1px solid #f3f4f6;font-size:14px}
+  tr:hover td{background:#f9fafb}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600}
+  .badge-success{background:#d1fae5;color:#065f46}
+  .badge-danger{background:#fee2e2;color:#991b1b}
+  .badge-warning{background:#fef3c7;color:#92400e}
+  .badge-info{background:#dbeafe;color:#1e40af}
+  .badge-gray{background:#e5e7eb;color:#374151}
+  .form-group{margin-bottom:14px}
+  .form-label{display:block;margin-bottom:6px;font-size:13px;font-weight:500;color:#374151}
+  .form-control{width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;transition:border .2s}
+  .form-control:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal-overlay.show{display:flex}
+  .modal{background:#fff;border-radius:14px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto}
+  .modal-header{padding:18px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center}
+  .modal-body{padding:20px}
+  .modal-footer{padding:16px 20px;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:8px}
+  .toast{position:fixed;top:20px;right:20px;padding:14px 20px;border-radius:10px;color:#fff;font-size:14px;z-index:100;box-shadow:0 10px 25px rgba(0,0,0,.15);animation:slideIn .3s}
+  @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+  .toast-success{background:var(--success)}
+  .toast-error{background:var(--danger)}
+  .toast-info{background:var(--primary)}
+  .loader{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .page{display:none}
+  .page.active{display:block}
+  .avatar{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:600}
+  .search-box{position:relative}
+  .search-box input{padding-left:36px}
+  .search-box i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af}
+  .tab-btn{padding:8px 16px;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;font-weight:500;color:#6b7280}
+  .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary)}
+  .empty{text-align:center;padding:40px 20px;color:#9ca3af}
+  .empty i{font-size:48px;margin-bottom:12px;opacity:.4}
+  body[data-role="siswa"] .page .card-title button,
+  body[data-role="siswa"] .page .btn-danger,
+  body[data-role="siswa"] .page .btn-warning,
+  body[data-role="siswa"] .page .btn-primary {display:none!important}
+  body[data-role="guru"] #page-groups .card-title button,
+  body[data-role="guru"] #page-groups .btn-warning,
+  body[data-role="guru"] #page-groups .btn-danger {display:none!important}
+  body[data-role="guru"] #page-students .card-title button,
+  body[data-role="guru"] #page-programs .card-title button,
+  body[data-role="guru"] #page-tutors .card-title button,
+  body[data-role="guru"] #page-enrollments .card-title button,
+  body[data-role="guru"] #page-invoices .card-title button {display:none!important}
+  @media(max-width:768px){
+    .sidebar{transform:translateX(-100%)}
+    .sidebar.show{transform:translateX(0)}
+    .main{margin-left:0}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar" id="sidebar">
+  <div style="padding:20px;border-bottom:1px solid rgba(255,255,255,.1)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:40px;height:40px;background:#fbbf24;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#4338ca;font-size:18px">CJ</div>
+      <div>
+        <div style="font-weight:700;font-size:15px">CERDAS JUARA</div>
+        <div style="font-size:11px;opacity:.8">Bimbel Management</div>
+      </div>
+    </div>
+  </div>
+  <nav id="navMenu" style="padding:10px 0"></nav>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;opacity:.7">
+    © 2026 CERDAS JUARA — 3 Role
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<div class="main" id="main">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="btn btn-icon btn-secondary" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+      <div>
+        <div style="font-weight:600;font-size:15px" id="pageTitle">Dashboard</div>
+        <div style="font-size:12px;color:#6b7280" id="pageSubtitle">Selamat datang kembali</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <button class="btn btn-icon btn-secondary" title="Notifikasi"><i class="fas fa-bell"></i></button>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="avatar" id="userAvatar">U</div>
+        <div style="line-height:1.2">
+          <div style="font-size:13px;font-weight:600" id="userName">User</div>
+          <div style="font-size:11px;color:#6b7280" id="userRole">Role</div>
+        </div>
+        <button class="btn btn-icon btn-secondary" onclick="logout()" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div style="padding:24px">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="page active" id="page-dashboard">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px" id="statsGrid"></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px" class="dash-grid">
+        <div class="card">
+          <div class="card-title">
+            <span><i class="fas fa-chart-line" style="color:var(--primary)"></i> Aktivitas Terbaru</span>
+          </div>
+          <div id="recentActivity"><div class="empty"><i class="fas fa-inbox"></i><div>Belum ada aktivitas</div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span><i class="fas fa-bullhorn" style="color:var(--warning)"></i> Pengumuman</span></div>
+          <div id="recentAnnouncements"><div class="empty"><i class="fas fa-bullhorn"></i><div>Belum ada pengumuman</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SISWA ===== -->
+    <div class="page" id="page-students">
+      <div class="card">
+        <div class="card-title">
+          <span>Manajemen Siswa</span>
+          <button class="btn btn-primary" onclick="openStudentModal()"><i class="fas fa-plus"></i> Tambah Siswa</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <div class="search-box" style="flex:1;min-width:200px">
+            <i class="fas fa-search"></i>
+            <input type="text" class="form-control" placeholder="Cari nama / NIS..." id="searchStudent" oninput="renderStudents()">
+          </div>
+          <select class="form-control" style="width:auto" id="filterJenjang" onchange="renderStudents()">
+            <option value="">Semua Jenjang</option>
+            <option>SD</option><option>SMP</option><option>SMA</option>
+          </select>
+          <select class="form-control" style="width:auto" id="filterStatus" onchange="renderStudents()">
+            <option value="">Semua Status</option>
+            <option>AKTIF</option><option>NONAKTIF</option><option>LULUS</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>NIS</th><th>Nama</th><th>Jenjang</th><th>Kelas</th><th>Sekolah</th><th>Kontak Wali</th><th>Status</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="studentsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PROGRAM ===== -->
+    <div class="page" id="page-programs">
+      <div class="card">
+        <div class="card-title">
+          <span>Manajemen Program</span>
+          <button class="btn btn-primary" onclick="openProgramModal()"><i class="fas fa-plus"></i> Tambah Program</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px" id="programsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ===== TUTORS ===== -->
+    <div class="page" id="page-tutors">
+      <div class="card">
+        <div class="card-title">
+          <span>Manajemen Pengajar</span>
+          <button class="btn btn-primary" onclick="openTutorModal()"><i class="fas fa-plus"></i> Tambah Pengajar</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Foto</th><th>Nama</th><th>Keahlian</th><th>Pendidikan</th><th>Honor/Sesi</th><th>Status</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="tutorsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== GROUPS ===== -->
+    <div class="page" id="page-groups">
+      <div class="card">
+        <div class="card-title">
+          <span>Manajemen Kelas / Grup</span>
+          <button class="btn btn-primary" onclick="openGroupModal()"><i class="fas fa-plus"></i> Tambah Kelas</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px" id="groupsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ===== ENROLLMENTS ===== -->
+    <div class="page" id="page-enrollments">
+      <div class="card">
+        <div class="card-title">
+          <span>Enrollment Siswa</span>
+          <button class="btn btn-primary" onclick="openEnrollmentModal()"><i class="fas fa-plus"></i> Tambah Enrollment</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Siswa</th><th>Kelas</th><th>Tgl Mulai</th><th>Status</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="enrollmentsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ATTENDANCE ===== -->
+    <div class="page" id="page-attendance">
+      <div class="card">
+        <div class="card-title">
+          <span>Absensi</span>
+          <button class="btn btn-primary" onclick="openAttendanceModal()"><i class="fas fa-plus"></i> Input Absensi</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <input type="date" class="form-control" style="width:auto" id="filterAttDate" onchange="renderAttendance()">
+          <select class="form-control" style="width:auto" id="filterAttGroup" onchange="renderAttendance()">
+            <option value="">Semua Kelas</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Tanggal</th><th>Siswa</th><th>Kelas</th><th>Status</th><th>Catatan</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="attendanceTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ASSESSMENTS & SCORES ===== -->
+    <div class="page" id="page-assessments">
+      <div class="card">
+        <div class="card-title">
+          <span>Asesmen & Nilai</span>
+          <button class="btn btn-primary" onclick="openAssessmentModal()"><i class="fas fa-plus"></i> Tambah Asesmen</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Nama Asesmen</th><th>Kelas</th><th>Bobot</th><th>Tanggal</th><th>Jumlah Siswa</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="assessmentsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MATERIALS ===== -->
+    <div class="page" id="page-materials">
+      <div class="card">
+        <div class="card-title">
+          <span>Materi & Tugas</span>
+          <button class="btn btn-primary" onclick="openMaterialModal()"><i class="fas fa-plus"></i> Tambah Materi</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px" id="materialsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ===== JOURNALS ===== -->
+    <div class="page" id="page-journals">
+      <div class="card">
+        <div class="card-title">
+          <span>Jurnal Mengajar</span>
+          <button class="btn btn-primary" onclick="openJournalModal()"><i class="fas fa-plus"></i> Tambah Jurnal</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Tanggal</th><th>Kelas</th><th>Topik</th><th>Catatan</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="journalsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ANNOUNCEMENTS ===== -->
+    <div class="page" id="page-announcements">
+      <div class="card">
+        <div class="card-title">
+          <span>Pengumuman</span>
+          <button class="btn btn-primary" onclick="openAnnouncementModal()"><i class="fas fa-plus"></i> Buat Pengumuman</button>
+        </div>
+        <div id="announcementsList"></div>
+      </div>
+    </div>
+
+    <!-- ===== INVOICES ===== -->
+    <div class="page" id="page-invoices">
+      <div class="card">
+        <div class="card-title">
+          <span>Tagihan / Pembayaran</span>
+          <button class="btn btn-primary" onclick="openInvoiceModal()"><i class="fas fa-plus"></i> Buat Tagihan</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <select class="form-control" style="width:auto" id="filterInvStatus" onchange="renderInvoices()">
+            <option value="">Semua Status</option>
+            <option>BELUM</option><option>MENUNGGU</option><option>LUNAS</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Periode</th><th>Siswa</th><th>Program</th><th>Nominal</th><th>Status</th><th>Tgl Bayar</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="invoicesTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CLOUDINARY CONFIG ===== -->
+    <div class="page" id="page-settings">
+      <div class="card" style="max-width:760px">
+        <div class="card-title"><span><i class="fas fa-cloud" style="color:var(--primary)"></i> Konfigurasi Cloudinary</span></div>
+        <p style="font-size:13px;color:#6b7280;margin:-6px 0 18px">Pengaturan ini digunakan untuk mengunggah foto siswa, guru, profil pengguna, serta gambar materi/tugas.</p>
+        <form id="cloudinaryConfigForm" onsubmit="saveCloudinaryConfig(event)">
+          <div class="form-group"><label class="form-label">Cloud Name</label><input type="text" class="form-control" id="cfgCloudName" required placeholder="Nama cloud Cloudinary"></div>
+          <div class="form-group"><label class="form-label">Upload Preset Name (Unsigned)</label><input type="text" class="form-control" id="cfgUploadPreset" required placeholder="Nama unsigned upload preset"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Terapkan Konfigurasi</button>
+            <button type="button" class="btn btn-success" onclick="downloadCloudinaryConfig()"><i class="fas fa-download"></i> Download config.json</button>
+          </div>
+        </form>
+        <div style="margin-top:18px;padding:14px;background:#eff6ff;border-radius:10px;font-size:13px;color:#1e40af">
+          <strong>Penggunaan di GitHub:</strong> simpan file <code>config.json</code> hasil unduhan di folder utama repository, sejajar dengan <code>index.html</code>. File HTML lain seperti <code>tugas.html</code> dapat membaca file yang sama menggunakan <code>fetch('./config.json')</code>.
+        </div>
+        <div style="margin-top:12px;padding:14px;background:#fff7ed;border-radius:10px;font-size:12px;color:#9a3412">
+          Upload preset harus benar-benar bertipe <b>Unsigned</b> di Cloudinary. Nama preset dapat terlihat oleh pengunjung website; batasi format hanya gambar (jpg, jpeg, png, webp) dan atur batas ukuran/pengamanan di pengaturan preset. Jangan pernah memasukkan API Secret ke HTML atau config.json.
+        </div>
+        <div id="cloudinaryConfigStatus" style="font-size:12px;color:#6b7280;margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- ===== PROFILE ===== -->
+    <div class="page" id="page-profile">
+      <div class="card" style="max-width:600px">
+        <div class="card-title"><span>Profil Saya</span></div>
+        <form id="profileForm" onsubmit="saveProfile(event)">
+          <div style="text-align:center;margin-bottom:20px">
+            <div class="avatar" style="width:80px;height:80px;font-size:32px;margin:0 auto 10px" id="profileAvatar">U</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Foto Profil</label>
+            <input type="file" class="form-control" id="profilePhotoFile" accept="image/*">
+            <small style="color:#6b7280">Pilih gambar/foto. Maksimal 8 MB.</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nama Lengkap</label>
+            <input type="text" class="form-control" id="profileNama" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">No. WhatsApp</label>
+            <input type="text" class="form-control" id="profileWA">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <input type="text" class="form-control" id="profileRole" disabled>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="font-weight:600" id="modalTitle">Modal</div>
+      <button class="btn btn-icon btn-secondary" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen" style="position:fixed;inset:0;background:linear-gradient(135deg,#173B67,#3478D4);display:none;align-items:center;justify-content:center;z-index:200;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:32px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:60px;height:60px;background:#fbbf24;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#4338ca;font-size:24px;margin-bottom:10px">CJ</div>
+      <h2 style="margin:0;font-size:20px">CERDAS JUARA</h2>
+      <p style="color:#6b7280;font-size:13px;margin-top:4px">Silakan login untuk melanjutkan</p>
+    </div>
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label">Username / Email</label>
+        <input type="text" class="form-control" id="loginEmail" required autocomplete="username" placeholder="Masukkan username atau email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" id="loginPassword" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:11px" id="loginBtn">
+        <i class="fas fa-sign-in-alt"></i> Masuk
+      </button>
+    </form>
+    <div style="margin-top:16px;text-align:center;font-size:12px;color:#9ca3af">
+      Belum punya akun? Hubungi admin
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   KONFIGURASI SUPABASE
+   ========================================================= */
+const SUPABASE_URL = 'https://fjedugqoeupieqxfcprw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqZWR1Z3FvZXVwaWVxeGZjcHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDgwNTcsImV4cCI6MjEwOTAyNDA1N30.R59XI8nSssSc4-sk5YZtdqGw168OrZHH6ZL6SgF2wSw';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Konfigurasi Cloudinary bawaan. Jika config.json tersedia di folder repository,
+// nilainya akan menggantikan konfigurasi bawaan ini.
+let CLOUDINARY_CONFIG = {
+  cloud_name: 'popx6mep',
+  upload_preset: 'dwi.rosi77@guru.smp.belajar.id'
+};
+async function loadCloudinaryConfig(){
+  try{
+    const response = await fetch('./config.json', {cache:'no-store'});
+    if(response.ok){
+      const cfg = await response.json();
+      const cloud = cfg.cloudinary || cfg;
+      if(cloud.cloud_name && cloud.upload_preset){
+        CLOUDINARY_CONFIG = {
+          cloud_name: String(cloud.cloud_name).trim(),
+          upload_preset: String(cloud.upload_preset).trim()
+        };
+      }
+    }
+  }catch(error){
+    // Jika dibuka langsung sebagai file lokal atau config.json belum ada,
+    // aplikasi tetap menggunakan konfigurasi bawaan di atas.
+    console.info('config.json belum dapat dibaca; menggunakan konfigurasi bawaan.', error.message);
+  }
+}
+function renderCloudinaryConfigForm(){
+  if(!$('cfgCloudName')) return;
+  $('cfgCloudName').value = CLOUDINARY_CONFIG.cloud_name || '';
+  $('cfgUploadPreset').value = CLOUDINARY_CONFIG.upload_preset || '';
+  $('cloudinaryConfigStatus').textContent = 'Konfigurasi aktif: ' + CLOUDINARY_CONFIG.cloud_name + ' / ' + CLOUDINARY_CONFIG.upload_preset;
+}
+function saveCloudinaryConfig(e){
+  if(e) e.preventDefault();
+  const cloud_name = $('cfgCloudName').value.trim();
+  const upload_preset = $('cfgUploadPreset').value.trim();
+  if(!cloud_name || !upload_preset){ toast('Cloud Name dan Upload Preset wajib diisi.','error'); return; }
+  CLOUDINARY_CONFIG = {cloud_name, upload_preset};
+  toast('Konfigurasi Cloudinary diterapkan pada halaman ini. Download config.json agar bisa dipakai oleh halaman lain.');
+  renderCloudinaryConfigForm();
+}
+function downloadCloudinaryConfig(){
+  const cloud_name = $('cfgCloudName').value.trim();
+  const upload_preset = $('cfgUploadPreset').value.trim();
+  if(!cloud_name || !upload_preset){ toast('Lengkapi Cloud Name dan Upload Preset.','error'); return; }
+  const config = {cloudinary:{cloud_name, upload_preset}};
+  const blob = new Blob([JSON.stringify(config,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='config.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  toast('config.json berhasil diunduh. Letakkan di folder utama repository GitHub.');
+}
+async function uploadImageToCloudinary(file, folder='general'){
+  if(!file) return null;
+  if(!file.type || !file.type.startsWith('image/')) throw new Error('File harus berupa gambar/foto.');
+  if(file.size > 8 * 1024 * 1024) throw new Error('Ukuran foto maksimal 8 MB.');
+  if(!CLOUDINARY_CONFIG.cloud_name || !CLOUDINARY_CONFIG.upload_preset) throw new Error('Konfigurasi Cloudinary belum lengkap.');
+  const form = new FormData();
+  form.append('file', file);
+  form.append('upload_preset', CLOUDINARY_CONFIG.upload_preset);
+  form.append('folder', 'cerdas-juara/' + folder);
+  const endpoint = `https://api.cloudinary.com/v1_1/${encodeURIComponent(CLOUDINARY_CONFIG.cloud_name)}/image/upload`;
+  const response = await fetch(endpoint, {method:'POST', body:form});
+  const result = await response.json().catch(()=>({}));
+  if(!response.ok) throw new Error(result.error?.message || 'Upload foto ke Cloudinary gagal. Periksa nama cloud dan unsigned upload preset.');
+  if(!result.secure_url) throw new Error('Cloudinary tidak mengembalikan URL foto.');
+  return result.secure_url;
+}
+// Klien khusus membuat akun baru. Sesi admin utama tidak akan terganti.
+const signupClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+});
+
+// Membuat akun Auth tanpa Edge Function. Profil/detail tetap dibuat oleh admin yang sedang login.
+async function createAccountWithoutEdge({ role, login, password, nama, detail, foto_url }) {
+  const normalizedLogin = String(login || '').trim().toLowerCase();
+  const email = role === 'siswa' ? `${normalizedLogin}@akun.cerdasjuara.invalid` : normalizedLogin;
+  if (role === 'siswa') {
+    if (!/^[a-z0-9._-]{3,30}$/.test(normalizedLogin)) throw new Error('Username 3-30 karakter; gunakan huruf kecil, angka, titik, garis bawah, atau tanda hubung.');
+    const { data: exists, error: existsError } = await sb.from('profiles').select('id').eq('username', normalizedLogin).maybeSingle();
+    if (existsError) throw existsError;
+    if (exists) throw new Error('Username sudah digunakan. Silakan pilih username lain.');
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error('Email guru tidak valid.');
+  }
+  if (!password || password.length < 6) throw new Error('Password minimal 6 karakter.');
+  const { data: authData, error: authError } = await signupClient.auth.signUp({
+    email, password,
+    options: { data: { nama, role } }
+  });
+  if (authError) {
+    if (/already registered|already been registered|user already exists/i.test(authError.message)) {
+      throw new Error(role === 'siswa' ? 'Username sudah digunakan. Silakan pilih username lain.' : 'Email guru sudah terdaftar.');
+    }
+    throw authError;
+  }
+  const userId = authData?.user?.id;
+  if (!userId) throw new Error('Akun login tidak berhasil dibuat. Periksa pengaturan konfirmasi email Supabase.');
+
+  const profileData = { id: userId, role, nama, is_active: true };
+  if (foto_url || detail?.foto_url) profileData.foto_url = foto_url || detail.foto_url;
+  if (role === 'siswa') profileData.username = normalizedLogin;
+  const { error: profileError } = await sb.from('profiles').insert(profileData);
+  if (profileError) throw new Error('Akun login terbentuk, tetapi profil gagal disimpan: ' + profileError.message + '. Periksa kebijakan RLS tabel profiles.');
+
+  const table = role === 'siswa' ? 'students' : 'tutors';
+  const row = role === 'siswa'
+    ? Object.fromEntries(Object.entries(detail).filter(([key])=>key!=='foto_url').concat([['profile_id',userId]]))
+    : { ...detail, profile_id: userId, nama, is_active: true };
+  const { error: detailError } = await sb.from(table).insert(row);
+  if (detailError) {
+    await sb.from('profiles').delete().eq('id', userId);
+    throw new Error('Profil login terbentuk, tetapi data ' + role + ' gagal disimpan: ' + detailError.message + '. Periksa kebijakan RLS tabel ' + table + '.');
+  }
+  return { success: true, user_id: userId };
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let currentUser = null;
+let currentProfile = null;
+let studentsCache = [];
+let programsCache = [];
+let tutorsCache = [];
+let groupsCache = [];
+let enrollmentsCache = [];
+
+const VALID_ROLES = ['admin','guru','siswa'];
+const ROLE_LABELS = {admin:'Administrator',guru:'Guru',siswa:'Siswa'};
+
+const MENU = [
+  {id:'dashboard', label:'Dashboard', icon:'fa-home', roles:['admin','guru','siswa']},
+  {id:'students', label:'Siswa', icon:'fa-user-graduate', roles:['admin']},
+  {id:'programs', label:'Program', icon:'fa-book', roles:['admin']},
+  {id:'tutors', label:'Pengajar', icon:'fa-chalkboard-teacher', roles:['admin']},
+  {id:'groups', label:'Kelas / Grup', icon:'fa-users', roles:['admin','guru']},
+  {id:'enrollments', label:'Enrollment', icon:'fa-clipboard-list', roles:['admin']},
+  {id:'attendance', label:'Absensi', icon:'fa-calendar-check', roles:['admin','guru']},
+  {id:'assessments', label:'Asesmen & Nilai', icon:'fa-star', roles:['admin','guru','siswa']},
+  {id:'materials', label:'Materi & Tugas', icon:'fa-file-alt', roles:['admin','guru','siswa']},
+  {id:'journals', label:'Jurnal Mengajar', icon:'fa-journal-whills', roles:['admin','guru']},
+  {id:'announcements', label:'Pengumuman', icon:'fa-bullhorn', roles:['admin','guru','siswa']},
+  {id:'invoices', label:'Tagihan', icon:'fa-file-invoice-dollar', roles:['admin','siswa']},
+  {id:'profile', label:'Profil Saya', icon:'fa-user-circle', roles:['admin','guru','siswa']},
+  {id:'settings', label:'Konfigurasi Cloudinary', icon:'fa-cloud', roles:['admin']},
+];
+
+/* =========================================================
+   UTIL
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const fmtRp = n => 'Rp ' + (n||0).toLocaleString('id-ID');
+const fmtDate = d => d ? new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-';
+const fmtDateTime = d => d ? new Date(d).toLocaleString('id-ID') : '-';
+function toast(msg, type='success'){
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':type==='error'?'exclamation-circle':'info-circle'}"></i> ${msg}`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+function statusBadge(s){
+  const map = {AKTIF:'success',NONAKTIF:'danger',LULUS:'info',HADIR:'success',IZIN:'warning',SAKIT:'warning',ALPA:'danger',BELUM:'danger',MENUNGGU:'warning',LUNAS:'success',KELUAR:'gray'};
+  return `<span class="badge badge-${map[s]||'gray'}">${s}</span>`;
+}
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+async function init(){
+  await loadCloudinaryConfig();
+  try{
+    const {data:{session}, error} = await sb.auth.getSession();
+    if(error) throw error;
+    if(session) await loadProfile(session.user);
+    else showLogin();
+  }catch(err){
+    console.error(err);
+    toast('Tidak dapat memeriksa sesi login: '+err.message,'error');
+    showLogin();
+  }
+}
+function showLogin(){
+  document.body.removeAttribute('data-role');
+  $('loginScreen').style.display = 'flex';
+  $('sidebar').style.display = 'none';
+  $('main').style.display = 'none';
+}
+async function handleLogin(e){
+  e.preventDefault();
+  const btn = $('loginBtn');
+  btn.innerHTML = '<span class="loader"></span> Memproses...';
+  btn.disabled = true;
+  const loginId = $('loginEmail').value.trim().toLowerCase();
+  const password = $('loginPassword').value;
+  // Username siswa dipetakan ke alamat email internal; admin/guru tetap dapat memakai email.
+  const email = loginId.includes('@') ? loginId : `${loginId}@akun.cerdasjuara.invalid`;
+  try{
+    const {data, error} = await sb.auth.signInWithPassword({email, password});
+    if(error) throw error;
+    await loadProfile(data.user);
+  }catch(err){
+    toast(err.message || 'Login gagal','error');
+    btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk';
+    btn.disabled = false;
+  }
+}
+async function loadProfile(user){
+  currentUser = user;
+  const {data, error} = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  if(error || !data){
+    await sb.auth.signOut();
+    currentUser = null;
+    currentProfile = null;
+    showLogin();
+    toast('Akun belum memiliki profil pada tabel profiles. Hubungi admin.','error');
+    return;
+  }
+  const role = String(data.role||'').trim().toLowerCase();
+  if(!VALID_ROLES.includes(role)){
+    await sb.auth.signOut();
+    currentUser = null;
+    currentProfile = null;
+    showLogin();
+    toast('Role akun tidak valid. Role harus admin, guru, atau siswa.','error');
+    return;
+  }
+  currentProfile = {...data, role};
+  document.body.dataset.role = role;
+  $('loginScreen').style.display = 'none';
+  $('sidebar').style.display = 'block';
+  $('main').style.display = 'block';
+  $('userName').textContent = data.nama || user.email || 'Pengguna';
+  $('userRole').textContent = ROLE_LABELS[role];
+  $('userAvatar').textContent = (data.nama || 'U').charAt(0).toUpperCase();
+  renderMenu();
+  navigate('dashboard');
+}
+async function logout(){
+  if(!confirm('Yakin ingin keluar?')) return;
+  const {error} = await sb.auth.signOut();
+  if(error){toast(error.message,'error');return;}
+  currentUser = null;
+  currentProfile = null;
+  showLogin();
+}
+function hasRole(...roles){
+  return !!currentProfile && roles.includes(currentProfile.role);
+}
+function requireRole(...roles){
+  if(hasRole(...roles)) return true;
+  toast('Akses ditolak. Akun Anda tidak memiliki izin untuk tindakan ini.','error');
+  return false;
+}
+
+/* =========================================================
+   MENU & NAVIGATION
+   ========================================================= */
+function renderMenu(){
+  const role = currentProfile?.role;
+  const nav = $('navMenu');
+  nav.innerHTML = MENU.filter(m=>m.roles.includes(role)).map(m=>`
+    <div class="menu-item" data-page="${m.id}" onclick="navigate('${m.id}')">
+      <i class="fas ${m.icon}"></i><span>${m.label}</span>
+    </div>
+  `).join('');
+}
+function navigate(page){
+  const allowed = MENU.find(m=>m.id===page);
+  if(!currentProfile || !allowed || !allowed.roles.includes(currentProfile.role)){
+    toast('Menu tidak tersedia untuk role '+(currentProfile?.role||'pengguna'),'error');
+    return;
+  }
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
+  const pageEl = $('page-'+page);
+  const menuEl = document.querySelector(`.menu-item[data-page="${page}"]`);
+  if(pageEl) pageEl.classList.add('active');
+  if(menuEl) menuEl.classList.add('active');
+  const info = MENU.find(m=>m.id===page);
+  $('pageTitle').textContent = info?.label || 'Dashboard';
+  $('pageSubtitle').textContent = info ? 'Kelola data ' + info.label.toLowerCase() : 'Ringkasan sistem';
+  loadPageData(page);
+  if(window.innerWidth<=768) $('sidebar').classList.remove('show');
+}
+function toggleSidebar(){
+  if(window.innerWidth<=768){
+    $('sidebar').classList.toggle('show');
+  } else {
+    $('sidebar').classList.toggle('collapsed');
+    $('main').classList.toggle('full');
+  }
+}
+
+/* =========================================================
+   LOAD PAGE DATA
+   ========================================================= */
+async function loadPageData(page){
+  try{
+    switch(page){
+      case 'dashboard': await loadDashboard(); break;
+      case 'students': await loadStudents(); break;
+      case 'programs': await loadPrograms(); break;
+      case 'tutors': await loadTutors(); break;
+      case 'groups': await loadGroups(); break;
+      case 'enrollments': await loadEnrollments(); break;
+      case 'attendance': await loadAttendance(); break;
+      case 'assessments': await loadAssessments(); break;
+      case 'materials': await loadMaterials(); break;
+      case 'journals': await loadJournals(); break;
+      case 'announcements': await loadAnnouncements(); break;
+      case 'invoices': await loadInvoices(); break;
+      case 'profile': loadProfileForm(); break;
+      case 'settings': renderCloudinaryConfigForm(); break;
+    }
+  }catch(e){
+    console.error(e);
+    toast('Gagal memuat data', 'error');
+  }
+}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+async function loadDashboard(){
+  const role = currentProfile.role;
+  let stats = [];
+  if(role==='admin'){
+    const [s,p,t,g,i] = await Promise.all([
+      sb.from('students').select('id',{count:'exact',head:true}),
+      sb.from('programs').select('id',{count:'exact',head:true}),
+      sb.from('tutors').select('id',{count:'exact',head:true}),
+      sb.from('groups').select('id',{count:'exact',head:true}),
+      sb.from('invoices').select('nominal,status').eq('status','LUNAS')
+    ]);
+    const totalRevenue = (i.data||[]).reduce((a,b)=>a+(b.nominal||0),0);
+    stats = [
+      {label:'Total Siswa', value:s.count||0, icon:'fa-user-graduate', color:'#4f46e5'},
+      {label:'Total Program', value:p.count||0, icon:'fa-book', color:'#10b981'},
+      {label:'Total Pengajar', value:t.count||0, icon:'fa-chalkboard-teacher', color:'#f59e0b'},
+      {label:'Total Kelas', value:g.count||0, icon:'fa-users', color:'#ef4444'},
+      {label:'Pendapatan', value:fmtRp(totalRevenue), icon:'fa-money-bill-wave', color:'#8b5cf6'},
+    ];
+  } else if(role==='guru'){
+    const {data:tutor} = await sb.from('tutors').select('id').eq('profile_id', currentUser.id).maybeSingle();
+    const {data:g} = tutor ? await sb.from('groups').select('id').eq('tutor_id', tutor.id) : {data:[]};
+    const groupIds = (g||[]).map(x=>x.id);
+    const [{count:sc},{count:mc}] = await Promise.all([
+      sb.from('groups').select('id',{count:'exact',head:true}).in('id', groupIds.length?groupIds:['00000000-0000-0000-0000-000000000000']),
+      sb.from('materials').select('id',{count:'exact',head:true}).in('group_id', groupIds.length?groupIds:['00000000-0000-0000-0000-000000000000'])
+    ]);
+    stats = [
+      {label:'Kelas Saya', value:groupIds.length, icon:'fa-users', color:'#4f46e5'},
+      {label:'Materi', value:mc||0, icon:'fa-file-alt', color:'#10b981'},
+    ];
+  } else {
+    const {data:e} = await sb.from('enrollments').select('id,group_id').eq('student_id', await getCurrentStudentId());
+    stats = [
+      {label:'Kelas Saya', value:(e||[]).length, icon:'fa-users', color:'#4f46e5'},
+    ];
+  }
+  $('statsGrid').innerHTML = stats.map(s=>`
+    <div class="stat-card">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div>
+          <div style="font-size:12px;color:#6b7280;margin-bottom:6px">${s.label}</div>
+          <div style="font-size:24px;font-weight:700">${s.value}</div>
+        </div>
+        <div class="stat-icon" style="background:${s.color}"><i class="fas ${s.icon}"></i></div>
+      </div>
+    </div>
+  `).join('');
+
+  // Recent announcements
+  const {data:ann} = await sb.from('announcements').select('*').order('created_at',{ascending:false}).limit(5);
+  $('recentAnnouncements').innerHTML = (ann&&ann.length) ? ann.map(a=>`
+    <div style="padding:10px 0;border-bottom:1px solid #f3f4f6">
+      <div style="font-weight:600;font-size:14px">${a.judul}</div>
+      <div style="font-size:12px;color:#6b7280;margin-top:4px">${a.isi.substring(0,100)}${a.isi.length>100?'...':''}</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:4px"><i class="far fa-clock"></i> ${fmtDateTime(a.created_at)}</div>
+    </div>
+  `).join('') : '<div class="empty"><i class="fas fa-bullhorn"></i><div>Belum ada pengumuman</div></div>';
+
+  // Recent activity
+  if(hasRole('admin')){
+  const {data:stu,error:stuError} = await sb.from('students').select('nis,created_at,profiles(nama)').order('created_at',{ascending:false}).limit(5);
+  if(stuError) throw stuError;
+  $('recentActivity').innerHTML = (stu&&stu.length) ? stu.map(s=>`
+    <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px">
+      <div class="avatar" style="width:32px;height:32px;font-size:13px">${(s.profiles?.nama||'S').charAt(0)}</div>
+      <div style="flex:1">
+        <div style="font-weight:500;font-size:14px">${s.profiles?.nama||'Nama belum terhubung'}</div>
+        <div style="font-size:12px;color:#6b7280">NIS: ${s.nis}</div>
+      </div>
+      <div style="font-size:11px;color:#9ca3af">${fmtDate(s.created_at)}</div>
+    </div>
+  `).join('') : '<div class="empty"><i class="fas fa-inbox"></i><div>Belum ada aktivitas</div></div>';
+  } else {
+    $('recentActivity').innerHTML = '<div class="empty"><i class="fas fa-user-circle"></i><div>Selamat belajar di CERDAS JUARA</div></div>';
+  }
+}
+
+async function getCurrentStudentId(){
+  const {data,error} = await sb.from('students').select('id').eq('profile_id', currentUser.id).maybeSingle();
+  if(error) console.error(error);
+  return data?.id || null;
+}
+
+async function getCurrentTutorId(){
+  const {data,error} = await sb.from('tutors').select('id').eq('profile_id', currentUser.id).maybeSingle();
+  if(error) console.error(error);
+  return data?.id || null;
+}
+
+/* =========================================================
+   STUDENTS
+   ========================================================= */
+async function loadStudents(){
+  const {data,error} = await sb.from('students').select('*,profiles(nama,foto_url)').order('created_at',{ascending:false});
+  if(error) throw error;
+  studentsCache = (data || []).map(x=>({...x,nama:x.profiles?.nama||'',foto_url:x.profiles?.foto_url||''}));
+  renderStudents();
+}
+function renderStudents(){
+  const q = ($('searchStudent').value||'').toLowerCase();
+  const j = $('filterJenjang').value;
+  const s = $('filterStatus').value;
+  const filtered = studentsCache.filter(x=>
+    (!q || (x.nama||'').toLowerCase().includes(q) || (x.nis||'').toLowerCase().includes(q)) &&
+    (!j || x.jenjang===j) &&
+    (!s || x.status===s)
+  );
+  $('studentsTable').innerHTML = filtered.length ? filtered.map(x=>`
+    <tr>
+      <td><strong>${x.nis}</strong></td>
+      <td><div style="display:flex;align-items:center;gap:8px">${x.foto_url?`<img src="${x.foto_url}" alt="Foto siswa" style="width:34px;height:34px;object-fit:cover;border-radius:50%">`:'<span class="avatar" style="width:34px;height:34px">'+(x.nama||'S').charAt(0)+'</span>'}<span>${x.nama}</span></div></td>
+      <td>${x.jenjang}</td>
+      <td>${x.kelas||'-'}</td>
+      <td>${x.sekolah||'-'}</td>
+      <td>${x.nama_orangtua||'-'}<br><small style="color:#6b7280">${x.no_wa_orangtua||''}</small></td>
+      <td>${statusBadge(x.status)}</td>
+      <td>
+        <button class="btn btn-sm btn-warning" onclick="editStudent('${x.id}')"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="deleteStudent('${x.id}')"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>
+  `).join('') : '<tr><td colspan="8" class="empty"><i class="fas fa-inbox"></i><div>Belum ada data siswa</div></td></tr>';
+}
+async function openStudentModal(data=null){
+  if(!requireRole('admin')) return;
+  const isEdit = !!data;
+  openModal(isEdit?'Edit Siswa':'Tambah Siswa Baru', `
+    <form id="studentForm">
+      ${isEdit ? '' : `
+      <div class="form-group"><label class="form-label">Username Login *</label><input type="text" class="form-control" id="f_username" required minlength="3" autocomplete="off" placeholder="Contoh: ahmad05"><small style="color:#6b7280">Gunakan huruf kecil, angka, titik, garis bawah, atau tanda hubung.</small></div>
+      <div class="form-group"><label class="form-label">Password *</label><input type="password" class="form-control" id="f_password" minlength="6" required placeholder="Minimal 6 karakter"></div>`}
+      <div class="form-group"><label class="form-label">Foto Siswa</label><input type="file" class="form-control" id="f_foto" accept="image/*"><small style="color:#6b7280">Opsional, gambar maksimal 8 MB. ${data?.foto_url?'Foto saat ini sudah tersimpan.':''}</small></div>
+      <div class="form-group"><label class="form-label">Nama Lengkap *</label><input type="text" class="form-control" id="f_nama" value="${data?.nama||''}" required></div>
+      <div class="form-group"><label class="form-label">NIS *</label><input type="text" class="form-control" id="f_nis" value="${data?.nis||''}" required></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label class="form-label">Jenjang *</label><select class="form-control" id="f_jenjang" required><option value="">Pilih</option><option ${data?.jenjang==='SD'?'selected':''}>SD</option><option ${data?.jenjang==='SMP'?'selected':''}>SMP</option><option ${data?.jenjang==='SMA'?'selected':''}>SMA</option></select></div>
+        <div class="form-group"><label class="form-label">Kelas</label><input type="text" class="form-control" id="f_kelas" value="${data?.kelas||''}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Sekolah</label><input type="text" class="form-control" id="f_sekolah" value="${data?.sekolah||''}"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label class="form-label">Nama Orang Tua (data kontak)</label><input type="text" class="form-control" id="f_ortu" value="${data?.nama_orangtua||''}"></div>
+        <div class="form-group"><label class="form-label">No. WA Orang Tua</label><input type="text" class="form-control" id="f_wa" value="${data?.no_wa_orangtua||''}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Alamat</label><textarea class="form-control" id="f_alamat" rows="2">${data?.alamat||''}</textarea></div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="f_status"><option ${data?.status==='AKTIF'||!data?'selected':''}>AKTIF</option><option ${data?.status==='NONAKTIF'?'selected':''}>NONAKTIF</option><option ${data?.status==='LULUS'?'selected':''}>LULUS</option></select></div>
+      ${isEdit ? '<small style="color:#6b7280">Perubahan nama akan diperbarui pada profil akun siswa.</small>' : '<small style="color:#6b7280">Siswa login menggunakan username dan password yang dibuat admin.</small>'}
+    </form>
+  `, async ()=>{
+    const nama=$('f_nama').value.trim();
+    const payload={nis:$('f_nis').value.trim(),jenjang:$('f_jenjang').value,kelas:$('f_kelas').value.trim()||null,sekolah:$('f_sekolah').value.trim()||null,nama_orangtua:$('f_ortu').value.trim()||null,no_wa_orangtua:$('f_wa').value.trim()||null,alamat:$('f_alamat').value.trim()||null,status:$('f_status').value};
+    if(!nama || !payload.nis || !payload.jenjang){toast('Nama, NIS, dan jenjang wajib diisi.','error');return false;}
+    try{
+      const photoFile = $('f_foto')?.files?.[0];
+      const foto_url = photoFile ? await uploadImageToCloudinary(photoFile,'siswa') : (data?.foto_url||null);
+      if(isEdit){
+      const {error:pe}=await sb.from('profiles').update({nama, ...(foto_url?{foto_url}:{})}).eq('id',data.profile_id);
+      if(pe){toast(pe.message,'error');return false;}
+      const {error}=await sb.from('students').update(payload).eq('id',data.id);
+      if(error){toast(error.message,'error');return false;}
+      } else {
+        await createAccountWithoutEdge({role:'siswa',login:$('f_username').value,password:$('f_password').value,nama,detail:payload,foto_url});
+      }
+    }catch(error){ toast(error.message||'Gagal menyimpan data siswa/foto','error'); return false; }
+    toast(isEdit?'Data siswa diperbarui':'Akun dan data siswa berhasil dibuat');closeModal();await loadStudents();return true;
+  });
+}
+function editStudent(id){
+  const s = studentsCache.find(x=>x.id===id);
+  if(s) openStudentModal(s);
+}
+async function deleteStudent(id){
+  if(!requireRole('admin')) return;
+  if(!confirm('Hapus siswa ini?')) return;
+  const {error} = await sb.from('students').delete().eq('id', id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Siswa dihapus');
+  loadStudents();
+}
+
+/* =========================================================
+   PROGRAMS
+   ========================================================= */
+async function loadPrograms(){
+  const {data} = await sb.from('programs').select('*').order('created_at',{ascending:false});
+  programsCache = data || [];
+  $('programsGrid').innerHTML = programsCache.length ? programsCache.map(p=>`
+    <div class="card" style="margin:0">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px">
+        <span class="badge badge-info">${p.jenjang}</span>
+        <div>
+          <button class="btn btn-sm btn-warning" onclick="editProgram('${p.id}')"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="deleteProgram('${p.id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      <h3 style="margin:0 0 6px;font-size:16px">${p.nama}</h3>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 12px">${p.deskripsi||'-'}</p>
+      <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px solid #f3f4f6;padding-top:10px">
+        <div><strong style="color:var(--primary)">${fmtRp(p.biaya_bulanan)}</strong><div style="color:#9ca3af;font-size:11px">/bulan</div></div>
+        <div style="text-align:right"><strong>${p.durasi_bulan}</strong><div style="color:#9ca3af;font-size:11px">bulan</div></div>
+      </div>
+    </div>
+  `).join('') : '<div class="empty" style="grid-column:1/-1"><i class="fas fa-book"></i><div>Belum ada program</div></div>';
+}
+function openProgramModal(data=null){
+  if(!requireRole('admin')) return;
+  const isEdit = !!data;
+  openModal(isEdit?'Edit Program':'Tambah Program', `
+    <form id="programForm">
+      <div class="form-group"><label class="form-label">Nama Program *</label><input type="text" class="form-control" id="p_nama" value="${data?.nama||''}" required></div>
+      <div class="form-group"><label class="form-label">Jenjang *</label>
+        <select class="form-control" id="p_jenjang" required>
+          <option value="">Pilih</option>
+          <option ${data?.jenjang==='SD'?'selected':''}>SD</option>
+          <option ${data?.jenjang==='SMP'?'selected':''}>SMP</option>
+          <option ${data?.jenjang==='SMA'?'selected':''}>SMA</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Deskripsi</label><textarea class="form-control" id="p_desk" rows="2">${data?.deskripsi||''}</textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label class="form-label">Biaya Bulanan (Rp)</label><input type="number" class="form-control" id="p_biaya" value="${data?.biaya_bulanan||0}"></div>
+        <div class="form-group"><label class="form-label">Durasi (Bulan)</label><input type="number" class="form-control" id="p_durasi" value="${data?.durasi_bulan||1}"></div>
+      </div>
+    </form>
+  `, async ()=>{
+    const payload = {
+      nama:$('p_nama').value.trim(),
+      jenjang:$('p_jenjang').value,
+      deskripsi:$('p_desk').value.trim(),
+      biaya_bulanan:parseInt($('p_biaya').value)||0,
+      durasi_bulan:parseInt($('p_durasi').value)||1,
+    };
+    const res = isEdit ? await sb.from('programs').update(payload).eq('id',data.id) : await sb.from('programs').insert(payload);
+    if(res.error){ toast(res.error.message,'error'); return false; }
+    toast(isEdit?'Program diperbarui':'Program ditambahkan');
+    closeModal();
+    loadPrograms();
+    return true;
+  });
+}
+function editProgram(id){ const p=programsCache.find(x=>x.id===id); if(p) openProgramModal(p); }
+async function deleteProgram(id){
+  if(!requireRole('admin')) return;
+  if(!confirm('Hapus program ini?')) return;
+  const {error} = await sb.from('programs').delete().eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Program dihapus');
+  loadPrograms();
+}
+
+/* =========================================================
+   TUTORS
+   ========================================================= */
+async function loadTutors(){
+  const {data} = await sb.from('tutors').select('*').order('created_at',{ascending:false});
+  tutorsCache = data || [];
+  $('tutorsTable').innerHTML = tutorsCache.length ? tutorsCache.map(t=>`
+    <tr>
+      <td>${t.foto_url?`<img src="${t.foto_url}" alt="Foto pengajar" style="width:38px;height:38px;object-fit:cover;border-radius:50%">`:'<span class="avatar">'+(t.nama||'G').charAt(0)+'</span>'}</td>
+      <td><strong>${t.nama}</strong></td>
+      <td>${t.keahlian||'-'}</td>
+      <td>${t.pendidikan||'-'}</td>
+      <td>${fmtRp(t.honor_per_sesi)}</td>
+      <td>${statusBadge(t.is_active?'AKTIF':'NONAKTIF')}</td>
+      <td>
+        <button class="btn btn-sm btn-warning" onclick="editTutor('${t.id}')"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="deleteTutor('${t.id}')"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>
+  `).join('') : '<tr><td colspan="7" class="empty"><i class="fas fa-inbox"></i><div>Belum ada pengajar</div></td></tr>';
+}
+function openTutorModal(data=null){
+  if(!requireRole('admin')) return;
+  const isEdit=!!data;
+  openModal(isEdit?'Edit Pengajar':'Tambah Pengajar',`
+    <form>
+      ${isEdit?'':`<div class="form-group"><label class="form-label">Email / Username Login *</label><input type="email" class="form-control" id="t_email" required placeholder="guru@email.com"></div><div class="form-group"><label class="form-label">Password Awal *</label><input type="password" class="form-control" id="t_password" minlength="8" required placeholder="Minimal 8 karakter"></div>`}
+      <div class="form-group"><label class="form-label">Foto Pengajar</label><input type="file" class="form-control" id="t_foto" accept="image/*"><small style="color:#6b7280">Opsional, gambar maksimal 8 MB.</small></div>
+      <div class="form-group"><label class="form-label">Nama *</label><input type="text" class="form-control" id="t_nama" value="${data?.nama||''}" required></div>
+      <div class="form-group"><label class="form-label">Keahlian</label><input type="text" class="form-control" id="t_keahlian" value="${data?.keahlian||''}"></div>
+      <div class="form-group"><label class="form-label">Pendidikan</label><input type="text" class="form-control" id="t_pendidikan" value="${data?.pendidikan||''}"></div>
+      <div class="form-group"><label class="form-label">Honor per Sesi (Rp)</label><input type="number" class="form-control" id="t_honor" value="${data?.honor_per_sesi||0}"></div>
+    </form>
+  `,async()=>{
+    const nama=$('t_nama').value.trim();
+    const payload={nama,keahlian:$('t_keahlian').value.trim()||null,pendidikan:$('t_pendidikan').value.trim()||null,honor_per_sesi:parseInt($('t_honor').value)||0};
+    if(!nama){toast('Nama pengajar wajib diisi.','error');return false;}
+    try{
+      const photoFile = $('t_foto')?.files?.[0];
+      if(photoFile) payload.foto_url = await uploadImageToCloudinary(photoFile,'guru');
+      else if(data?.foto_url) payload.foto_url = data.foto_url;
+      if(isEdit){if(data.profile_id){const profilePayload={nama,...(payload.foto_url?{foto_url:payload.foto_url}:{})};const {error:profileError}=await sb.from('profiles').update(profilePayload).eq('id',data.profile_id);if(profileError){toast(profileError.message,'error');return false;}}const {error}=await sb.from('tutors').update(payload).eq('id',data.id);if(error){toast(error.message,'error');return false;}}
+      else { await createAccountWithoutEdge({role:'guru',login:$('t_email').value,password:$('t_password').value,nama,detail:payload}); }
+    }catch(error){toast(error.message||'Gagal membuat akun/data pengajar','error');return false;}
+    toast(isEdit?'Pengajar diperbarui':'Akun dan data pengajar berhasil dibuat');closeModal();await loadTutors();return true;
+  });
+}
+function editTutor(id){ const t=tutorsCache.find(x=>x.id===id); if(t) openTutorModal(t); }
+async function deleteTutor(id){
+  if(!requireRole('admin')) return;
+  if(!confirm('Hapus pengajar ini?')) return;
+  const {error} = await sb.from('tutors').delete().eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Pengajar dihapus');
+  loadTutors();
+}
+
+/* =========================================================
+   GROUPS
+   ========================================================= */
+async function loadGroups(){
+  let query = sb.from('groups').select('*,programs(nama),tutors(nama)').order('created_at',{ascending:false});
+  if(hasRole('guru')){
+    const tutorId = await getCurrentTutorId();
+    if(!tutorId){ groupsCache=[]; $('groupsGrid').innerHTML='<div class="empty">Profil guru belum terhubung ke data pengajar.</div>'; return; }
+    query = query.eq('tutor_id',tutorId);
+  }
+  const {data,error} = await query;
+  if(error) throw error;
+  groupsCache = data || [];
+  $('groupsGrid').innerHTML = groupsCache.length ? groupsCache.map(g=>`
+    <div class="card" style="margin:0">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+        <span class="badge badge-info">${g.programs?.nama||'-'}</span>
+        <div>
+          <button class="btn btn-sm btn-warning" onclick="editGroup('${g.id}')"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="deleteGroup('${g.id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      <h3 style="margin:0 0 6px;font-size:16px">${g.nama}</h3>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:10px">
+        <div><i class="fas fa-user-tie"></i> ${g.tutors?.nama||'Belum ada pengajar'}</div>
+        <div><i class="far fa-clock"></i> ${g.jadwal||'-'}</div>
+        <div><i class="fas fa-users"></i> Kapasitas: ${g.kapasitas} siswa</div>
+      </div>
+    </div>
+  `).join('') : '<div class="empty" style="grid-column:1/-1"><i class="fas fa-users"></i><div>Belum ada kelas</div></div>';
+}
+async function openGroupModal(data=null){
+  if(!requireRole('admin')) return;
+  const isEdit = !!data;
+  if(!programsCache.length) await loadPrograms();
+  if(!tutorsCache.length) await loadTutors();
+  openModal(isEdit?'Edit Kelas':'Tambah Kelas', `
+    <form>
+      <div class="form-group"><label class="form-label">Nama Kelas *</label><input type="text" class="form-control" id="g_nama" value="${data?.nama||''}" required></div>
+      <div class="form-group"><label class="form-label">Program *</label>
+        <select class="form-control" id="g_program" required>
+          <option value="">Pilih</option>
+          ${programsCache.map(p=>`<option value="${p.id}" ${data?.program_id===p.id?'selected':''}>${p.nama}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Pengajar</label>
+        <select class="form-control" id="g_tutor">
+          <option value="">Pilih</option>
+          ${tutorsCache.map(t=>`<option value="${t.id}" ${data?.tutor_id===t.id?'selected':''}>${t.nama}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label class="form-label">Jadwal</label><input type="text" class="form-control" id="g_jadwal" value="${data?.jadwal||''}" placeholder="Senin & Rabu 16:00"></div>
+        <div class="form-group"><label class="form-label">Kapasitas</label><input type="number" class="form-control" id="g_kapasitas" value="${data?.kapasitas||10}"></div>
+      </div>
+    </form>
+  `, async ()=>{
+    const payload = {
+      nama:$('g_nama').value.trim(),
+      program_id:$('g_program').value,
+      tutor_id:$('g_tutor').value||null,
+      jadwal:$('g_jadwal').value.trim(),
+      kapasitas:parseInt($('g_kapasitas').value)||10,
+    };
+    const res = isEdit ? await sb.from('groups').update(payload).eq('id',data.id) : await sb.from('groups').insert(payload);
+    if(res.error){ toast(res.error.message,'error'); return false; }
+    toast(isEdit?'Kelas diperbarui':'Kelas ditambahkan');
+    closeModal();
+    loadGroups();
+    return true;
+  });
+}
+function editGroup(id){ const g=groupsCache.find(x=>x.id===id); if(g) openGroupModal(g); }
+async function deleteGroup(id){
+  if(!requireRole('admin')) return;
+  if(!confirm('Hapus kelas ini?')) return;
+  const {error} = await sb.from('groups').delete().eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Kelas dihapus');
+  loadGroups();
+}
+
+/* =========================================================
+   ENROLLMENTS
+   ========================================================= */
+async function loadEnrollments(){
+  const {data} = await sb.from('enrollments').select('*,students(nis,profiles(nama)),groups(nama)').order('created_at',{ascending:false});
+  enrollmentsCache = data || [];
+  $('enrollmentsTable').innerHTML = enrollmentsCache.length ? enrollmentsCache.map(e=>`
+    <tr>
+      <td><strong>${e.students?.profiles?.nama}</strong><br><small style="color:#6b7280">${e.students?.nis}</small></td>
+      <td>${e.groups?.nama||'-'}</td>
+      <td>${fmtDate(e.tgl_mulai)}</td>
+      <td>${statusBadge(e.status)}</td>
+      <td>
+        <button class="btn btn-sm btn-danger" onclick="deleteEnrollment('${e.id}')"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>
+  `).join('') : '<tr><td colspan="5" class="empty"><i class="fas fa-inbox"></i><div>Belum ada enrollment</div></td></tr>';
+}
+async function openEnrollmentModal(){
+  if(!requireRole('admin')) return;
+  if(!studentsCache.length) await loadStudents();
+  if(!groupsCache.length) await loadGroups();
+  openModal('Tambah Enrollment', `
+    <form>
+      <div class="form-group"><label class="form-label">Siswa *</label>
+        <select class="form-control" id="e_student" required>
+          <option value="">Pilih</option>
+          ${studentsCache.map(s=>`<option value="${s.id}">${s.nama||'Nama belum terhubung'} (${s.nis})</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Kelas *</label>
+        <select class="form-control" id="e_group" required>
+          <option value="">Pilih</option>
+          ${groupsCache.map(g=>`<option value="${g.id}">${g.nama}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Tanggal Mulai</label><input type="date" class="form-control" id="e_tgl" value="${new Date().toISOString().substring(0,10)}"></div>
+    </form>
+  `, async ()=>{
+    const payload = {
+      student_id:$('e_student').value,
+      group_id:$('e_group').value,
+      tgl_mulai:$('e_tgl').value,
+    };
+    const {error} = await sb.from('enrollments').insert(payload);
+    if(error){ toast(error.message,'error'); return false; }
+    toast('Enrollment ditambahkan');
+    closeModal();
+    loadEnrollments();
+    return true;
+  });
+}
+async function deleteEnrollment(id){
+  if(!requireRole('admin')) return;
+  if(!confirm('Hapus enrollment ini?')) return;
+  const {error} = await sb.from('enrollments').delete().eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Enrollment dihapus');
+  loadEnrollments();
+}
+
+/* =========================================================
+   ATTENDANCE
+   ========================================================= */
+async function loadAttendance(){
+  const {data} = await sb.from('attendance').select('*,enrollments(students(profiles(nama)),groups(nama))').order('tanggal',{ascending:false}).limit(100);
+  const list = data || [];
+  // populate group filter
+  if(!groupsCache.length) await loadGroups();
+  $('filterAttGroup').innerHTML = '<option value="">Semua Kelas</option>' + groupsCache.map(g=>`<option value="${g.id}">${g.nama}</option>`).join('');
+  renderAttendance(list);
+}
+function renderAttendance(list){
+  const date = $('filterAttDate').value;
+  const gid = $('filterAttGroup').value;
+  const filtered = (list||[]).filter(a=>
+    (!date || a.tanggal===date) &&
+    (!gid || a.enrollments?.groups?.id===gid)
+  );
+  $('attendanceTable').innerHTML = filtered.length ? filtered.map(a=>`
+    <tr>
+      <td>${fmtDate(a.tanggal)}</td>
+      <td>${a.enrollments?.students?.profiles?.nama||'-'}</td>
+      <td>${a.enrollments?.groups?.nama||'-'}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>${a.catatan||'-'}</td>
+      <td>
+        <button class="btn btn-sm btn-danger" onclick="deleteAttendance('${a.id}')"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>
+  `).join('') : '<tr><td colspan="6" class="empty"><i class="fas fa-inbox"></i><div>Belum ada data absensi</div></td></tr>';
+}
+async function openAttendanceModal(){
+  if(!requireRole('admin','guru')) return;
+  if(!enrollmentsCache.length) await loadEnrollments();
+  openModal('Input Absensi', `
+    <form>
+      <div class="form-group"><label class="form-label">Enrollment (Siswa x Kelas) *</label>
+        <select class="form-control" id="a_enroll" required>
+          <option value="">Pilih</option>
+          ${enrollmentsCache.filter(e=>e.status==='AKTIF').map(e=>`<option value="${e.id}">${e.students?.profiles?.nama} — ${e.groups?.nama}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Tanggal *</label><input type="date" class="form-control" id="a_tgl" value="${new Date().toISOString().substring(0,10)}" required></div>
+      <div class="form-group"><label class="form-label">Status *</label>
+        <select class="form-control" id="a_status" required>
+          <option>HADIR</option><option>IZIN</option><option>SAKIT</option><option>ALPA</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Catatan</label><textarea class="form-control" id="a_catatan" rows="2"></textarea></div>
+    </form>
+  `, async ()=>{
+    const payload = {
+      enrollment_id:$('a_enroll').value,
+      tanggal:$('a_tgl').value,
+      status:$('a_status').value,
+      catatan:$('a_catatan').value.trim(),
+      dicatat_oleh:currentUser.id,
+    };
+    const {error} = await sb.from('attendance').insert(payload);
+    if(error){ toast(error.message,'error'); return false; }
+    toast('Absensi disimpan');
+    closeModal();
+    loadAttendance();
+    return true;
+  });
+}
+async function deleteAttendance(id){
+  if(!requireRole('admin','guru')) return;
+  if(!confirm('Hapus absensi ini?')) return;
+  const {error} = await sb.from('attendance').delete().eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Absensi dihapus');
+  loadAttendance();
+}
+
+/* =========================================================
+   ASSESSMENTS
+   ========================================================= */
+async function loadAssessments(){
+  let query = sb.from('assessments').select('*,groups(nama),scores(id,student_id,nilai)').order('tanggal',{ascending:false});
+  let ownStudentId = null;
+  if(hasRole('guru')){
+    const tutorId = await getCurrentTutorId();
+    const {data:ownedGroups} = tutorId ? await sb.from('groups').select('id').eq('tutor_id',tutorId) : {data:[]};
+    const ids = (ownedGroups||[]).map(x=>x.id);
+    query = query.in('group_id',ids.length?ids:['00000000-0000-0000-0000-000000000000']);
+  } else if(hasRole('siswa')){
+    ownStudentId = await getCurrentStudentId();
+    const {data:enrolled} = ownStudentId ? await sb.from('enrollments').select('group_id').eq('student_id',ownStudentId).eq('status','AKTIF') : {data:[]};
+    const ids = (enrolled||[]).map(x=>x.group_id);
+    query = query.in('group_id',ids.length?ids:['00000000-0000-0000-0000-000000000000']);
+  }
+  const {data,error} = await query;
+  if(error) throw error;
+  const list = data || [];
+  $('assessmentsTable').innerHTML = list.length ? list.map(a=>{
+    const ownScore = ownStudentId ? (a.scores||[]).find(x=>x.student_id===ownStudentId)?.nilai : null;
+    return `<tr>
+      <td><strong>${a.nama}</strong></td>
+      <td>${a.groups?.nama||'-'}</td>
+      <td>${a.bobot}</td>
+      <td>${fmtDate(a.tanggal)}</td>
+      <td>${ownStudentId ? (ownScore===undefined || ownScore===null ? 'Belum dinilai' : ownScore) : (a.scores||[]).length+' siswa'}</td>
+      <td>${ownStudentId ? '<span class="badge badge-info">Hasil Saya</span>' : `<button class="btn btn-sm btn-primary" onclick="openScoresModal('${a.id}','${a.nama.replace(/'/g,"\'")}')"><i class="fas fa-edit"></i> Nilai</button> ${hasRole('admin')?`<button class="btn btn-sm btn-danger" onclick="deleteAssessment('${a.id}')"><i class="fas fa-trash"></i></button>`:''}`}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="6" class="empty"><i class="fas fa-inbox"></i><div>Belum ada asesmen untuk kelas Anda</div></td></tr>';
+}
+
+async function openAssessmentModal(){
+  if(!requireRole('admin','guru')) return;
+  if(!groupsCache.length) await loadGroups();
+  openModal('Tambah Asesmen', `
+    <form>
+      <div class="form-group"><label class="form-label">Nama Asesmen *</label><input type="text" class="form-control" id="as_nama" required placeholder="UTS Matematika"></div>
+      <div class="form-group"><label class="form-label">Kelas *</label>
+        <select class="form-control" id="as_group" required>
+          <option value="">Pilih</option>
+          ${groupsCache.map(g=>`<option value="${g.id}">${g.nama}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label class="form-label">Bobot</label><input type="number" class="form-control" id="as_bobot" value="1"></div>
+        <div class="form-group"><label class="form-label">Tanggal</label><input type="date" class="form-control" id="as_tgl" value="${new Date().toISOString().substring(0,10)}"></div>
+      </div>
+    </form>
+  `, async ()=>{
+    const payload = {
+      nama:$('as_nama').value.trim(),
+      group_id:$('as_group').value,
+      bobot:parseInt($('as_bobot').value)||1,
+      tanggal:$('as_tgl').value,
+    };
+    const {error} = await sb.from('assessments').insert(payload);
+    if(error){ toast(error.message,'error'); return false; }
+    toast('Asesmen ditambahkan');
+    closeModal();
+    loadAssessments();
+    return true;
+  });
+}
+async function deleteAssessment(id){
+  if(!requireRole('admin')) return;
+  if(!confirm('Hapus asesmen ini beserta semua nilainya?')) return;
+  const {error} = await sb.from('assessments').delete().eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Asesmen dihapus');
+  loadAssessments();
+}
+async function openScoresModal(assessmentId, assessmentName){
+  if(!requireRole('admin','guru')) return;
+  const {data:enrolls} = await sb.from('enrollments').select('*,students(nis,profiles(nama))').eq('group_id',
+    (await sb.from('assessments').select('group_id').eq('id',assessmentId).single()).data.group_id
+  ).eq('status','AKTIF');
+  const {data:scores} = await sb.from('scores').select('*').eq('assessment_id', assessmentId);
+  const scoreMap = {};
+  (scores||[]).forEach(s=>scoreMap[s.student_id]=s.nilai);
+  openModal(`Input Nilai — ${assessmentName}`, `
+    <div style="max-height:400px;overflow-y:auto">
+      <table>
+        <thead><tr><th>Siswa</th><th>NIS</th><th>Nilai</th></tr></thead>
+        <tbody>
+          ${(enrolls||[]).map(e=>`
+            <tr>
+              <td>${e.students?.profiles?.nama}</td>
+              <td>${e.students?.nis}</td>
+              <td><input type="number" min="0" max="100" class="form-control" data-sid="${e.student_id}" value="${scoreMap[e.student_id]??''}"></td>
+            </tr>
+          `).join('') || '<tr><td colspan="3" class="empty">Belum ada siswa</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `, async ()=>{
+    const inputs = document.querySelectorAll('#modalBody input[data-sid]');
+    for(const inp of inputs){
+      const sid = inp.dataset.sid;
+      const val = inp.value;
+      if(val==='') continue;
+      const nilai = parseFloat(val);
+      if(isNaN(nilai) || nilai<0 || nilai>100){ toast('Nilai harus 0-100','error'); return false; }
+      const {error} = await sb.from('scores').upsert({assessment_id:assessmentId, student_id:sid, nilai},{onConflict:'assessment_id,student_id'});
+      if(error){ toast(error.message,'error'); return false; }
+    }
+    toast('Nilai disimpan');
+    closeModal();
+    loadAssessments();
+    return true;
+  });
+}
+
+/* =========================================================
+   MATERIALS
+   ========================================================= */
+async function loadMaterials(){
+  let query = sb.from('materials').select('*,groups(nama)').order('created_at',{ascending:false});
+  if(hasRole('guru')){
+    const tutorId = await getCurrentTutorId();
+    const {data:ownedGroups} = tutorId ? await sb.from('groups').select('id').eq('tutor_id',tutorId) : {data:[]};
+    const ids = (ownedGroups||[]).map(x=>x.id);
+    query = query.in('group_id',ids.length?ids:['00000000-0000-0000-0000-000000000000']);
+  } else if(hasRole('siswa')){
+    const sid = await getCurrentStudentId();
+    const {data:enrolled} = sid ? await sb.from('enrollments').select('group_id').eq('student_id',sid).eq('status','AKTIF') : {data:[]};
+    const ids = (enrolled||[]).map(x=>x.group_id);
+    query = query.in('group_id',ids.length?ids:['00000000-0000-0000-0000-000000000000']);
+  }
+  const {data,error} = await query;
+  if(error) throw error;
+  const list = data || [];
+  $('materialsGrid').innerHTML = list.length ? list.map(m=>`
+    <div class="card" style="margin:0">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+        <span class="badge ${m.tipe==='tugas'?'badge-warning':'badge-info'}">${m.tipe.toUpperCase()}</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteMaterial('${m.id}')"><i class="fas fa-trash"></i></button>
+      </div>
+      <h3 style="margin:0 0 6px;font-size:15px">${m.judul}</h3>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:8px"><i class="fas fa-users"></i> ${m.groups?.nama||'-'}</div>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 10px">${m.deskripsi||'-'}</p>
+      ${m.file_url?`<a href="${m.file_url}" target="_blank" rel="noopener"><img src="${m.file_url}" alt="Gambar materi/tugas" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;background:#f3f4f6"></a>`:''}
+      ${m.deadline?`<div style="font-size:11px;color:#ef4444;margin-top:8px"><i class="far fa-clock"></i> Deadline: ${fmtDateTime(m.deadline)}</div>`:''}
+    </div>
+  `).join('') : '<div class="empty" style="grid-column:1/-1"><i class="fas fa-file-alt"></i><div>Belum ada materi</div></div>';
+}
+async function openMaterialModal(){
+  if(!requireRole('admin','guru')) return;
+  if(!groupsCache.length) await loadGroups();
+  openModal('Tambah Materi', `
+    <form>
+      <div class="form-group"><label class="form-label">Judul *</label><input type="text" class="form-control" id="m_judul" required></div>
+      <div class="form-group"><label class="form-label">Kelas *</label>
+        <select class="form-control" id="m_group" required>
+          <option value="">Pilih</option>
+          ${groupsCache.map(g=>`<option value="${g.id}">${g.nama}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Tipe</label>
+        <select class="form-control" id="m_tipe"><option>materi</option><option>tugas</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Deskripsi</label><textarea class="form-control" id="m_desk" rows="2"></textarea></div>
+      <div class="form-group"><label class="form-label">Foto Materi / Tugas</label><input type="file" class="form-control" id="m_foto" accept="image/*"><small style="color:#6b7280">Hanya gambar/foto, maksimal 8 MB.</small></div>
+      <div class="form-group"><label class="form-label">Deadline</label><input type="datetime-local" class="form-control" id="m_deadline"></div>
+    </form>
+  `, async ()=>{
+    let uploadedPhoto = null;
+    try{ if($('m_foto').files[0]) uploadedPhoto = await uploadImageToCloudinary($('m_foto').files[0],'materi-tugas'); }
+    catch(error){ toast(error.message,'error'); return false; }
+    const payload = {
+      judul:$('m_judul').value.trim(),
+      group_id:$('m_group').value,
+      tipe:$('m_tipe').value,
+      deskripsi:$('m_desk').value.trim(),
+      file_url:uploadedPhoto,
+      deadline:$('m_deadline').value||null,
+      created_by:currentUser.id,
+    };
+    const {error} = await sb.from('materials').insert(payload);
+    if(error){ toast(error.message,'error'); return false; }
+    toast('Materi ditambahkan');
+    closeModal();
+    loadMaterials();
+    return true;
+  });
+}
+async function deleteMaterial(id){
+  if(!requireRole('admin','guru')) return;
+  if(!confirm('Hapus materi ini?')) return;
+  const {error} = await sb.from('materials').delete().eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Materi dihapus');
+  loadMaterials();
+}
+
+/* =========================================================
+   JOURNALS
+   ========================================================= */
+async function loadJournals(){
+  const {data} = await sb.from('journals').select('*,groups(nama)').order('tanggal',{ascending:false});
+  const list = data || [];
+  $('journalsTable').innerHTML = list.length ? list.map(j=>`
+    <tr>
+      <td>${fmtDate(j.tanggal)}</td>
+      <td>${j.groups?.nama||'-'}</td>
+      <td><strong>${j.topik}</strong></td>
+      <td>${j.catatan||'-'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteJournal('${j.id}')"><i class="fas fa-trash"></i></button></td>
+    </tr>
+  `).join('') : '<tr><td colspan="5" class="empty"><i class="fas fa-inbox"></i><div>Belum ada jurnal</div></td></tr>';
+}
+async function openJournalModal(){
+  if(!requireRole('admin','guru')) return;
+  if(!groupsCache.length) await loadGroups();
+  openModal('Tambah Jurnal', `
+    <form>
+      <div class="form-group"><label class="form-label">Kelas *</label>
+        <select class="form-control" id="j_group" required>
+          <option value="">Pilih</option>
+          ${groupsCache.map(g=>`<option value="${g.id}">${g.nama}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Tanggal *</label><input type="date" class="form-control" id="j_tgl" value="${new Date().toISOString().substring(0,10)}" required></div>
+      <div class="form-group"><label class="form-label">Topik *</label><input type="text" class="form-control" id="j_topik" required></div>
+      <div class="form-group"><label class="form-label">Catatan</label><textarea class="form-control" id="j_catatan" rows="3"></textarea></div>
+    </form>
+  `, async ()=>{
+    const payload = {
+      group_id:$('j_group').value,
+      tanggal:$('j_tgl').value,
+      topik:$('j_topik').value.trim(),
+      catatan:$('j_catatan').value.trim(),
+      created_by:currentUser.id,
+    };
+    const {error} = await sb.from('journals').insert(payload);
+    if(error){ toast(error.message,'error'); return false; }
+    toast('Jurnal ditambahkan');
+    closeModal();
+    loadJournals();
+    return true;
+  });
+}
+async function deleteJournal(id){
+  if(!requireRole('admin','guru')) return;
+  if(!confirm('Hapus jurnal ini?')) return;
+  const {error} = await sb.from('journals').delete().eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Jurnal dihapus');
+  loadJournals();
+}
+
+/* =========================================================
+   ANNOUNCEMENTS
+   ========================================================= */
+async function loadAnnouncements(){
+  let query = sb.from('announcements').select('*,groups(nama),profiles(nama)').order('created_at',{ascending:false});
+  if(hasRole('siswa')) query = query.in('target_role',['siswa','semua']);
+  const {data} = await query;
+  const list = data || [];
+  $('announcementsList').innerHTML = list.length ? list.map(a=>`
+    <div style="padding:16px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+        <div>
+          <h3 style="margin:0;font-size:15px">${a.judul}</h3>
+          <div style="font-size:12px;color:#6b7280;margin-top:4px">
+            <i class="fas fa-user"></i> ${a.profiles?.nama||'-'} • 
+            <i class="far fa-clock"></i> ${fmtDateTime(a.created_at)} •
+            <span class="badge badge-info">${a.target_role}</span>
+            ${a.groups?.nama?` • <i class="fas fa-users"></i> ${a.groups.nama}`:''}
+          </div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="deleteAnnouncement('${a.id}')"><i class="fas fa-trash"></i></button>
+      </div>
+      <p style="margin:0;font-size:14px;color:#374151;white-space:pre-wrap">${a.isi}</p>
+    </div>
+  `).join('') : '<div class="empty"><i class="fas fa-bullhorn"></i><div>Belum ada pengumuman</div></div>';
+}
+async function openAnnouncementModal(){
+  if(!requireRole('admin','guru')) return;
+  if(!groupsCache.length) await loadGroups();
+  openModal('Buat Pengumuman', `
+    <form>
+      <div class="form-group"><label class="form-label">Judul *</label><input type="text" class="form-control" id="an_judul" required></div>
+      <div class="form-group"><label class="form-label">Kelas (kosongkan untuk semua)</label>
+        <select class="form-control" id="an_group">
+          <option value="">Semua Kelas</option>
+          ${groupsCache.map(g=>`<option value="${g.id}">${g.nama}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Target</label>
+        <select class="form-control" id="an_target">
+          <option>semua</option><option>guru</option><option>siswa</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Isi *</label><textarea class="form-control" id="an_isi" rows="4" required></textarea></div>
+    </form>
+  `, async ()=>{
+    const payload = {
+      judul:$('an_judul').value.trim(),
+      group_id:$('an_group').value||null,
+      target_role:$('an_target').value,
+      isi:$('an_isi').value.trim(),
+      created_by:currentUser.id,
+    };
+    const {error} = await sb.from('announcements').insert(payload);
+    if(error){ toast(error.message,'error'); return false; }
+    toast('Pengumuman dibuat');
+    closeModal();
+    loadAnnouncements();
+    return true;
+  });
+}
+async function deleteAnnouncement(id){
+  if(!requireRole('admin','guru')) return;
+  if(!confirm('Hapus pengumuman ini?')) return;
+  const {error} = await sb.from('announcements').delete().eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Pengumuman dihapus');
+  loadAnnouncements();
+}
+
+/* =========================================================
+   INVOICES
+   ========================================================= */
+async function loadInvoices(){
+  let query = sb.from('invoices').select('*,students(profiles(nama)),programs(nama)').order('created_at',{ascending:false});
+  if(hasRole('siswa')){
+    const sid = await getCurrentStudentId();
+    if(!sid){ $('invoicesTable').innerHTML='<tr><td colspan="7" class="empty">Profil siswa belum terhubung ke data siswa.</td></tr>'; return; }
+    query = query.eq('student_id',sid);
+  }
+  const {data} = await query;
+  const list = data || [];
+  const filter = $('filterInvStatus').value;
+  const filtered = filter ? list.filter(i=>i.status===filter) : list;
+  $('invoicesTable').innerHTML = filtered.length ? filtered.map(i=>`
+    <tr>
+      <td><strong>${i.periode}</strong></td>
+      <td>${i.students?.profiles?.nama||'-'}</td>
+      <td>${i.programs?.nama||'-'}</td>
+      <td>${fmtRp(i.nominal)}</td>
+      <td>${statusBadge(i.status)}</td>
+      <td>${i.tgl_bayar?fmtDate(i.tgl_bayar):'-'}</td>
+      <td>
+        ${i.status!=='LUNAS'?`<button class="btn btn-sm btn-success" onclick="verifyInvoice('${i.id}')"><i class="fas fa-check"></i></button>`:''}
+        <button class="btn btn-sm btn-danger" onclick="deleteInvoice('${i.id}')"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>
+  `).join('') : '<tr><td colspan="7" class="empty"><i class="fas fa-inbox"></i><div>Belum ada tagihan</div></td></tr>';
+}
+async function openInvoiceModal(){
+  if(!requireRole('admin')) return;
+  if(!studentsCache.length) await loadStudents();
+  if(!programsCache.length) await loadPrograms();
+  openModal('Buat Tagihan', `
+    <form>
+      <div class="form-group"><label class="form-label">Siswa *</label>
+        <select class="form-control" id="i_student" required>
+          <option value="">Pilih</option>
+          ${studentsCache.map(s=>`<option value="${s.id}">${s.nama||'Nama belum terhubung'}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Program</label>
+        <select class="form-control" id="i_program">
+          <option value="">Pilih</option>
+          ${programsCache.map(p=>`<option value="${p.id}">${p.nama}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label class="form-label">Periode *</label><input type="text" class="form-control" id="i_periode" placeholder="2026-11" required></div>
+        <div class="form-group"><label class="form-label">Nominal (Rp) *</label><input type="number" class="form-control" id="i_nominal" required></div>
+      </div>
+      <div class="form-group"><label class="form-label">Catatan</label><textarea class="form-control" id="i_catatan" rows="2"></textarea></div>
+    </form>
+  `, async ()=>{
+    const payload = {
+      student_id:$('i_student').value,
+      program_id:$('i_program').value||null,
+      periode:$('i_periode').value.trim(),
+      nominal:parseInt($('i_nominal').value)||0,
+      catatan:$('i_catatan').value.trim(),
+    };
+    const {error} = await sb.from('invoices').insert(payload);
+    if(error){ toast(error.message,'error'); return false; }
+    toast('Tagihan dibuat');
+    closeModal();
+    loadInvoices();
+    return true;
+  });
+}
+async function verifyInvoice(id){
+  if(!requireRole('admin')) return;
+  if(!confirm('Tandai tagihan ini sebagai LUNAS?')) return;
+  const {error} = await sb.from('invoices').update({status:'LUNAS',tgl_bayar:new Date().toISOString(),verified_by:currentUser.id}).eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Tagihan dilunasi');
+  loadInvoices();
+}
+async function deleteInvoice(id){
+  if(!requireRole('admin')) return;
+  if(!confirm('Hapus tagihan ini?')) return;
+  const {error} = await sb.from('invoices').delete().eq('id',id);
+  if(error){ toast(error.message,'error'); return; }
+  toast('Tagihan dihapus');
+  loadInvoices();
+}
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+function loadProfileForm(){
+  $('profileNama').value = currentProfile.nama || '';
+  $('profileWA').value = currentProfile.no_wa || '';
+  $('profileRole').value = currentProfile.role;
+  if(currentProfile.foto_url){ $('profileAvatar').innerHTML = `<img src="${currentProfile.foto_url}" alt="Foto profil" style="width:80px;height:80px;object-fit:cover;border-radius:50%">`; }
+  else $('profileAvatar').textContent = (currentProfile.nama||'U').charAt(0).toUpperCase();
+}
+async function saveProfile(e){
+  e.preventDefault();
+  const payload = {
+    nama:$('profileNama').value.trim(),
+    no_wa:$('profileWA').value.trim(),
+  };
+  try{
+    const photoFile = $('profilePhotoFile')?.files?.[0];
+    if(photoFile) payload.foto_url = await uploadImageToCloudinary(photoFile,'profil');
+  }catch(error){ toast(error.message,'error'); return; }
+  const {error} = await sb.from('profiles').update(payload).eq('id', currentUser.id);
+  if(error){ toast(error.message,'error'); return; }
+  currentProfile = {...currentProfile, ...payload};
+  $('userName').textContent = payload.nama;
+  $('userAvatar').textContent = payload.nama.charAt(0).toUpperCase();
+  if(payload.foto_url){ $('profileAvatar').innerHTML = `<img src="${payload.foto_url}" alt="Foto profil" style="width:80px;height:80px;object-fit:cover;border-radius:50%">`; }
+  toast('Profil diperbarui');
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+let modalSaveHandler = null;
+function openModal(title, bodyHtml, onSave){
+  $('modalTitle').textContent = title;
+  $('modalBody').innerHTML = bodyHtml;
+  $('modalFooter').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+    <button class="btn btn-primary" id="modalSaveBtn"><i class="fas fa-save"></i> Simpan</button>
+  `;
+  modalSaveHandler = onSave;
+  $('modalSaveBtn').onclick = async ()=>{
+    const btn = $('modalSaveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span> Menyimpan...';
+    const ok = await modalSaveHandler();
+    if(ok!==false){
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Simpan';
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Simpan';
+    }
+  };
+  $('modalOverlay').classList.add('show');
+}
+function closeModal(){
+  $('modalOverlay').classList.remove('show');
+  modalSaveHandler = null;
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+init();
+</script>
+</body>
+</html>
