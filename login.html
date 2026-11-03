@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduSmart — Portal Bimbel Cerdas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --ink: #0f172a;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --surface: #f8fafc;
+      --line: #e2e8f0;
+      --muted: #64748b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Onest', sans-serif; background: #f1f5f9; color: var(--ink); min-height: 100vh; }
+    .hidden { display: none !important; }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; background: var(--ink); color: #fff;
+      padding: 12px 20px; border-radius: 99px; font-size: 0.85rem; font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 9999; display: none; align-items: center; gap: 8px;
+    }
+    .toast.show { display: flex; }
+
+    /* Header Navbar */
+    .app-header {
+      background: var(--ink); color: #fff; padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .brand-title { font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; }
+    .user-badge { display: flex; align-items: center; gap: 1rem; }
+    .role-tag {
+      background: rgba(255,255,255,0.15); padding: 0.25rem 0.75rem;
+      border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    }
+    .btn-logout {
+      background: var(--danger); color: #fff; border: none; padding: 0.4rem 1rem;
+      border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-logout:hover { background: #dc2626; }
+
+    /* Form Login */
+    .login-wrapper {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); padding: 1rem;
+    }
+    .login-card {
+      background: #fff; width: 100%; max-width: 400px; padding: 2.5rem 2rem;
+      border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    .form-group { margin-bottom: 1.2rem; text-align: left; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; color: var(--ink); }
+    .input-icon-wrapper { position: relative; }
+    .input-icon-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .input-icon-wrapper input, .form-group select {
+      width: 100%; padding: 11px 14px 11px 40px; border: 1px solid var(--line); border-radius: 10px;
+      font-size: 0.9rem; font-family: inherit; outline: none; transition: border-color 0.2s;
+    }
+    .form-group select { padding-left: 14px; }
+    .input-icon-wrapper input:focus, .form-group select:focus { border-color: var(--accent); }
+    .btn-submit {
+      width: 100%; padding: 12px; background: var(--accent); color: #fff; border: none;
+      border-radius: 10px; font-weight: 700; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem;
+    }
+    .btn-submit:hover { background: var(--accent-hover); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Content & Panels */
+    .dashboard-container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+    .grid-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .kpi-card { background: #fff; padding: 1.5rem; border-radius: 14px; border: 1px solid var(--line); }
+    .kpi-num { font-size: 2rem; font-weight: 800; color: var(--accent); }
+    .kpi-label { font-size: 0.85rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+    
+    .panel-box { background: #fff; padding: 1.75rem; border-radius: 14px; border: 1px solid var(--line); margin-bottom: 1.5rem; }
+    .panel-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; }
+    
+    /* Table Styling */
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; text-align: left; }
+    th { background: var(--surface); padding: 10px 14px; font-weight: 700; border-bottom: 1px solid var(--line); color: var(--muted); }
+    td { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+
+    /* LMS workspace */
+    .lms-workspace{margin-top:1.5rem}
+    .lms-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+    .lms-tabs button,.lms-action{border:1px solid var(--line);background:#fff;color:var(--ink);padding:.65rem .9rem;border-radius:9px;cursor:pointer;font-weight:700}
+    .lms-tabs button.active,.lms-action.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .lms-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+    .lms-field{display:flex;flex-direction:column;gap:5px;margin-bottom:.8rem}
+    .lms-field label{font-size:.78rem;font-weight:700;color:var(--muted)}
+    .lms-field input,.lms-field select,.lms-field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font:inherit}
+    .lms-field textarea{min-height:90px;resize:vertical}
+    .lms-card{border:1px solid var(--line);border-radius:12px;padding:1rem;margin-bottom:.8rem;background:#fff}
+    .lms-card h4{margin-bottom:.4rem}
+    .lms-muted{color:var(--muted);font-size:.85rem}
+    .lms-status{display:inline-block;padding:3px 8px;border-radius:20px;background:#dcfce7;color:#166534;font-size:.75rem;font-weight:700}
+    .lms-photo{width:100%;max-width:180px;border-radius:8px;border:1px solid var(--line);margin:5px}
+    .lms-empty{padding:1.5rem;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+    @media(max-width:600px){.app-header{padding:1rem;align-items:flex-start;gap:.7rem}.user-badge{gap:.5rem}.dashboard-container{margin:1rem auto}.panel-box{padding:1rem}}
+  </style>
+</head>
+<body>
+
+  <!-- Toast Message -->
+  <div id="toast" class="toast"><i class="fas fa-info-circle"></i> <span id="toastMsg">Notifikasi</span></div>
+
+  <!-- 1. TAMPILAN LOGIN SIMPEL (TANPA SELEKSI TAB ROLE) -->
+  <div id="loginView" class="login-wrapper">
+    <div class="login-card">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <i class="fas fa-graduation-cap" style="font-size: 2.8rem; color: var(--accent);"></i>
+        <h2 style="margin-top: 10px; font-size: 1.6rem; font-weight: 800;">EduSmart Portal</h2>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 4px;">Masuk ke sistem akademik Bimbel Cerdas</p>
+      </div>
+
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Email Pengguna</label>
+          <div class="input-icon-wrapper">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="loginEmail" placeholder="nama@bimbel.com" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-icon-wrapper">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="loginPassword" placeholder="••••••••" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="loginSubmitBtn">
+          Masuk ke System <i class="fas fa-arrow-right" style="margin-left: 6px;"></i>
+        </button>
+      </form>
+      
+      <div style="text-align: center; margin-top: 1.75rem;">
+        <a href="index.html" style="font-size: 0.85rem; color: var(--muted); text-decoration: none; font-weight: 600;">
+          <i class="fas fa-arrow-left"></i> Kembali ke Beranda Utama
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER SISTEM (Muncul Otomatis Setelah Login) -->
+  <header id="appHeader" class="app-header hidden">
+    <div class="brand-title">
+      <i class="fas fa-graduation-cap" style="color: #fbbf24;"></i> EduSmart Bimbel
+    </div>
+    <div class="user-badge">
+      <div>
+        <span id="userNameDisplay" style="font-weight: 700;">-</span>
+        <span id="userRoleTag" class="role-tag">ROLE</span>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </header>
+
+  <!-- 2. DASHBOARD ADMIN -->
+  <div id="adminDashboard" class="dashboard-container hidden">
+    <h2 style="margin-bottom: 1.5rem;">Dashboard Administrator</h2>
+    
+    <div class="grid-kpi">
+      <div class="kpi-card"><div class="kpi-num" id="statTotalSiswa">0</div><div class="kpi-label">Total Siswa Terdaftar</div></div>
+      <div class="kpi-card"><div class="kpi-num" id="statTotalGuru">0</div><div class="kpi-label">Total Pengajar (Guru)</div></div>
+      <div class="kpi-card"><div class="kpi-num" id="statTotalUser">0</div><div class="kpi-label">Total Seluruh Pengguna</div></div>
+    </div>
+
+    <!-- Form Pembuatan Akun Baru oleh Admin -->
+    <div class="panel-box">
+      <div class="panel-title">
+        <span><i class="fas fa-user-plus" style="color: var(--accent);"></i> Buat Akun Guru / Siswa Baru</span>
+      </div>
+      <form onsubmit="handleCreateUserByAdmin(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div class="form-group">
+          <label>Nama Lengkap</label>
+          <input type="text" id="newUserFullName" placeholder="Nama Lengkap" required style="padding-left:14px;">
+        </div>
+        <div class="form-group">
+          <label>Email Akun</label>
+          <input type="email" id="newUserEmail" placeholder="email@bimbel.com" required style="padding-left:14px;">
+        </div>
+        <div class="form-group">
+          <label>Password Default</label>
+          <input type="password" id="newUserPassword" placeholder="••••••••" required style="padding-left:14px;">
+        </div>
+        <div class="form-group">
+          <label>Role / Hak Akses</label>
+          <select id="newUserRole" onchange="toggleFormInputs()">
+            <option value="siswa">Siswa</option>
+            <option value="guru">Guru</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>NIP / NISN</label>
+          <input type="text" id="newUserNipNisn" placeholder="Nomor Induk" required style="padding-left:14px;">
+        </div>
+        <div class="form-group" id="groupKelasInput">
+          <label>Kelas</label>
+          <input type="text" id="newUserKelas" placeholder="Contoh: 12 SMA IPA" style="padding-left:14px;">
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <button type="submit" class="btn-submit" id="btnCreateUser" style="width: auto; padding: 10px 24px;">
+            <i class="fas fa-save"></i> Buat & Simpan Akun
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tabel Daftar Pengguna -->
+    <div class="panel-box">
+      <div class="panel-title">
+        <span>Daftar Pengguna EduSmart</span>
+        <button onclick="loadUsersTable()" style="background: var(--surface); border: 1px solid var(--line); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight:600;">
+          <i class="fas fa-sync"></i> Refresh Data
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama Lengkap</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>NIP / NISN</th>
+              <th>Kelas</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <tr><td colspan="6" style="text-align:center; color: var(--muted);">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <section class="panel-box lms-workspace">
+      <div class="panel-title">Manajemen Akademik</div>
+      <div class="lms-tabs" id="adminTabs">
+        <button class="active" data-tab="admin-overview" onclick="switchLmsTab('admin','admin-overview',this)">Ringkasan</button>
+        <button data-tab="admin-classes" onclick="switchLmsTab('admin','admin-classes',this)">Kelas & Mapel</button>
+        <button data-tab="admin-settings" onclick="switchLmsTab('admin','admin-settings',this)">Cloudinary</button>
+      </div>
+      <div id="admin-overview" class="lms-tab-panel"><p class="lms-muted">Kelola akun melalui formulir di atas. Kelas, mata pelajaran, dan pengaturan unggahan tersedia pada tab berikutnya.</p></div>
+      <div id="admin-classes" class="lms-tab-panel hidden">
+        <div class="lms-grid">
+          <div><h3>Daftar Kelas</h3><div id="adminClassList" class="lms-muted">Memuat...</div></div>
+          <div><h3>Mata Pelajaran</h3><div id="adminSubjectList" class="lms-muted">Memuat...</div></div>
+        </div>
+      </div>
+      <div id="admin-settings" class="lms-tab-panel hidden">
+        <p class="lms-muted" style="margin-bottom:1rem">Gunakan Cloudinary Upload Preset bertipe <b>Unsigned</b>. Batasi folder, ukuran, dan format file melalui pengaturan Cloudinary.</p>
+        <div class="lms-grid">
+          <div class="lms-field"><label>Cloudinary Cloud Name</label><input id="cloudNameInput" placeholder="nama-cloud"></div>
+          <div class="lms-field"><label>Unsigned Upload Preset</label><input id="cloudPresetInput" placeholder="nama-preset"></div>
+        </div>
+        <button class="lms-action primary" onclick="saveCloudinarySettings()">Simpan Pengaturan Cloudinary</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 3. DASHBOARD GURU -->
+  <div id="guruDashboard" class="dashboard-container hidden">
+    <h2 style="margin-bottom: 1.5rem;">Dashboard Guru / Pengajar</h2>
+    <div class="grid-kpi">
+      <div class="kpi-card"><div class="kpi-num">3</div><div class="kpi-label">Sesi Mengajar Hari Ini</div></div>
+      <div class="kpi-card"><div class="kpi-num">28</div><div class="kpi-label">Total Jam Mengajar</div></div>
+      <div class="kpi-card"><div class="kpi-num">4</div><div class="kpi-label">Tugas Perlu Dinilai</div></div>
+    </div>
+
+    <div class="panel-box">
+      <div class="panel-title">Jadwal Mengajar Hari Ini</div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr><th>Waktu</th><th>Mata Pelajaran</th><th>Kelas</th><th>Ruang / Link</th><th>Aksi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>14:00 - 15:30 WIB</td><td>Matematika Intensif</td><td>12 IPA 1</td><td>Ruang Kelas 02</td><td><button class="btn-submit" style="padding: 4px 12px; font-size: 0.8rem; margin:0;">Form Absensi</button></td></tr>
+            <tr><td>16:00 - 17:30 WIB</td><td>Fisika TPS UTBK</td><td>12 IPA 3</td><td>Zoom Online</td><td><button class="btn-submit" style="padding: 4px 12px; font-size: 0.8rem; margin:0;">Mulai Sesi</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <section class="panel-box lms-workspace">
+      <div class="panel-title">Ruang Kerja Guru</div>
+      <div class="lms-tabs" id="guruTabs">
+        <button class="active" onclick="switchLmsTab('guru','guru-schedule',this)">Jadwal</button>
+        <button onclick="switchLmsTab('guru','guru-materials',this)">Materi</button>
+        <button onclick="switchLmsTab('guru','guru-assignments',this)">Buat Tugas</button>
+        <button onclick="switchLmsTab('guru','guru-submissions',this)">Pengumpulan & Nilai</button>
+      </div>
+      <div id="guru-schedule" class="lms-tab-panel">
+        <form onsubmit="saveSchedule(event)">
+          <div class="lms-grid">
+            <div class="lms-field"><label>Kelas</label><select id="scheduleClass" required></select></div>
+            <div class="lms-field"><label>Mata Pelajaran</label><select id="scheduleSubject"></select></div>
+            <div class="lms-field"><label>Judul Jadwal</label><input id="scheduleTitle" required></div>
+            <div class="lms-field"><label>Tanggal</label><input id="scheduleDate" type="date" required></div>
+            <div class="lms-field"><label>Mulai</label><input id="scheduleStart" type="time" required></div>
+            <div class="lms-field"><label>Selesai</label><input id="scheduleEnd" type="time" required></div>
+            <div class="lms-field"><label>Lokasi / Link</label><input id="scheduleLocation"></div>
+          </div>
+          <button class="lms-action primary">Simpan Jadwal</button>
+        </form>
+        <div id="guruScheduleList" style="margin-top:1rem"></div>
+      </div>
+      <div id="guru-materials" class="lms-tab-panel hidden">
+        <form onsubmit="saveMaterial(event)">
+          <div class="lms-grid">
+            <div class="lms-field"><label>Kelas</label><select id="materialClass" required></select></div>
+            <div class="lms-field"><label>Mata Pelajaran</label><select id="materialSubject"></select></div>
+            <div class="lms-field"><label>Judul Materi</label><input id="materialTitle" required></div>
+            <div class="lms-field"><label>Link Video (opsional)</label><input id="materialVideo" type="url"></div>
+            <div class="lms-field"><label>Link File (opsional)</label><input id="materialFile" type="url"></div>
+          </div>
+          <div class="lms-field"><label>Isi / Deskripsi Materi</label><textarea id="materialContent"></textarea></div>
+          <label><input type="checkbox" id="materialPublished"> Publikasikan agar dapat dilihat siswa</label><br><br>
+          <button class="lms-action primary">Simpan Materi</button>
+        </form>
+        <div id="guruMaterialList" style="margin-top:1rem"></div>
+      </div>
+      <div id="guru-assignments" class="lms-tab-panel hidden">
+        <form onsubmit="saveAssignment(event)">
+          <div class="lms-grid">
+            <div class="lms-field"><label>Kelas</label><select id="assignmentClass" required></select></div>
+            <div class="lms-field"><label>Mata Pelajaran</label><select id="assignmentSubject"></select></div>
+            <div class="lms-field"><label>Judul Tugas</label><input id="assignmentTitle" required></div>
+            <div class="lms-field"><label>Batas Pengumpulan</label><input id="assignmentDue" type="datetime-local"></div>
+          </div>
+          <div class="lms-field"><label>Petunjuk / Deskripsi</label><textarea id="assignmentDescription"></textarea></div>
+          <div class="lms-field"><label>Link Lampiran (opsional)</label><input id="assignmentAttachment" type="url"></div>
+          <label><input type="checkbox" id="assignmentPublished"> Terbitkan tugas</label><br><br>
+          <button class="lms-action primary">Buat Tugas</button>
+        </form>
+        <div id="guruAssignmentList" style="margin-top:1rem"></div>
+      </div>
+      <div id="guru-submissions" class="lms-tab-panel hidden">
+        <div class="lms-field"><label>Pilih Tugas</label><select id="gradeAssignmentSelect" onchange="loadSubmissions()"><option value="">Pilih tugas...</option></select></div>
+        <div id="submissionList"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 4. DASHBOARD SISWA -->
+  <div id="siswaDashboard" class="dashboard-container hidden">
+    <h2 style="margin-bottom: 1.5rem;">Dashboard Siswa</h2>
+    <div class="grid-kpi">
+      <div class="kpi-card"><div class="kpi-num">86.4</div><div class="kpi-label">Rata-rata Try Out</div></div>
+      <div class="kpi-card"><div class="kpi-num">96%</div><div class="kpi-label">Tingkat Kehadiran</div></div>
+      <div class="kpi-card"><div class="kpi-num">2</div><div class="kpi-label">Tugas Aktif</div></div>
+    </div>
+
+    <div class="panel-box">
+      <div class="panel-title">Jadwal Belajar Bimbel</div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr><th>Hari & Waktu</th><th>Mata Pelajaran</th><th>Pengajar</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Senin, 15:30 WIB</td><td>Bahasa Inggris TPS</td><td>Ms. Sarah</td><td><span style="color:var(--success); font-weight:700;"><i class="fas fa-check-circle"></i> Terjadwal</span></td></tr>
+            <tr><td>Rabu, 16:00 WIB</td><td>Kimia Organik</td><td>Dr. Hendra</td><td><span style="color:var(--success); font-weight:700;"><i class="fas fa-check-circle"></i> Terjadwal</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <section class="panel-box lms-workspace">
+      <div class="panel-title">Ruang Belajar Siswa</div>
+      <div class="lms-tabs" id="siswaTabs">
+        <button class="active" onclick="switchLmsTab('siswa','siswa-schedule',this)">Jadwal</button>
+        <button onclick="switchLmsTab('siswa','siswa-materials',this)">Materi</button>
+        <button onclick="switchLmsTab('siswa','siswa-assignments',this)">Tugas & Pengumpulan</button>
+      </div>
+      <div id="siswa-schedule" class="lms-tab-panel"><div id="studentScheduleList">Memuat jadwal...</div></div>
+      <div id="siswa-materials" class="lms-tab-panel hidden"><div id="studentMaterialList">Memuat materi...</div></div>
+      <div id="siswa-assignments" class="lms-tab-panel hidden"><div id="studentAssignmentList">Memuat tugas...</div></div>
+    </section>
+  </div>
+
+  <!-- SUPABASE SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <script>
+    const SUPABASE_URL = 'https://fjedugqoeupieqxfcprw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqZWR1Z3FvZXVwaWVxeGZjcHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDgwNTcsImV4cCI6MjEwOTAyNDA1N30.R59XI8nSssSc4-sk5YZtdqGw168OrZHH6ZL6SgF2wSw';
+    
+    let supabaseClient = null;
+    let currentUser = null;
+    let currentProfile = null;
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // Inisialisasi Supabase saat load
+    window.addEventListener('load', async () => {
+      if (typeof window.supabase !== 'undefined') {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        await checkSession();
+      } else {
+        showToast('⚠️ Gagal memuat library Supabase.');
+      }
+    });
+
+    // Cek status sesi login
+    async function checkSession() {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          currentUser = session.user;
+          await loadUserProfile(session.user.id);
+        } else {
+          showLoginView();
+        }
+      } catch (err) {
+        showLoginView();
+      }
+    }
+
+    // Ambil data profil dari database berdasarkan user_id
+    async function loadUserProfile(userId) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (error || !data) {
+          showToast('⚠️ Gagal memuat profil akun.');
+          return;
+        }
+
+        currentProfile = data;
+        renderDashboardView();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Proses Otentikasi Login
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('loginSubmitBtn');
+
+      if (!supabaseClient) { showToast('Koneksi Supabase belum siap. Muat ulang halaman.'); return; }
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          showToast('❌ Login Gagal: ' + error.message);
+          btn.disabled = false;
+          btn.innerHTML = 'Masuk ke System <i class="fas fa-arrow-right" style="margin-left: 6px;"></i>';
+          return;
+        }
+
+        currentUser = data.user;
+        showToast('✅ Login Berhasil!');
+        await loadUserProfile(data.user.id);
+      } catch (err) {
+        showToast('❌ Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Masuk ke System <i class="fas fa-arrow-right" style="margin-left: 6px;"></i>';
+      }
+    }
+
+    // Prosess Logout
+    async function handleLogout() {
+      await supabaseClient.auth.signOut();
+      currentUser = null;
+      currentProfile = null;
+      showToast('👋 Berhasil Keluar');
+      showLoginView();
+    }
+
+    // Otomatisasi Penampilan Dashboard Sesuai Role di Database
+    function renderDashboardView() {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('appHeader').classList.remove('hidden');
+
+      document.getElementById('userNameDisplay').innerText = currentProfile.full_name || currentProfile.email;
+      document.getElementById('userRoleTag').innerText = currentProfile.role || 'siswa';
+
+      // Sembunyikan semua tampilan dashboard terlebih dahulu
+      document.getElementById('adminDashboard').classList.add('hidden');
+      document.getElementById('guruDashboard').classList.add('hidden');
+      document.getElementById('siswaDashboard').classList.add('hidden');
+
+      // Tampilkan dashboard sesuai role
+      if (currentProfile.role === 'admin') {
+        document.getElementById('adminDashboard').classList.remove('hidden');
+        loadUsersTable();
+        loadAdminAcademic();
+        loadCloudinarySettings();
+      } else if (currentProfile.role === 'guru') {
+        document.getElementById('guruDashboard').classList.remove('hidden');
+        initializeTeacherWorkspace();
+      } else if (currentProfile.role === 'siswa') {
+        document.getElementById('siswaDashboard').classList.remove('hidden');
+        initializeStudentWorkspace();
+      } else {
+        showToast('Role akun tidak dikenali. Hubungi administrator.');
+        showLoginView();
+      }
+    }
+
+    function showLoginView() {
+      document.getElementById('appHeader').classList.add('hidden');
+      document.getElementById('adminDashboard').classList.add('hidden');
+      document.getElementById('guruDashboard').classList.add('hidden');
+      document.getElementById('siswaDashboard').classList.add('hidden');
+      document.getElementById('loginView').classList.remove('hidden');
+    }
+
+    function toggleFormInputs() {
+      const role = document.getElementById('newUserRole').value;
+      document.getElementById('groupKelasInput').style.display = (role === 'siswa') ? 'block' : 'none';
+    }
+
+    // Admin: Pendaftaran Akun Pengguna Baru
+    async function handleCreateUserByAdmin(e) {
+      e.preventDefault();
+      if (!currentProfile || currentProfile.role !== 'admin') {
+        showToast('⚠️ Akses Ditolak: Hanya Admin');
+        return;
+      }
+
+      const fullName = document.getElementById('newUserFullName').value.trim();
+      const email = document.getElementById('newUserEmail').value.trim();
+      const password = document.getElementById('newUserPassword').value;
+      const role = document.getElementById('newUserRole').value;
+      const nipNisn = document.getElementById('newUserNipNisn').value.trim();
+      const kelas = document.getElementById('newUserKelas').value.trim() || '-';
+
+      const btn = document.getElementById('btnCreateUser');
+      btn.disabled = true;
+      btn.innerText = 'Menyimpan...';
+
+      try {
+        // Buat instance temporary agar session Admin aktif tidak terputus
+        const tempSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          auth: { persistSession: false }
+        });
+
+        const { data, error } = await tempSupabase.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: {
+              full_name: fullName,
+              role: role,
+              nip_nisn: nipNisn,
+              kelas: kelas
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        showToast(`✅ Akun ${role} (${fullName}) berhasil dibuat!`);
+        e.target.reset();
+        await loadUsersTable();
+      } catch (err) {
+        showToast('❌ Gagal membuat akun: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Buat & Simpan Akun';
+      }
+    }
+
+    // Admin: Ambil & Tampilkan Tabel Pengguna
+    async function loadUsersTable() {
+      const tbody = document.getElementById('userTableBody');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--muted);">Memuat data...</td></tr>';
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data pengguna.</td></tr>';
+          return;
+        }
+
+        // Update Angka KPI
+        document.getElementById('statTotalUser').innerText = data.length;
+        document.getElementById('statTotalSiswa').innerText = data.filter(u => u.role === 'siswa').length;
+        document.getElementById('statTotalGuru').innerText = data.filter(u => u.role === 'guru').length;
+
+        tbody.innerHTML = data.map(u => {
+          let badgeStyle = 'background:#dbeafe; color:#1e40af;';
+          if (u.role === 'siswa') badgeStyle = 'background:#fef3c7; color:#92400e;';
+          if (u.role === 'admin') badgeStyle = 'background:#fce7f3; color:#9d174d;';
+
+          return `
+            <tr>
+              <td><strong>${escapeHtml(u.full_name || '-')}</strong></td>
+              <td>${escapeHtml(u.email || '-')}</td>
+              <td><span class="role-tag" style="${badgeStyle}">${u.role}</span></td>
+              <td>${escapeHtml(u.nip_nisn || '-')}</td>
+              <td>${escapeHtml(u.kelas || '-')}</td>
+              <td><i class="fas fa-check-circle" style="color:var(--success);"></i> Aktif</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--danger);">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+
+    // ==========================================================
+    // LMS MODULES: KELAS, JADWAL, MATERI, TUGAS, CLOUDINARY
+    // ==========================================================
+    let teacherClasses = [];
+    let subjectsCache = [];
+    const cloudSettingsKey = 'kakros_cloudinary_settings';
+
+    function switchLmsTab(role, panelId, button) {
+      const root = document.getElementById(role + 'Dashboard');
+      root.querySelectorAll('.lms-tab-panel').forEach(p => p.classList.add('hidden'));
+      root.querySelectorAll('.lms-tabs button').forEach(b => b.classList.remove('active'));
+      const panel = document.getElementById(panelId);
+      if (panel) panel.classList.remove('hidden');
+      if (button) button.classList.add('active');
+      if (role === 'guru' && panelId === 'guru-submissions') loadTeacherAssignmentOptions();
+      if (role === 'siswa' && panelId === 'siswa-assignments') loadStudentAssignments();
+    }
+
+    function getCloudinarySettings() {
+      try { return JSON.parse(localStorage.getItem(cloudSettingsKey) || '{}'); }
+      catch (_) { return {}; }
+    }
+    function loadCloudinarySettings() {
+      const c = getCloudinarySettings();
+      const n = document.getElementById('cloudNameInput');
+      const p = document.getElementById('cloudPresetInput');
+      if (n) n.value = c.cloudName || '';
+      if (p) p.value = c.uploadPreset || '';
+    }
+    function saveCloudinarySettings() {
+      const cloudName = document.getElementById('cloudNameInput').value.trim();
+      const uploadPreset = document.getElementById('cloudPresetInput').value.trim();
+      if (!cloudName || !uploadPreset) { showToast('Isi Cloud Name dan Upload Preset.'); return; }
+      localStorage.setItem(cloudSettingsKey, JSON.stringify({cloudName, uploadPreset}));
+      showToast('Pengaturan Cloudinary tersimpan di browser ini.');
+    }
+    function cloudinaryReady() {
+      const c = getCloudinarySettings();
+      return !!(c.cloudName && c.uploadPreset);
+    }
+    async function uploadPhotoToCloudinary(file) {
+      const c = getCloudinarySettings();
+      if (!c.cloudName || !c.uploadPreset) throw new Error('Cloudinary belum dikonfigurasi oleh Admin.');
+      if (!file || !file.type.startsWith('image/')) throw new Error('File harus berupa gambar.');
+      if (file.size > 8 * 1024 * 1024) throw new Error('Ukuran foto maksimal 8 MB.');
+      const form = new FormData();
+      form.append('file', file);
+      form.append('upload_preset', c.uploadPreset);
+      form.append('folder', 'bimbel-kak-ros/pengumpulan-tugas');
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(c.cloudName)}/image/upload`, {method:'POST', body:form});
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error?.message || 'Upload foto ke Cloudinary gagal.');
+      return result;
+    }
+
+    async function loadAdminAcademic() {
+      try {
+        const [cl, su] = await Promise.all([
+          supabaseClient.from('classes').select('*').order('id'),
+          supabaseClient.from('subjects').select('*').order('id')
+        ]);
+        if (cl.error) throw cl.error;
+        if (su.error) throw su.error;
+        document.getElementById('adminClassList').innerHTML = cl.data.length
+          ? cl.data.map(x => `<div class="lms-card"><b>${escapeHtml(x.name || x.class_name || ('Kelas #' + x.id))}</b><div class="lms-muted">ID: ${x.id}</div></div>`).join('')
+          : '<div class="lms-empty">Belum ada kelas.</div>';
+        document.getElementById('adminSubjectList').innerHTML = su.data.length
+          ? su.data.map(x => `<div class="lms-card"><b>${escapeHtml(x.name || x.subject_name || ('Mapel #' + x.id))}</b><div class="lms-muted">ID: ${x.id}</div></div>`).join('')
+          : '<div class="lms-empty">Belum ada mata pelajaran.</div>';
+      } catch (e) {
+        document.getElementById('adminClassList').textContent = 'Gagal memuat: ' + e.message;
+        document.getElementById('adminSubjectList').textContent = 'Gagal memuat: ' + e.message;
+      }
+    }
+
+    async function initializeTeacherWorkspace() {
+      try {
+        const [cl, su] = await Promise.all([
+          supabaseClient.from('classes').select('*').order('id'),
+          supabaseClient.from('subjects').select('*').order('id')
+        ]);
+        if (cl.error) throw cl.error;
+        if (su.error) throw su.error;
+        teacherClasses = cl.data || [];
+        subjectsCache = su.data || [];
+        // Data classes RLS should expose only the teacher's assigned classes.
+        ['scheduleClass','materialClass','assignmentClass'].forEach(id => fillSelect(id, teacherClasses, 'Pilih kelas'));
+        ['scheduleSubject','materialSubject','assignmentSubject'].forEach(id => fillSelect(id, subjectsCache, 'Pilih mata pelajaran'));
+        await Promise.all([loadTeacherSchedules(), loadTeacherMaterials(), loadTeacherAssignments()]);
+      } catch (e) { showToast('Gagal memuat ruang guru: ' + e.message); }
+    }
+
+    function fillSelect(id, rows, placeholder) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = `<option value="">${placeholder}</option>` + (rows || []).map(r =>
+        `<option value="${r.id}">${escapeHtml(r.name || r.class_name || r.subject_name || ('ID ' + r.id))}</option>`
+      ).join('');
+    }
+
+    async function saveSchedule(e) {
+      e.preventDefault();
+      const payload = {
+        class_id: Number(document.getElementById('scheduleClass').value),
+        subject_id: document.getElementById('scheduleSubject').value ? Number(document.getElementById('scheduleSubject').value) : null,
+        title: document.getElementById('scheduleTitle').value.trim(),
+        schedule_date: document.getElementById('scheduleDate').value,
+        start_time: document.getElementById('scheduleStart').value,
+        end_time: document.getElementById('scheduleEnd').value,
+        location: document.getElementById('scheduleLocation').value.trim(),
+        created_by: currentUser.id
+      };
+      try {
+        const {error} = await supabaseClient.from('schedules').insert(payload);
+        if (error) throw error;
+        e.target.reset(); showToast('Jadwal berhasil disimpan.'); await loadTeacherSchedules();
+      } catch (err) { showToast('Gagal menyimpan jadwal: ' + err.message); }
+    }
+    async function loadTeacherSchedules() {
+      const el = document.getElementById('guruScheduleList');
+      try {
+        const {data,error} = await supabaseClient.from('schedules').select('*, classes(name), subjects(name)').order('schedule_date',{ascending:true});
+        if (error) throw error;
+        el.innerHTML = data?.length ? data.map(x => `<div class="lms-card"><b>${escapeHtml(x.title)}</b><div class="lms-muted">${escapeHtml(x.schedule_date)} • ${escapeHtml(x.start_time)}–${escapeHtml(x.end_time)} • ${escapeHtml(x.classes?.name || 'Kelas')}</div><div>${escapeHtml(x.subjects?.name || '')} ${escapeHtml(x.location || '')}</div></div>`).join('') : '<div class="lms-empty">Belum ada jadwal.</div>';
+      } catch(e) { el.textContent = 'Gagal memuat jadwal: ' + e.message; }
+    }
+
+    async function saveMaterial(e) {
+      e.preventDefault();
+      const payload = {
+        class_id:Number(document.getElementById('materialClass').value),
+        subject_id:document.getElementById('materialSubject').value ? Number(document.getElementById('materialSubject').value) : null,
+        title:document.getElementById('materialTitle').value.trim(),
+        content:document.getElementById('materialContent').value.trim(),
+        video_url:document.getElementById('materialVideo').value.trim() || null,
+        file_url:document.getElementById('materialFile').value.trim() || null,
+        is_published:document.getElementById('materialPublished').checked,
+        created_by:currentUser.id
+      };
+      try {
+        const {error}=await supabaseClient.from('learning_materials').insert(payload);
+        if(error) throw error;
+        e.target.reset(); showToast('Materi berhasil disimpan.'); await loadTeacherMaterials();
+      } catch(err){showToast('Gagal menyimpan materi: '+err.message);}
+    }
+    async function loadTeacherMaterials() {
+      const el=document.getElementById('guruMaterialList');
+      try{
+        const {data,error}=await supabaseClient.from('learning_materials').select('*, classes(name), subjects(name)').order('created_at',{ascending:false});
+        if(error) throw error;
+        el.innerHTML=data?.length?data.map(x=>`<div class="lms-card"><b>${escapeHtml(x.title)}</b><div class="lms-muted">${escapeHtml(x.classes?.name||'Kelas')} • ${x.is_published?'Dipublikasikan':'Draft'}</div>${escapeHtml(x.content||'')}</div>`).join(''):'<div class="lms-empty">Belum ada materi.</div>';
+      }catch(e){el.textContent='Gagal memuat materi: '+e.message;}
+    }
+
+    async function saveAssignment(e) {
+      e.preventDefault();
+      const due=document.getElementById('assignmentDue').value;
+      const payload={
+        class_id:Number(document.getElementById('assignmentClass').value),
+        subject_id:document.getElementById('assignmentSubject').value?Number(document.getElementById('assignmentSubject').value):null,
+        title:document.getElementById('assignmentTitle').value.trim(),
+        description:document.getElementById('assignmentDescription').value.trim(),
+        attachment_url:document.getElementById('assignmentAttachment').value.trim()||null,
+        due_at:due?new Date(due).toISOString():null,
+        is_published:document.getElementById('assignmentPublished').checked,
+        created_by:currentUser.id
+      };
+      try{
+        const {error}=await supabaseClient.from('assignments').insert(payload);
+        if(error) throw error;
+        e.target.reset(); showToast('Tugas berhasil dibuat.'); await loadTeacherAssignments();
+      }catch(err){showToast('Gagal membuat tugas: '+err.message);}
+    }
+    async function loadTeacherAssignments() {
+      const el=document.getElementById('guruAssignmentList');
+      try{
+        const {data,error}=await supabaseClient.from('assignments').select('*, classes(name), subjects(name)').order('created_at',{ascending:false});
+        if(error) throw error;
+        el.innerHTML=data?.length?data.map(x=>`<div class="lms-card"><b>${escapeHtml(x.title)}</b><div class="lms-muted">${escapeHtml(x.classes?.name||'Kelas')} • ${x.is_published?'Terbit':'Draft'} • Tenggat: ${x.due_at?new Date(x.due_at).toLocaleString('id-ID'):'Tidak dibatasi'}</div>${escapeHtml(x.description||'')}</div>`).join(''):'<div class="lms-empty">Belum ada tugas.</div>';
+      }catch(e){el.textContent='Gagal memuat tugas: '+e.message;}
+    }
+    async function loadTeacherAssignmentOptions(){
+      const select=document.getElementById('gradeAssignmentSelect');
+      try{
+        const {data,error}=await supabaseClient.from('assignments').select('id,title').order('created_at',{ascending:false});
+        if(error) throw error;
+        select.innerHTML='<option value="">Pilih tugas...</option>'+(data||[]).map(x=>`<option value="${x.id}">${escapeHtml(x.title)}</option>`).join('');
+      }catch(e){showToast('Gagal memuat daftar tugas: '+e.message);}
+    }
+    async function loadSubmissions(){
+      const assignmentId=document.getElementById('gradeAssignmentSelect').value;
+      const el=document.getElementById('submissionList');
+      if(!assignmentId){el.innerHTML='';return;}
+      try{
+        const {data,error}=await supabaseClient.from('assignment_submissions')
+          .select('id,student_id,answer_text,submitted_at,status,score,feedback,profiles(full_name),assignment_submission_files(id,cloudinary_url,file_name)')
+          .eq('assignment_id',assignmentId).order('submitted_at',{ascending:false});
+        if(error) throw error;
+        el.innerHTML=data?.length?data.map(s=>`<div class="lms-card"><b>${escapeHtml(s.profiles?.full_name||s.student_id)}</b><div class="lms-muted">${s.submitted_at?new Date(s.submitted_at).toLocaleString('id-ID'):''}</div><p>${escapeHtml(s.answer_text||'Tidak ada keterangan.')}</p><div>${(s.assignment_submission_files||[]).map(f=>`<a href="${escapeHtml(f.cloudinary_url)}" target="_blank" rel="noopener"><img class="lms-photo" src="${escapeHtml(f.cloudinary_url)}" alt="Foto tugas"></a>`).join('')}</div><div class="lms-grid"><div class="lms-field"><label>Nilai (0–100)</label><input type="number" min="0" max="100" step="0.01" id="score-${s.id}" value="${s.score??''}"></div><div class="lms-field"><label>Umpan balik</label><input id="feedback-${s.id}" value="${escapeHtml(s.feedback||'')}"></div></div><button class="lms-action primary" onclick="gradeSubmission(${s.id})">Simpan Penilaian</button></div>`).join(''):'<div class="lms-empty">Belum ada siswa yang mengumpulkan tugas ini.</div>';
+      }catch(e){el.textContent='Gagal memuat pengumpulan: '+e.message;}
+    }
+    async function gradeSubmission(id){
+      const score=Number(document.getElementById('score-'+id).value);
+      const feedback=document.getElementById('feedback-'+id).value.trim();
+      if(!Number.isFinite(score)||score<0||score>100){showToast('Nilai harus antara 0 sampai 100.');return;}
+      try{
+        const {error}=await supabaseClient.from('assignment_submissions').update({score,feedback,status:'dinilai',graded_by:currentUser.id,graded_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id);
+        if(error) throw error;
+        showToast('Penilaian berhasil disimpan.'); await loadSubmissions();
+      }catch(e){showToast('Gagal menyimpan nilai: '+e.message);}
+    }
+
+    async function initializeStudentWorkspace(){
+      await Promise.all([loadStudentSchedules(),loadStudentMaterials(),loadStudentAssignments()]);
+    }
+    async function loadStudentSchedules(){
+      const el=document.getElementById('studentScheduleList');
+      try{
+        const {data,error}=await supabaseClient.from('schedules').select('*, classes(name), subjects(name)').order('schedule_date',{ascending:true});
+        if(error) throw error;
+        el.innerHTML=data?.length?data.map(x=>`<div class="lms-card"><b>${escapeHtml(x.title)}</b><div class="lms-muted">${escapeHtml(x.schedule_date)} • ${escapeHtml(x.start_time)}–${escapeHtml(x.end_time)}</div>${escapeHtml(x.subjects?.name||'')} • ${escapeHtml(x.classes?.name||'')} • ${escapeHtml(x.location||'')}</div>`).join(''):'<div class="lms-empty">Belum ada jadwal belajar.</div>';
+      }catch(e){el.textContent='Gagal memuat jadwal: '+e.message;}
+    }
+    async function loadStudentMaterials(){
+      const el=document.getElementById('studentMaterialList');
+      try{
+        const {data,error}=await supabaseClient.from('learning_materials').select('*, classes(name), subjects(name)').eq('is_published',true).order('created_at',{ascending:false});
+        if(error) throw error;
+        el.innerHTML=data?.length?data.map(x=>`<div class="lms-card"><h4>${escapeHtml(x.title)}</h4><div class="lms-muted">${escapeHtml(x.subjects?.name||'')} • ${escapeHtml(x.classes?.name||'')}</div><p>${escapeHtml(x.content||x.description||'')}</p>${x.file_url?`<p><a href="${escapeHtml(x.file_url)}" target="_blank" rel="noopener">Buka file materi</a></p>`:''}${x.video_url?`<p><a href="${escapeHtml(x.video_url)}" target="_blank" rel="noopener">Tonton video</a></p>`:''}</div>`).join(''):'<div class="lms-empty">Belum ada materi yang dipublikasikan.</div>';
+      }catch(e){el.textContent='Gagal memuat materi: '+e.message;}
+    }
+    async function loadStudentAssignments(){
+      const el=document.getElementById('studentAssignmentList');
+      try{
+        const [{data:tasks,error:tErr},{data:mine,error:mErr}]=await Promise.all([
+          supabaseClient.from('assignments').select('*, classes(name), subjects(name)').eq('is_published',true).order('due_at',{ascending:true}),
+          supabaseClient.from('assignment_submissions').select('id,assignment_id,status,score,feedback,assignment_submission_files(cloudinary_url,file_name)').eq('student_id',currentUser.id)
+        ]);
+        if(tErr) throw tErr; if(mErr) throw mErr;
+        const submitted=new Map((mine||[]).map(s=>[s.assignment_id,s]));
+        el.innerHTML=tasks?.length?tasks.map(t=>{
+          const s=submitted.get(t.id);
+          return `<div class="lms-card"><h4>${escapeHtml(t.title)}</h4><div class="lms-muted">${escapeHtml(t.classes?.name||'Kelas')} • ${escapeHtml(t.subjects?.name||'')} • Tenggat: ${t.due_at?new Date(t.due_at).toLocaleString('id-ID'):'Tidak dibatasi'}</div><p>${escapeHtml(t.description||'')}</p>${t.attachment_url?`<p><a href="${escapeHtml(t.attachment_url)}" target="_blank" rel="noopener">Lampiran tugas</a></p>`:''}<div class="lms-muted">${s?'Status: '+escapeHtml(s.status||'terkirim')+(s.score!==null&&s.score!==undefined?' • Nilai: '+s.score:''):'Belum dikumpulkan'}</div><form onsubmit="submitStudentAssignment(event,${t.id},${s?.id||'null'})"><div class="lms-field"><label>Keterangan / Jawaban (opsional)</label><textarea name="answer">${escapeHtml('')}</textarea></div><div class="lms-field"><label>Foto hasil pekerjaan (maks. 8 MB per foto)</label><input type="file" name="photos" accept="image/*" capture="environment" multiple ${s?'':'required'}></div><button class="lms-action primary">${s?'Tambah Foto / Kirim Ulang':'Kirim Pengumpulan'}</button></form>${(s?.assignment_submission_files||[]).map(f=>`<a href="${escapeHtml(f.cloudinary_url)}" target="_blank" rel="noopener"><img class="lms-photo" src="${escapeHtml(f.cloudinary_url)}" alt="Foto yang dikumpulkan"></a>`).join('')}${s?.feedback?`<p><b>Umpan balik guru:</b> ${escapeHtml(s.feedback)}</p>`:''}</div>`;
+        }).join(''):'<div class="lms-empty">Belum ada tugas yang diterbitkan.</div>';
+      }catch(e){el.textContent='Gagal memuat tugas: '+e.message;}
+    }
+    async function submitStudentAssignment(e, assignmentId, existingSubmissionId){
+      e.preventDefault();
+      const form=e.target;
+      const answer=form.elements.answer.value.trim();
+      const files=Array.from(form.elements.photos.files||[]);
+      if(!files.length && !existingSubmissionId){showToast('Pilih minimal satu foto tugas.');return;}
+      const btn=form.querySelector('button'); btn.disabled=true; btn.textContent='Mengunggah...';
+      try{
+        let submissionId=existingSubmissionId;
+        if(!submissionId){
+          const {data,error}=await supabaseClient.from('assignment_submissions').insert({
+            assignment_id:assignmentId,student_id:currentUser.id,answer_text:answer,status:'terkirim',submitted_at:new Date().toISOString()
+          }).select('id').single();
+          if(error) throw error;
+          submissionId=data.id;
+        }else{
+          const {error}=await supabaseClient.from('assignment_submissions').update({
+            answer_text:answer,submitted_at:new Date().toISOString(),updated_at:new Date().toISOString()
+          }).eq('id',submissionId);
+          if(error) throw error;
+        }
+        for(const file of files){
+          const uploaded=await uploadPhotoToCloudinary(file);
+          const {error}=await supabaseClient.from('assignment_submission_files').insert({
+            submission_id:submissionId,cloudinary_url:uploaded.secure_url,
+            cloudinary_public_id:uploaded.public_id,file_name:file.name,
+            file_format:uploaded.format,file_size:file.size
+          });
+          if(error) throw error;
+        }
+        showToast('Pengumpulan tugas berhasil dikirim.');
+        await loadStudentAssignments();
+      }catch(err){showToast('Pengumpulan gagal: '+err.message);}
+      finally{btn.disabled=false;btn.textContent='Kirim Pengumpulan';}
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
