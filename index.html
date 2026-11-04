@@ -37,14 +37,14 @@ img { display: block; max-width: 100%; }
 .hidden { display: none !important; }
 
 /* Page Loader */
-#pageLoader { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; background: var(--ink); color: #fff; border-radius: 0 0 var(--radius-card) var(--radius-card); transition: transform 0.7s cubic-bezier(.22,1,.36,1); }
+#pageLoader { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; background: #e0f2fe; color: var(--ink); border-radius: 0 0 var(--radius-card) var(--radius-card); transition: transform 0.7s cubic-bezier(.22,1,.36,1); }
 .loader-logo { width: 70px; height: 70px; background-image: url('logo sekolah.png'); background-size: contain; background-repeat: no-repeat; background-position: center; filter: drop-shadow(0 0 12px rgba(255,215,0,0.5)); }
 .loader-title { font-size: 1.5rem; font-weight: 700; }
-.loader-subtitle { max-width: 28ch; font-size: 0.875rem; color: rgba(255,255,255,0.6); text-align: center; }
+.loader-subtitle { max-width: 28ch; font-size: 0.875rem; color: #64748b; text-align: center; }
 .loader-progress { width: min(20rem, 72vw); display: flex; flex-direction: column; gap: 0.75rem; }
-.loader-track { height: 2px; background: rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden; }
+.loader-track { height: 2px; background: #0f172a; border-radius: 4px; overflow: hidden; }
 .loader-fill { height: 100%; background: #fbbf24; width: 0%; transition: width 0.1s; }
-.loader-status { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.5); }
+.loader-status { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
 
 /* Buttons */
 .pill-btn { display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill); font-size: 0.875rem; font-weight: 600; transition: all 0.35s; cursor: pointer; white-space: nowrap; }
@@ -1217,6 +1217,7 @@ body.drawer-open { overflow: hidden; }
     <button class="btn-admin-action btn-admin-blue" data-admin-only onclick="openAddBlockModal()"><i class="fas fa-plus"></i> Blok Baru</button>
     <button class="btn-admin-action btn-admin-blue" data-admin-only onclick="openAddMenuModal()"><i class="fas fa-th"></i> Menu Baru</button>
     <button class="btn-admin-action" onclick="openManageGallery()"><i class="fas fa-images"></i> Galeri</button>
+    <button class="btn-admin-action" data-admin-only onclick="openManagePendaftaran()" style="background:#10b981;"><i class="fas fa-user-check"></i> Pendaftar</button>
     <button class="btn-admin-action btn-admin-blue" data-admin-only onclick="openManageMenuModal()"><i class="fas fa-list"></i> Kelola Menu</button>
     <button class="btn-admin-action" style="background:#dc2626;" data-admin-only onclick="openYoutubeModal()"><i class="fab fa-youtube"></i> Video YouTube</button>
     <button class="btn-admin-action" data-admin-only onclick="openEditBeforeAfterModal()"><i class="fas fa-wand-magic-sparkles"></i> Before/After</button>
@@ -1288,7 +1289,7 @@ body.drawer-open { overflow: hidden; }
           <h1 class="hero-h1">
   <span class="line-mask"><span class="line-inner"><span class="hero-h1__highlight"></span></span></span>
   <span class="line-mask"><span class="line-inner"><span class="hero-h1__highlight"></span></span></span>
-  <span class="line-mask"><span class="line-inner"><span class="hero-h1__highlight">Siap</span></span></span>
+  <span class="line-mask"><span class="line-inner"><span class="hero-h1__highlight">TKA</span></span></span>
 </h1>
           <div class="hero-rating reveal-item">
             <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
@@ -1296,11 +1297,11 @@ body.drawer-open { overflow: hidden; }
           </div>
           <div class="hero-ctas reveal-item">
             <a href="login.html" class="pill-btn pill-btn--accent pill-btn--has-arrow"><span>EduSmart</span><span class="pill-btn__badge"><i class="fas fa-arrow-right"></i></span></a>
-            <a href="#" target="_blank" class="pill-btn pill-btn--outline pill-btn--no-arrow"><span><i class="fas fa-graduation-cap"></i>Daftar Sekarang</span></a>
+            <a href="pendaftaran.html" target="_blank" class="pill-btn pill-btn--outline pill-btn--no-arrow"><span><i class="fas fa-graduation-cap"></i>Daftar Sekarang</span></a>
           </div>
           <div class="popular-keywords reveal-item">
             <a href="#" class="keyword-chip"><i class="fas fa-calendar-alt"></i> jadwal</a>
-            <a href="#" class="keyword-chip">Daftar Bimbel</a>
+            <a href="pendaftaran.html" class="keyword-chip">Daftar Bimbel</a>
             <a href="#gallery" class="keyword-chip"><i class="fas fa-images"></i> galeri</a>
             <a href="#" class="keyword-chip">prestasi</a>
             <a href="perpustakaan.html" class="keyword-chip">perpustakaan</a>
@@ -1319,7 +1320,7 @@ body.drawer-open { overflow: hidden; }
               <div class="hero-card__right">
                 <div>
                   <div class="hero-card__caption" id="spotlightTag">Pengumuman</div>
-                  <div class="hero-card__title" id="spotlightTitle">PPDB 2027 Telah Dibuka!</div>
+                  <div class="hero-card__title" id="spotlightTitle">Pendaftaran Telah Dibuka!</div>
                 </div>
                 <div class="hero-card__bottom">
                   <div class="hero-card__dashes">
@@ -1371,7 +1372,7 @@ body.drawer-open { overflow: hidden; }
     </div>
   </section>
 
-  <section class="stats-shell">
+    <section class="stats-shell">
     <div class="shell">
       <div class="stats-panel">
   <!-- WADAH BACKGROUND SLIDER -->
@@ -1390,7 +1391,7 @@ body.drawer-open { overflow: hidden; }
   <div class="stats-header-row">
           <div class="eyebrow eyebrow--light">Data & Statistik</div>
           <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%; flex-wrap: wrap; gap: 1rem;">
-            <h2 class="stats-title" style="margin: 0;">Komitmen kami dalam memajukan pendidikan.</h2>
+            <h2 class="stats-title" style="margin: 0;">Membangun generasi cerdas dan berprestasi.</h2>
             <!-- Tombol Khusus Admin -->
             <button class="btn-submit" id="btnUploadStatsBg" onclick="openUploadStatsModal()" style="width: auto; padding: 8px 16px; font-size: 0.8rem; display: none; background: #fbbf24; color: var(--ink);">
               <i class="fas fa-camera"></i> Ganti Background
@@ -1398,10 +1399,10 @@ body.drawer-open { overflow: hidden; }
           </div>
         </div>
         <div class="stats-grid">
-          <div><div class="stat-num" id="statGuru">8</div><div class="stat-label"><i class="fas fa-chalkboard-teacher" style="color:#fbbf24;"></i> Tenaga Pendidik</div></div>
-          <div><div class="stat-num" id="statSiswa">107</div><div class="stat-label"><i class="fas fa-user-graduate" style="color:#38bdf8;"></i> Peserta Didik</div></div>
-          <div><div class="stat-num" id="statPaguyuban">6</div><div class="stat-label"><i class="fas fa-users" style="color:#f472b6;"></i> Paguyuban</div></div>
-          <div><div class="stat-num" id="statPegawai">11</div><div class="stat-label"><i class="fas fa-briefcase" style="color:#a7f3d0;"></i> Total Pegawai</div></div>
+          <div><div class="stat-num" id="statGuru">8</div><div class="stat-label"><i class="fas fa-chalkboard-teacher" style="color:#fbbf24;"></i> Tutor Pengajar</div></div>
+          <div><div class="stat-num" id="statSiswa">107</div><div class="stat-label"><i class="fas fa-user-graduate" style="color:#38bdf8;"></i> Siswa Aktif</div></div>
+          <div><div class="stat-num" id="statPaguyuban">6</div><div class="stat-label"><i class="fas fa-layer-group" style="color:#f472b6;"></i> Program Kelas</div></div>
+          <div><div class="stat-num" id="statPegawai">11</div><div class="stat-label"><i class="fas fa-trophy" style="color:#a7f3d0;"></i> Siswa Berprestasi</div></div>
         </div>
       </div>
     </div>
@@ -1411,7 +1412,7 @@ body.drawer-open { overflow: hidden; }
     <div class="shell">
       <div class="app-launcher__header">
         <div class="eyebrow eyebrow--dark">Menu & Akses Cepat</div>
-        <h2 class="app-launcher__title">Layanan Digital Sekolah</h2>
+        <h2 class="app-launcher__title">Layanan Digital</h2>
         <p class="app-launcher__subtitle">Klik ikon untuk membuka file atau halaman. Admin dapat mengelola isi di sini.</p>
       </div>
       <div class="app-grid" id="appGrid">
@@ -1430,7 +1431,7 @@ body.drawer-open { overflow: hidden; }
     <div class="shell">
       <div class="blocks-header">
         <div class="eyebrow eyebrow--dark">Informasi & Kegiatan</div>
-        <h2 class="blocks-title">Seputar Sekolah Kami</h2>
+        <h2 class="blocks-title">Seputar Bimbel Kami</h2>
       </div>
       <div class="block-list" id="blockList">
         <div style="text-align: center; color: var(--muted); padding: 2rem;">Memuat blok...</div>
@@ -1463,7 +1464,7 @@ body.drawer-open { overflow: hidden; }
           </div>
         </div>
         <div class="portfolio-grid" id="newsGrid">
-          <div class="news-card"><div class="card-img" style="background-image: url('background 1.jpg');"></div><div class="card-content"><div><h3>Pembukaan PPDB 2027</h3><p>Pendaftaran siswa baru telah dibuka.</p></div></div></div>
+          <div class="news-card"><div class="card-img" style="background-image: url('background 1.jpg');"></div><div class="card-content"><div><h3>Pendaftaran</h3><p>Pendaftaran grub bimbel telah dibuka.</p></div></div></div>
         </div>
       </div>
     </div>
@@ -1475,11 +1476,11 @@ body.drawer-open { overflow: hidden; }
     <div class="footer-shell">
       <div class="footer-cta">
         <div><div class="eyebrow eyebrow--light">Mari Bergabung</div><h2 class="footer-cta__title">Siapkan Masa Depan Putra-Putri Anda.</h2></div>
-        <a href="ppdb-2026.html" class="pill-btn pill-btn--accent pill-btn--has-arrow" style="background:#fbbf24; color: var(--ink);"><span>Daftar Sekarang</span><span class="pill-btn__badge" style="background: var(--ink); color:#fff;"><i class="fas fa-arrow-right"></i></span></a>
+        <a href="pendaftaran.html" class="pill-btn pill-btn--accent pill-btn--has-arrow" style="background:#fbbf24; color: var(--ink);"><span>Daftar Sekarang</span><span class="pill-btn__badge" style="background: var(--ink); color:#fff;"><i class="fas fa-arrow-right"></i></span></a>
       </div>
       <div class="footer-cols">
         <div class="footer-col"><h4>Bimbel Cerdas</h4><p>Jln Sawahan, Bayanan, Ngantru<br>Kec. Ngantang, Kab. Malang</p><p style="margin-top:0.5rem;"><i class="fas fa-envelope"></i> Bimbel Cerdas</p></div>
-        <div class="footer-col"><h4>Tautan</h4><ul><li><a href="ppdb-2026.html">PPDB</a></li><li><a href="#gallery">Galeri</a></li><li><a href="https://raporsd.page.gd">Rapor</a></li></ul></div>
+        <div class="footer-col"><h4>Tautan</h4><ul><li><a href="pendaftaran.html">Daftar</a></li><li><a href="#gallery">Galeri</a></li><li><a href="https://raporsd.page.gd">Rapor</a></li></ul></div>
         <div class="footer-col"><h4>Login</h4><ul><li><a href="#" onclick="openLoginModal()"><i class="fas fa-key"></i> Login Guru</a></li></ul></div>
         <div class="footer-col"><h4>Ikuti Kami</h4><div class="social-row"><a href="#" class="social-chip"><i class="fab fa-facebook-f"></i></a><a href="#" class="social-chip"><i class="fab fa-instagram"></i></a><a href="#" class="social-chip"><i class="fab fa-youtube"></i></a></div></div>
       </div>
@@ -1910,6 +1911,17 @@ body.drawer-open { overflow: hidden; }
   </div>
 </div>
 
+<!-- MODAL KELOLA PENDAFTARAN -->
+<div id="managePendaftaranModal" class="modal">
+  <div class="modal-content" style="max-width: 800px;">
+    <h3><i class="fas fa-user-check" style="color: #10b981;"></i> Pendaftar Baru</h3>
+    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Daftar siswa yang mendaftar via form. Klik Setujui untuk mengaktifkan akun mereka.</p>
+    <div id="pendaftaranList" style="margin-top: 1rem; text-align: left; max-height: 60vh; overflow-y: auto;">
+      Memuat data...
+    </div>
+    <button class="close-modal" style="background:#94a3b8;" onclick="closeModal('managePendaftaranModal')">Tutup</button>
+  </div>
+</div>
 <div id="manageYoutubeModal" class="modal">
   <div class="modal-content" style="max-width: 720px;">
     <h3 id="ytModalTitle"><i class="fab fa-youtube" style="color: #dc2626;"></i> Kelola Video YouTube</h3>
@@ -2234,8 +2246,8 @@ function renderMobileDrawer(headerMenus, launcherMenus) {
     <a class="mobile-drawer__link" onclick="closeMobileDrawer(); setTimeout(()=>document.getElementById('gallery').scrollIntoView({behavior:'smooth'}), 300);">
       <i class="fas fa-images"></i><span>Galeri Foto</span>
     </a>
-    <a class="mobile-drawer__link" href="ppdb-2026.html">
-      <i class="fas fa-user-plus"></i><span>Daftar PPDB 2027</span>
+    <a class="mobile-drawer__link" href="pendaftaran.html">
+      <i class="fas fa-user-plus"></i><span>Daftar</span>
     </a>
   `;
 
@@ -2290,9 +2302,9 @@ window.addEventListener('DOMContentLoaded', () => {
 // SPOTLIGHT CAROUSEL
 // ============================================================
 const spotlightData = [
-  { tag: "Pendaftaran", title: "PPDB 2027 Telah Dibuka!" },
-  { tag: "E-Rapor", title: "Rapor Online Terintegrasi" },
-  { tag: "Mars Bimbel Cerdas", title: "Klik logo disamping untuk lagu Artuga Jayalah" }
+  { tag: "Pendaftaran", title: "Pendaftaran siswa bimbel dibuka" },
+  { tag: "E-Rapor", title: "Menggunakan aplikasi LMS" },
+  { tag: "Mars Bimbel Cerdas", title: "Membangun Generasi Cerdas" }
 ];
 let spotlightIdx = 0;
 function updateSpotlight() {
@@ -3877,11 +3889,11 @@ function fetchInfoLokalTicker() {
 // 2. PESAN SEKOLAH (PASTI MUNCUL)
 function fetchPesanSekolahTicker() {
   const pesan = [
-    "Mari jaga kebersihan lingkungan sekolah kita!",
-    "Budayakan 5S: Senyum, Salam, Sapa, Sopan, Santun.",
-    "Jangan lupa belajar dan kerjakan PR di rumah.",
-    "Go Digital Sekolahku — Generasi Artuga Berkarakter!",
-    "Cek informasi PPDB terbaru di menu Layanan."
+    "Impian besar tanpa tindakan nyata hanya akan menjadi angan-angan di dalam kepala",
+    "Lelahnya belajar cuma sementara, perihnya kebodohan bertahan selamanya",
+    "Niat tanpa aksi cuma ilusi, belajar tanpa konsistensi cuma mimp",
+    "Jangan cuma ingin sukses, jadilah orang yang pantas untuk sukses",
+    "Cek informasi pendaftaran terbaru di menu Layanan."
   ];
   return {
     icon: 'fa-bullhorn',
@@ -4415,7 +4427,109 @@ updateLiveClock();
 // Perbarui setiap 1 detik agar detiknya berjalan
 setInterval(updateLiveClock, 1000);
 
-// === END PATCH ===
+// ============================================================
+// KELOLA PENDAFTARAN SISWA (Tabel Profiles)
+// ============================================================
+function openManagePendaftaran() {
+  if (!isAdmin()) { showToast('⚠️ Hanya admin yang bisa akses'); return; }
+  openModal('managePendaftaranModal');
+  loadPendaftaranList();
+}
+
+async function loadPendaftaranList() {
+  const list = document.getElementById('pendaftaranList');
+  list.innerHTML = '⏳ Memuat data pendaftar...';
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('role', 'siswa') // Hanya ambil yang role-nya siswa
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      list.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--muted);">Belum ada siswa yang mendaftar.</div>';
+      return;
+    }
+
+    list.innerHTML = data.map(siswa => {
+      // Tentukan status berdasarkan is_active
+      let statusBadge = siswa.is_active 
+        ? '<span style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:9999px; font-size:0.75rem; font-weight:700;">✅ AKTIF</span>'
+        : '<span style="background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:9999px; font-size:0.75rem; font-weight:700;">⏳ PENDING</span>';
+
+      // Tombol Aksi (Hanya muncul jika belum aktif)
+      const actionBtns = !siswa.is_active ? `
+        <div style="display:flex; gap:6px; margin-top:12px;">
+          <button onclick="setujuiPendaftar('${siswa.id}', true)" style="background:#10b981; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:600;"><i class="fas fa-check"></i> Setujui & Aktifkan</button>
+          <button onclick="hapusPendaftar('${siswa.id}')" style="background:#ef4444; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:600;"><i class="fas fa-trash"></i> Tolak / Hapus</button>
+        </div>
+      ` : '';
+
+      return `
+        <div style="background:#fff; border:1px solid var(--line); border-radius:12px; padding:1rem; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h4 style="margin:0; color:var(--ink); font-size:1rem;">${escapeHtml(siswa.full_name || 'Tanpa Nama')}</h4>
+              <p style="margin:2px 0 0; font-size:0.8rem; color:var(--muted);"><i class="fas fa-envelope"></i> ${escapeHtml(siswa.email || '-')}</p>
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; font-size:0.8rem; color:var(--muted);">
+            <div><i class="fas fa-school"></i> Kelas: ${escapeHtml(siswa.kelas || '-')}</div>
+            <div><i class="fas fa-id-card"></i> NISN/HP: ${escapeHtml(siswa.nip_nisn || '-')}</div>
+            <div><i class="fas fa-calendar-alt"></i> Daftar: ${new Date(siswa.created_at).toLocaleDateString('id-ID')}</div>
+          </div>
+          
+          ${actionBtns}
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = '⚠️ Gagal memuat data: ' + err.message;
+  }
+}
+
+async function setujuiPendaftar(id, status) {
+  if (!confirm('Yakin ingin menyetujui pendaftar ini? Akun mereka akan langsung aktif.')) return;
+
+  try {
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ is_active: status })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    showToast('✅ Pendaftar berhasil disetujui!');
+    loadPendaftaranList(); // Refresh daftar
+  } catch (err) {
+    showToast('❌ Gagal menyetujui: ' + err.message);
+  }
+}
+
+async function hapusPendaftar(id) {
+  if (!confirm('Yakin ingin menolak dan menghapus data pendaftar ini?')) return;
+
+  try {
+    const { error } = await supabaseClient
+      .from('profiles')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    showToast('🗑️ Data pendaftar dihapus.');
+    loadPendaftaranList(); // Refresh daftar
+  } catch (err) {
+    showToast('❌ Gagal menghapus: ' + err.message);
+  }
+}
 </script>
 </body>
 </html>

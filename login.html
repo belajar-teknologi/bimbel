@@ -286,6 +286,7 @@
         <button class="sidebar-item active" onclick="adminNav('overview', this)"><i class="fas fa-gauge-high"></i> Dashboard</button>
         <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="adminNav('users', this)"><i class="fas fa-users"></i> Pengguna</button>
+        <button class="sidebar-item" onclick="adminNav('pendaftar', this)"><i class="fas fa-user-clock"></i> Pendaftar Baru <span class="sidebar-badge" id="badgePendaftar" style="display:none;">0</span></button>
         <button class="sidebar-item" onclick="adminNav('classes', this)"><i class="fas fa-people-group"></i> Grup Belajar</button>
         <button class="sidebar-item" onclick="adminNav('subjects', this)"><i class="fas fa-book"></i> Mata Pelajaran</button>
         <div class="sidebar-divider"></div>
@@ -320,6 +321,33 @@
         </div>
 
         <!-- USERS -->
+         <!-- PENDAFTAR BARU -->
+<div id="admin-view-pendaftar" class="admin-view hidden">
+  <h2 style="margin-bottom: 1.5rem;">Persetujuan Pendaftaran Siswa</h2>
+  <div class="panel-box">
+    <div class="panel-title">
+      <span><i class="fas fa-user-clock" style="color: var(--accent);"></i> Daftar Calon Siswa</span>
+      <button class="lms-action sm" onclick="loadAdminPendaftar()"><i class="fas fa-sync"></i> Refresh</button>
+    </div>
+    <p class="lms-muted" style="margin-bottom: 1rem;">Data ini berasal dari form pendaftaran mandiri. Klik <b>Setujui</b> untuk mengaktifkan akun siswa agar bisa login ke LMS.</p>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Nama & Email</th>
+            <th>Kelas / NISN</th>
+            <th>Tanggal Daftar</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="pendaftarTableBody">
+          <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
         <div id="admin-view-users" class="admin-view hidden">
           <h2 style="margin-bottom: 1.5rem;">Manajemen Pengguna</h2>
           <div class="panel-box">
@@ -1128,7 +1156,8 @@ const ADMIN_LOADERS = {
   videos: () => { loadAdminVideos(); loadAdminBlockOptions(); },
   files: () => loadAdminFiles(),
   settings: () => { loadCloudinarySettings(); loadAdminSettings(); },
-  stats: () => loadAdminStats()
+  stats: () => loadAdminStats(),
+  pendaftar: () => loadAdminPendaftar() // <--- CUKUP TAMBAHKAN BARIS INI SAJA
 };
 
 function adminNav(view, btn) {
@@ -1208,26 +1237,53 @@ async function loadUserProfile(userId) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
+  
+  const emailInput = document.getElementById('loginEmail');
+  const passwordInput = document.getElementById('loginPassword');
   const btn = document.getElementById('loginSubmitBtn');
-  if (!supabaseClient) { showToast('Koneksi belum siap.'); return; }
+  
+  if (!emailInput || !passwordInput) return;
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+
+  if (!supabaseClient) { 
+    showToast('⚠️ Koneksi ke database belum siap. Mohon tunggu sebentar atau refresh halaman.'); 
+    return; 
+  }
+
+  // Ubah tombol jadi loading
+  const originalBtnText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memeriksa Akun...';
+
   try {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    // Proses Login ke Supabase
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ 
+      email: email, 
+      password: password 
+    });
+
+    // Jika gagal (misal password salah)
     if (error) {
-      showToast('❌ Login gagal: ' + error.message);
+      showToast('❌ Login Gagal: ' + error.message);
+      btn.disabled = false;
+      btn.innerHTML = originalBtnText;
       return;
     }
+
+    // Jika berhasil
     currentUser = data.user;
-    showToast('✅ Login berhasil!');
+    showToast('✅ Login berhasil! Memuat data...');
+    
+    // Ambil data profil
     await loadUserProfile(data.user.id);
+
   } catch (err) {
-    showToast('❌ ' + err.message);
-  } finally {
+    console.error("Error Login:", err);
+    showToast('❌ Terjadi kesalahan sistem: ' + err.message);
     btn.disabled = false;
-    btn.innerHTML = 'Masuk ke Sistem <i class="fas fa-arrow-right" style="margin-left:6px"></i>';
+    btn.innerHTML = originalBtnText;
   }
 }
 
@@ -3054,6 +3110,123 @@ document.getElementById('gMenuIcon')?.addEventListener('change', function() {
   if (preview) {
     preview.innerHTML = `<i class="${this.value}"></i>`;
   }
+});
+// ============================================================
+// FITUR PERSETUJUAN PENDAFTAR BARU (ADMIN)
+// ============================================================
+
+// 2. Fungsi Memuat Data Pendaftar dari Database
+async function loadAdminPendaftar() {
+  const tbody = document.getElementById('pendaftarTableBody');
+  const badge = document.getElementById('badgePendaftar');
+  if (!tbody) return; // Pengaman jika elemen belum ada
+
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>';
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('role', 'siswa') // Ambil yang rolenya siswa
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Hitung yang statusnya pending (is_active = false) untuk badge notifikasi
+    const pendingCount = data.filter(d => d.is_active === false).length;
+    if (pendingCount > 0 && badge) {
+      badge.innerText = pendingCount;
+      badge.style.display = 'inline-block';
+    } else if (badge) {
+      badge.style.display = 'none';
+    }
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada pendaftar.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.map(siswa => {
+      let statusBadge = siswa.is_active 
+        ? '<span class="lms-status">Aktif</span>'
+        : '<span class="lms-status warn">Pending</span>';
+
+      let actionBtn = !siswa.is_active 
+        ? `<button class="lms-action sm primary" onclick="setujuiPendaftar('${siswa.id}')"><i class="fas fa-check"></i> Setujui</button>
+           <button class="lms-action sm danger" onclick="hapusPendaftar('${siswa.id}')"><i class="fas fa-trash"></i> Tolak</button>`
+        : `<span class="lms-muted"><i class="fas fa-check-circle" style="color:var(--success)"></i> Selesai</span>`;
+
+      // Format tanggal
+      let tglDaftar = '-';
+      if (siswa.created_at) {
+        tglDaftar = new Date(siswa.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+      }
+
+      return `
+        <tr>
+          <td>
+            <strong>${escapeHtml(siswa.full_name || '-')}</strong><br>
+            <span class="lms-muted" style="font-size:0.75rem">${escapeHtml(siswa.email || '-')}</span>
+          </td>
+          <td>
+            Kelas: ${escapeHtml(siswa.kelas || '-')}<br>
+            <span class="lms-muted" style="font-size:0.75rem">NISN: ${escapeHtml(siswa.nip_nisn || '-')}</span>
+          </td>
+          <td>${tglDaftar}</td>
+          <td>${statusBadge}</td>
+          <td>${actionBtn}</td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
+// 3. Fungsi Admin Menyetujui Pendaftar
+async function setujuiPendaftar(id) {
+  if (!confirm('Setujui pendaftar ini? Akun siswa akan langsung aktif dan bisa login.')) return;
+  try {
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ is_active: true, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) throw error;
+    showToast('✅ Pendaftar berhasil disetujui!');
+    loadAdminPendaftar(); // Refresh tabel
+  } catch (err) {
+    showToast('❌ Gagal menyetujui: ' + err.message);
+  }
+}
+
+// 4. Fungsi Admin Menolak / Hapus Pendaftar
+async function hapusPendaftar(id) {
+  if (!confirm('Tolak dan hapus data pendaftar ini? (Akun autentikasi mungkin masih tersisa di Supabase Auth)')) return;
+  try {
+    const { error } = await supabaseClient
+      .from('profiles')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    showToast('🗑️ Pendaftar berhasil ditolak/dihapus.');
+    loadAdminPendaftar(); // Refresh tabel
+  } catch (err) {
+    showToast('❌ Gagal menghapus: ' + err.message);
+  }
+}
+
+// 5. Cek Notifikasi Badge saat Admin Login
+document.addEventListener('DOMContentLoaded', () => {
+  // Beri jeda 2 detik agar supabaseClient dan currentProfile sudah siap
+  setTimeout(() => {
+    if (typeof supabaseClient !== 'undefined' && currentProfile && currentProfile.role === 'admin') {
+      loadAdminPendaftar().catch((e) => console.log('Info: Gagal memuat badge awal', e));
+    }
+  }, 2000);
 });
   </script>
 </body>

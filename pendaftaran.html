@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pendaftaran Siswa Baru — Bimbel Cerdas</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root {
+    --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; 
+    --surface: #f0f9ff; --accent: #2563eb; --accent-hover: #1d4ed8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Onest', sans-serif; }
+  body { background: var(--surface); color: var(--ink); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 2rem 1rem; }
+  
+  .form-container {
+    background: #fff; width: 100%; max-width: 600px; border-radius: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid var(--line);
+  }
+  .form-header {
+    background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff; padding: 2rem;
+    text-align: center; position: relative;
+  }
+  .form-header h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; }
+  .form-header p { font-size: 0.9rem; opacity: 0.9; }
+  .back-btn {
+    position: absolute; left: 1.5rem; top: 1.5rem; color: #fff; text-decoration: none;
+    background: rgba(255,255,255,0.2); width: 36px; height: 36px; display: grid;
+    place-items: center; border-radius: 50%; transition: all 0.2s;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.4); }
+  
+  .form-body { padding: 2rem; }
+  .form-group { margin-bottom: 1.25rem; }
+  .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--ink); }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 12px 16px; border: 1px solid var(--line); border-radius: 0.75rem;
+    font-size: 0.95rem; outline: none; background: #fff; transition: all 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+  
+  .btn-submit {
+    width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none;
+    border-radius: 0.75rem; font-size: 1rem; font-weight: 700; cursor: pointer;
+    transition: all 0.3s; margin-top: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+  }
+  .btn-submit:hover { background: var(--accent-hover); transform: translateY(-2px); }
+  .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+  .toast {
+    position: fixed; top: 20px; right: 20px; padding: 16px 24px; border-radius: 0.75rem;
+    color: #fff; font-weight: 600; font-size: 0.9rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    z-index: 9999; display: none; align-items: center; gap: 10px; animation: slideIn 0.3s ease;
+  }
+  .toast.success { background: #10b981; display: flex; }
+  .toast.error { background: #ef4444; display: flex; }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+
+<div class="form-container">
+  <div class="form-header">
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <h1><i class="fas fa-user-plus"></i> Pendaftaran Siswa Baru</h1>
+    <p>Bimbel Cerdas — Kec. Ngantang, Kab. Malang</p>
+  </div>
+  
+  <div class="form-body">
+    <form id="formPendaftaran">
+      <div class="form-group">
+        <label>Nama Lengkap Siswa *</label>
+        <input type="text" id="full_name" required placeholder="Masukkan nama lengkap">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email (Aktif) *</label>
+          <input type="email" id="email" required placeholder="contoh@gmail.com">
+        </div>
+        <div class="form-group">
+          <label>Nomor HP / NISN</label>
+          <input type="text" id="nip_nisn" placeholder="08xxxxxxxxxx">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Kelas yang Diambil</label>
+          <input type="text" id="kelas" placeholder="Contoh: Kelas 6 SD">
+        </div>
+        <div class="form-group">
+          <label>Asal Sekolah</label>
+          <input type="text" id="asal_sekolah" placeholder="Contoh: SDN 1 Ngantang">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Password Akun *</label>
+        <input type="password" id="password" required placeholder="Minimal 6 karakter">
+        <p style="font-size: 0.75rem; color: var(--muted); margin-top: 4px;">Password ini akan digunakan untuk login ke LMS (EduSmart) nanti.</p>
+      </div>
+
+      <button type="submit" class="btn-submit" id="btnSubmit">
+        <i class="fas fa-paper-plane"></i> Kirim Pendaftaran
+      </button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://fjedugqoeupieqxfcprw.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqZWR1Z3FvZXVwaWVxeGZjcHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDgwNTcsImV4cCI6MjEwOTAyNDA1N30.R59XI8nSssSc4-sk5YZtdqGw168OrZHH6ZL6SgF2wSw';
+  
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').innerText = msg;
+    t.className = `toast ${type}`;
+    t.style.display = 'flex';
+    setTimeout(() => { t.style.display = 'none'; }, 4000);
+  }
+
+  document.getElementById('formPendaftaran').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mendaftarkan Akun...';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const fullName = document.getElementById('full_name').value.trim();
+    const nipNisn = document.getElementById('nip_nisn').value.trim();
+    const kelas = document.getElementById('kelas').value.trim();
+
+    try {
+      // 1. Daftarkan akun ke Supabase Auth
+      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: { full_name: fullName } // Simpan nama di metadata auth
+        }
+      });
+
+      if (authError) throw new Error('Gagal mendaftar: ' + authError.message);
+
+      // 2. Simpan/Update data ke tabel 'profiles' dengan status is_active = false
+      if (authData.user) {
+        const { error: profileError } = await supabaseClient
+          .from('profiles')
+          .upsert([{
+            id: authData.user.id,
+            email: email,
+            full_name: fullName,
+            role: 'siswa',
+            is_active: false, // Wajib false, nanti admin yang ubah jadi true
+            nip_nisn: nipNisn || null,
+            kelas: kelas || null
+          }]);
+
+        if (profileError) throw new Error('Gagal menyimpan profil: ' + profileError.message);
+      }
+
+      showToast('✅ Pendaftaran berhasil! Silakan tunggu persetujuan Admin.', 'success');
+      document.getElementById('formPendaftaran').reset();
+
+    } catch (err) {
+      console.error(err);
+      showToast('❌ ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Pendaftaran';
+    }
+  });
+</script>
+</body>
+</html>
