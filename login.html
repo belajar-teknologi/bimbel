@@ -247,10 +247,19 @@
             <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
           </div>
         </div>
-        <button type="submit" class="btn-submit" id="loginSubmitBtn">
+                <button type="submit" class="btn-submit" id="loginSubmitBtn">
           Masuk ke Sistem <i class="fas fa-arrow-right" style="margin-left: 6px;"></i>
         </button>
       </form>
+      
+      <!-- Tombol Pendaftaran Baru -->
+      <div style="margin-top: 1rem; text-align: center;">
+        <span style="font-size: 0.85rem; color: var(--muted);">Belum punya akun?</span>
+        <a href="pendaftaran.html" style="display: inline-block; margin-left: 0.5rem; font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none; padding: 6px 12px; border: 1px dashed var(--accent); border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
+          <i class="fas fa-user-plus"></i> Daftar Sekarang
+        </a>
+      </div>
+
       <div style="text-align: center; margin-top: 1.75rem;">
         <a href="index.html" style="font-size: 0.85rem; color: var(--muted); text-decoration: none; font-weight: 600;">
           <i class="fas fa-arrow-left"></i> Kembali ke Beranda Utama
@@ -922,7 +931,7 @@
         <button class="sidebar-item" onclick="siswaNav('assignments', this)"><i class="fas fa-pen-to-square"></i> Tugas Saya</button>
         <button class="sidebar-item" onclick="window.open('kuis.html?siswa_id=' + currentUser.id + '&kelas=' + currentProfile.kelas + '&nama=' + encodeURIComponent(currentProfile.full_name), '_blank')"><i class="fas fa-pen-to-square"></i> Kerjakan Kuis</button>
         <div class="sidebar-divider"></div>
-        <button class="sidebar-item" onclick="siswaNav('teachermenus', this)"><i class="fas fa-external-link-alt"></i> Materi / Kuis Guru</button>
+        <button class="sidebar-item" onclick="siswaNav('teachermenus', this)"><i class="fas fa-external-link-alt"></i> Materi </button>
         <button class="sidebar-item" onclick="siswaNav('files', this)"><i class="fas fa-folder-open"></i> File Kelas</button>
       </nav>
       <div class="sidebar-footer">EduSmart LMS • Siswa</div>
@@ -1272,11 +1281,39 @@ async function handleLogin(e) {
       return;
     }
 
-    // Jika berhasil
+    // ==========================================
+    // TAMBAHAN BARU: CEK STATUS PERSETUJUAN
+    // ==========================================
+    // Ambil data profil untuk mengecek is_active
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('is_active, role')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    if (profileError || !profile) {
+      showToast('⚠️ Profil tidak ditemukan. Hubungi admin.');
+      await supabaseClient.auth.signOut(); // Batalkan login
+      btn.disabled = false;
+      btn.innerHTML = originalBtnText;
+      return;
+    }
+
+    // Jika akun siswa belum disetujui (is_active === false)
+    if (profile.role === 'siswa' && profile.is_active === false) {
+      showToast('⏳ Akun Anda belum disetujui Admin. Silakan tunggu.');
+      await supabaseClient.auth.signOut(); // Batalkan login paksa
+      btn.disabled = false;
+      btn.innerHTML = originalBtnText;
+      return; // Hentikan proses
+    }
+    // ==========================================
+
+    // Jika berhasil dan sudah aktif
     currentUser = data.user;
     showToast('✅ Login berhasil! Memuat data...');
     
-    // Ambil data profil
+    // Ambil data profil lengkap
     await loadUserProfile(data.user.id);
 
   } catch (err) {
