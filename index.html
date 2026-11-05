@@ -270,6 +270,12 @@ body.drawer-open { overflow: hidden; }
   .mobile-drawer { width: 300px !important; max-width: 85vw !important; left: auto !important; right: calc(50% - 210px) !important; transform: translateX(100%) !important; position: fixed !important; }
   .mobile-drawer.open { transform: translateX(0) !important; }
 
+  /* ▼▼▼ PATCH 1: Tampilkan hamburger + z-index drawer di PC ▼▼▼ */
+  .hamburger-btn { display: flex !important; }
+  .mobile-drawer.open { z-index: 1600 !important; }
+  .mobile-drawer__overlay.show { z-index: 1599 !important; }
+  /* ▲▲▲ END PATCH 1 ▲▲▲ */
+
   #home { display: grid !important; grid-template-rows: 550px auto !important; height: auto !important; min-height: 100vh !important; background: #ffffff !important; overflow: visible !important; }
   #home .hero-liquid-bg { position: relative !important; height: 100% !important; width: 100% !important; background-color: #d8ece2 !important; border-radius: 0 0 24px 24px !important; overflow: hidden !important; }
     #home .hero-liquid-bg .liquid-base,
@@ -423,7 +429,7 @@ body.drawer-open { overflow: hidden; }
           <div class="hero-card">
             <div class="hero-card__inner">
               <div class="hero-card__left" id="musicCardLeft">
-                <img src="logo sekolah.png" alt="Logo Sekolah" class="rotating-logo" id="rotatingLogo">
+                <img src="logo sekolah.png" alt="Logo" class="rotating-logo" id="rotatingLogo">
                 <button class="hero-card__play-overlay" onclick="toggleMusic()" id="musicPlayBtn" title="Play / Pause Lagu">
                   <i class="fas fa-play"></i>
                 </button>
@@ -893,7 +899,7 @@ body.drawer-open { overflow: hidden; }
 
 <div id="uploadLogoModal" class="modal">
   <div class="modal-content">
-    <h3><i class="fas fa-school"></i> Upload Logo Sekolah</h3>
+    <h3><i class="fas fa-school"></i> Upload Logo </h3>
     <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 16px;">Logo akan tampil di header & halaman utama</p>
     <div class="form-group"><label>Pilih Logo</label><input type="file" id="logoFileInput" accept="image/png,image/jpeg,image/webp,image/svg+xml"></div>
     <img id="logoPreviewImg" class="preview-img" alt="Preview">
@@ -1351,7 +1357,7 @@ function renderMobileDrawer(headerMenus, launcherMenus) {
     <a class="mobile-drawer__link" href="login.html" target="_blank">
       <i class="fas fa-graduation-cap"></i><span>Edu Smart LMS</span>
     </a>
-    <a class="mobile-drawer__link" href="#" target="_blank">
+    <a class="mobile-drawer__link" href="pendaftaran.html" target="_blank">
       <i class="fas fa-file-lines"></i><span>Daftar Sekarang</span>
     </a>
     <a class="mobile-drawer__link" onclick="closeMobileDrawer(); setTimeout(()=>document.getElementById('gallery').scrollIntoView({behavior:'smooth'}), 300);">
@@ -1710,7 +1716,7 @@ async function handleUploadLogo() {
     applyLogo(result.secure_url);
     setTimeout(() => pb.classList.remove('show'), 800);
     rb.innerHTML = '✅ Logo berhasil diupdate!';
-    showToast('✅ Logo sekolah diperbarui');
+    showToast('✅ Logo diperbarui');
     setTimeout(() => { closeModal('uploadLogoModal'); rb.innerHTML = ''; }, 1500);
   };
   xhr.onerror = () => { btn.disabled = false; pb.classList.remove('show'); rb.innerHTML = '❌ Kesalahan jaringan.'; };
