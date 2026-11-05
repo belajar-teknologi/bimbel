@@ -1276,7 +1276,8 @@ body.drawer-open { overflow: hidden; }
 <main>
   <section id="home">
     <div class="hero-liquid-bg" id="liquidWrapper">
-      <img class="liquid-base" id="imgBefore" src="https://res.cloudinary.com/j6sfv399/image/upload/v1788762440/cc0e57fe-60d6-4918-b4e5-f4bca15dd579.jpg" alt="Sebelum" crossorigin="anonymous">
+      <!-- SESUDAH — src dikosongkan, diisi oleh JS dari DB -->
+<img class="liquid-base" id="imgBefore" src="" alt="Sebelum" crossorigin="anonymous">
       <canvas id="liquidCanvas"></canvas>
     </div>
     <span class="liquid-badge liquid-badge--before" id="baLabelBefore" style="display:none;"></span>
@@ -2027,7 +2028,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const CLOUDINARY_CLOUD_NAME = 'popx6mep';
 const CLOUDINARY_UPLOAD_PRESET = 'dwi.rosi77@guru.smp.belajar.id';
 const CLOUDINARY_FOLDER = 'dwi.rosi77@guru.smp.belajar.id';
-const DEFAULT_AFTER_IMAGE = 'https://res.cloudinary.com/j6sfv399/image/upload/v1788762440/772879928_1090776230277186_3705696280195234379_n.jpg';
+const DEFAULT_AFTER_IMAGE = 'background 1.jpg';
 
 let supabaseClient = null;
 let currentUser = null;
