@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=420, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Bimbel Cerdas — Kec. Ngantang, Kab. Malang</title>
 <meta name="description" content="Official Portal Bimbel Cerdas - Go Digital Sekolahku." />
 
@@ -83,10 +83,8 @@ header#header { position: relative; z-index: 9999; }
 .logo-text-wrap h1 { font-size: 1.15rem; font-weight: 800; color: var(--ink); line-height: 1.1; }
 .logo-text-wrap p { font-size: 0.75rem; color: var(--muted); }
 .header-nav { display: none; }
-.header-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; position: relative; }
-.hamburger-btn { display: none; width: 40px; height: 40px; border-radius: var(--radius-pill); background: var(--accent); color: #fff; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-
-/* --- 6. MENU DRAWER --- */
+.header-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; position: relative; margin-left: auto; }
+.hamburger-btn { display: flex !important; width: 40px; height: 40px; border-radius: var(--radius-pill); background: var(--accent); color: #fff; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; z-index: 99999 !important; position: relative; margin-left: 5px; }/* --- 6. MENU DRAWER --- */
 .mobile-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 300px; max-width: 85vw; background: #fff; z-index: 1500; box-shadow: -4px 0 24px rgba(0,0,0,0.15); transform: translateX(100%); transition: transform 0.35s cubic-bezier(.22,1,.36,1); display: flex; flex-direction: column; overflow-y: auto; }
 .mobile-drawer.open { transform: translateX(0); }
 .mobile-drawer__overlay { position: fixed; top: 0; bottom: 0; width: 100%; left: 0; background: rgba(7,30,23,0.6); backdrop-filter: blur(4px); z-index: 1499; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -229,9 +227,9 @@ body.drawer-open { overflow: hidden; }
 .news-ticker__track { display: inline-flex; align-items: center; gap: 3rem; white-space: nowrap; animation: tickerScroll 40s linear infinite; }
 @keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 .news-ticker__item { font-size: 0.85rem; font-weight: 600; color: rgba(255, 255, 255, 0.95); display: inline-flex; align-items: center; gap: 0.4rem; }
-.header-clock { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; background: rgba(15, 107, 82, 0.05); border: 1px solid rgba(15, 107, 82, 0.15); padding: 0.4rem 0.85rem; border-radius: var(--radius-pill); cursor: pointer; }
-.header-clock__time { font-size: 1.05rem; font-weight: 800; color: var(--accent); display: flex; align-items: center; gap: 0.35rem; }
-.header-clock__date { font-size: 0.65rem; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+.header-clock { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; background: rgba(15, 107, 82, 0.05); border: 1px solid rgba(15, 107, 82, 0.15); padding: 0.4rem 0.65rem; border-radius: var(--radius-pill); cursor: pointer; flex-shrink: 0; }
+.header-clock__time { font-size: 1rem; font-weight: 800; color: var(--accent); display: flex; align-items: center; gap: 0.35rem; }
+.header-clock__date { font-size: 0.6rem; font-weight: 600; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
 .music-playlist { position: absolute; top: calc(100% + 10px); right: 1.25rem; width: 280px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--line); border-radius: var(--radius-card-sm); box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 1000; display: none; overflow: hidden; }
 .music-playlist.show { display: block; }
 .music-playlist__header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--accent); color: #fff; font-size: 0.85rem; font-weight: 700; }
@@ -258,11 +256,11 @@ body.drawer-open { overflow: hidden; }
   .app-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .header-clock { display: none; }
-  .hamburger-btn { display: flex; }
 }
 
 /* --- 14. KUNCI TAMPILAN ANDROID 420PX DI PC --- */
-@media (min-width: 640px) {
+/* --- 14. KUNCI TAMPILAN ANDROID 420PX HANYA UNTUK PC/LAPTOP --- */
+@media (min-width: 1024px) {  /* <--- DIUBAH JADI 1024px AGAR TABLET/HP LANDSCAPE TETAP FULL SCREEN */
   html { background: #cbd5e1 !important; }
   body { max-width: 420px !important; margin: 0 auto !important; box-shadow: 0 0 40px rgba(0,0,0,0.2) !important; position: relative; background: #ffffff; overflow-x: hidden; }
 
@@ -270,8 +268,7 @@ body.drawer-open { overflow: hidden; }
   .mobile-drawer { width: 300px !important; max-width: 85vw !important; left: auto !important; right: calc(50% - 210px) !important; transform: translateX(100%) !important; position: fixed !important; }
   .mobile-drawer.open { transform: translateX(0) !important; }
 
-  /* ▼▼▼ PATCH 1: Tampilkan hamburger + z-index drawer di PC ▼▼▼ */
-  .hamburger-btn { display: flex !important; }
+    /* ▼▼▼ PATCH 1: z-index drawer di PC ▼▼▼ */
   .mobile-drawer.open { z-index: 1600 !important; }
   .mobile-drawer__overlay.show { z-index: 1599 !important; }
   /* ▲▲▲ END PATCH 1 ▲▲▲ */
@@ -310,6 +307,26 @@ body.drawer-open { overflow: hidden; }
   .btn-admin-action::after { display: none !important; content: none !important; }
   body:has(.admin-bar-active) { padding-left: 0 !important; padding-top: 80px !important; }
 }
+/* === PATCH: RESPONSIVE OTOMATIS UNTUK HP === */
+@media (max-width: 1023px) {
+  /* Memastikan layar HP mengisi 100% lebar layar, tidak ada batasan 420px */
+  body, header#header, #footer, .modal, .preview-overlay, .mobile-drawer__overlay {
+    max-width: 100% !important;
+    width: 100% !important;
+    left: 0 !important;
+    transform: none !important;
+  }
+  
+  /* Menyesuaikan ukuran font agar pas di layar HP kecil */
+  .hero-h1 { font-size: clamp(1.75rem, 8vw, 2.5rem) !important; }
+  .app-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important; }
+  .stats-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important; }
+  
+  /* Jarak padding yang lebih proporsional di HP */
+  .shell { padding-inline: 1rem !important; }
+  .hero-content { padding: 5rem 1rem 3rem !important; }
+}
+/* === END PATCH RESPONSIVE === */
 
 </style>
 </head>
