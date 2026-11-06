@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js SUDAH dimuat di head (sesuai konteks) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <style>
         :root {
@@ -177,6 +179,8 @@
     .lms-action.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
     .lms-action.danger { background: #fee2e2; color: var(--danger); border-color: #fecaca; }
     .lms-action.danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .lms-action.success { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .lms-action.success:hover { background: var(--success); color: #fff; border-color: var(--success); }
     .lms-action.sm { padding: 4px 10px; font-size: 0.75rem; }
     .lms-action:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -216,6 +220,128 @@
     }
     @media (min-width: 769px) {
       .sidebar-overlay { display: none !important; }
+    }
+        /* ===== NOTIFIKASI ===== */
+    .notif-wrap { position: relative; }
+    .notif-btn {
+      background: var(--surface); border: 1px solid var(--line);
+      width: 38px; height: 38px; border-radius: 9px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1rem; color: var(--ink); position: relative;
+      transition: all 0.15s;
+    }
+    .notif-btn:hover { background: var(--hover-sidebar); color: var(--accent); border-color: #bfdbfe; }
+    .notif-badge {
+      position: absolute; top: -4px; right: -4px;
+      background: var(--danger); color: #fff; font-size: 0.62rem;
+      font-weight: 800; padding: 1px 6px; border-radius: 99px;
+      min-width: 18px; text-align: center; border: 2px solid var(--bg-header);
+      display: none;
+    }
+    .notif-badge.show { display: inline-block; }
+
+    .notif-panel {
+      position: absolute; top: 48px; right: 0;
+      width: 360px; max-width: calc(100vw - 1.5rem);
+      background: #fff; border: 1px solid var(--line);
+      border-radius: 14px; box-shadow: 0 10px 30px rgba(15,23,42,0.15);
+      z-index: 999; display: none; overflow: hidden;
+    }
+    .notif-panel.show { display: block; }
+    .notif-header {
+      padding: 12px 14px; border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--surface);
+    }
+    .notif-header h4 { font-size: 0.95rem; font-weight: 800; color: var(--ink); }
+    .notif-header-actions { display: flex; gap: 6px; }
+    .notif-mini-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 0.75rem; font-weight: 700; color: var(--accent);
+      padding: 2px 6px; border-radius: 5px;
+    }
+    .notif-mini-btn:hover { background: var(--hover-sidebar); }
+    .notif-list { max-height: 420px; overflow-y: auto; }
+    .notif-item {
+      padding: 12px 14px; border-bottom: 1px solid var(--line);
+      cursor: pointer; display: flex; gap: 10px;
+      transition: background 0.15s; position: relative;
+    }
+    .notif-item:hover { background: var(--hover-sidebar); }
+    .notif-item.unread { background: #eff6ff; }
+    .notif-item.unread:hover { background: #dbeafe; }
+    .notif-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 0.85rem;
+    }
+    .notif-icon.assignment { background: #fef3c7; color: #92400e; }
+    .notif-icon.material { background: #dbeafe; color: #1e40af; }
+    .notif-icon.grade { background: #dcfce7; color: #166534; }
+    .notif-icon.schedule { background: #e0e7ff; color: #3730a3; }
+    .notif-icon.announcement { background: #fce7f3; color: #9d174d; }
+    .notif-icon.info { background: var(--surface); color: var(--muted); }
+    .notif-body { flex: 1; min-width: 0; }
+    .notif-title { font-size: 0.85rem; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+    .notif-msg { font-size: 0.78rem; color: var(--muted); line-height: 1.35; word-wrap: break-word; }
+    .notif-time { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+    .notif-dot {
+      width: 8px; height: 8px; background: var(--accent);
+      border-radius: 50%; flex-shrink: 0; margin-top: 6px;
+    }
+    .notif-empty { padding: 30px 16px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+    .notif-footer {
+      padding: 8px 14px; border-top: 1px solid var(--line);
+      background: var(--surface); text-align: center;
+    }
+    @media (max-width: 500px) {
+      .notif-panel { width: calc(100vw - 1rem); right: -1rem; }
+    }
+
+    /* ============================================================ */
+    /* TAMBAHAN BARU — CSS RAPOR & PRINT (Tahap 3B)                 */
+    /* ============================================================ */
+    .rapor-chart-wrap {
+      margin-top: 1.25rem;
+      padding: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .rapor-chart-wrap h4 {
+      font-size: 0.9rem;
+      color: var(--ink);
+      margin-bottom: 0.75rem;
+      font-weight: 800;
+    }
+    /* TAMBAHAN BARU: wrapper grafik overview dashboard */
+    .overview-chart-wrap {
+      height: 220px;
+      position: relative;
+    }
+    .rapor-header-print {
+      text-align: center;
+      margin-bottom: 1.2rem;
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 0.8rem;
+    }
+    .rapor-header-print h2 { font-size: 1.3rem; }
+    .rapor-header-print p { font-size: 0.85rem; color: var(--muted); }
+
+    @media print {
+      @page { size: A4; margin: 0; }
+      body { background: #fff; }
+      body * { visibility: hidden; }
+      #siswaRaporContent, #siswaRaporContent * { visibility: visible; }
+      #siswaRaporContent {
+        position: absolute; left: 0; top: 0; width: 21cm;
+        padding: 1.5cm; font-size: 11pt; background: #fff;
+      }
+      .no-print { display: none !important; }
+      .sidebar, .app-header, .sidebar-overlay, .toast, .notif-panel, .notif-btn { display: none !important; }
+      .rapor-chart-wrap { break-inside: avoid; page-break-inside: avoid; }
+      table { font-size: 10pt; }
+      th, td { padding: 6px 8px !important; }
     }
   </style>
 </head>
@@ -274,10 +400,31 @@
       <button class="btn-sidebar-toggle" onclick="toggleSidebar()" title="Menu"><i class="fas fa-bars"></i></button>
       <i class="fas fa-graduation-cap" style="color: #fbbf24;"></i> EduSmart LMS
     </div>
-    <div class="user-badge">
+        <div class="user-badge">
       <div>
         <span id="userNameDisplay" style="font-weight: 700; font-size: 0.9rem;">-</span>
         <span id="userRoleTag" class="role-tag">ROLE</span>
+      </div>
+      <div class="notif-wrap">
+        <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel(event)" title="Notifikasi">
+          <i class="fas fa-bell"></i>
+          <span class="notif-badge" id="notifBadge">0</span>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-header">
+            <h4><i class="fas fa-bell" style="color: var(--accent); margin-right: 4px;"></i> Notifikasi</h4>
+            <div class="notif-header-actions">
+              <button class="notif-mini-btn" onclick="markAllNotificationsRead()" title="Tandai semua dibaca">✓ Semua</button>
+              <button class="notif-mini-btn" onclick="deleteAllNotifications()" title="Hapus semua">🗑️</button>
+            </div>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-empty">Memuat...</div>
+          </div>
+          <div class="notif-footer">
+            <button class="notif-mini-btn" onclick="loadNotifications()">🔄 Refresh</button>
+          </div>
+        </div>
       </div>
       <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
     </div>
@@ -303,6 +450,9 @@
         <button class="sidebar-item" onclick="adminNav('materials', this)"><i class="fas fa-book-open"></i> Materi</button>
         <button class="sidebar-item" onclick="adminNav('assignments', this)"><i class="fas fa-tasks"></i> Tugas & Pengumpulan</button>
         <div class="sidebar-divider"></div>
+        <!-- TAMBAHAN BARU: menu Rapor -->
+        <button class="sidebar-item" onclick="adminNav('rapor', this)"><i class="fas fa-file-lines"></i> Rapor Digital</button>
+        <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="adminNav('news', this)"><i class="fas fa-newspaper"></i> Berita</button>
         <button class="sidebar-item" onclick="adminNav('blocks', this)"><i class="fas fa-layer-group"></i> Blok Halaman</button>
         <button class="sidebar-item" onclick="adminNav('menus', this)"><i class="fas fa-bars-staggered"></i> Menu Navigasi</button>
@@ -320,12 +470,38 @@
         <!-- OVERVIEW -->
         <div id="admin-view-overview" class="admin-view">
           <h2 style="margin-bottom: 1.5rem;">Dashboard Administrator</h2>
+          <!-- KPI LAMA — JANGAN DIUBAH -->
           <div class="grid-kpi">
             <div class="kpi-card"><div class="kpi-num" id="statTotalSiswa">0</div><div class="kpi-label">Total Siswa</div></div>
             <div class="kpi-card"><div class="kpi-num" id="statTotalGuru">0</div><div class="kpi-label">Total Guru</div></div>
             <div class="kpi-card"><div class="kpi-num" id="statTotalUser">0</div><div class="kpi-label">Total Pengguna</div></div>
             <div class="kpi-card"><div class="kpi-num" id="statTotalGroup">0</div><div class="kpi-label">Total Grup Belajar</div></div>
           </div>
+          <!-- KPI BARU -->
+          <div class="grid-kpi">
+            <div class="kpi-card"><div class="kpi-num" id="statPendaftarPending">0</div><div class="kpi-label">Pendaftar Pending</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="statTotalClasses">0</div><div class="kpi-label">Total Kelas</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="statTotalSubjects">0</div><div class="kpi-label">Total Mapel</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="statTotalAssignments">0</div><div class="kpi-label">Tugas Published</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="statTotalMaterials">0</div><div class="kpi-label">Materi Published</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="statTotalGraded">0</div><div class="kpi-label">Submission Dinilai</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="statTotalReports">0</div><div class="kpi-label">Rapor Dihasilkan</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="statAvgGlobalScore">0</div><div class="kpi-label">Rata-rata Nilai Global</div></div>
+          </div>
+          <!-- GRAFIK BARU -->
+          <div class="panel-box">
+            <div class="panel-title"><i class="fas fa-chart-pie" style="color: var(--accent);"></i> Distribusi Pengguna per Role</div>
+            <div class="overview-chart-wrap"><canvas id="adminChartUserRoles" height="90"></canvas></div>
+          </div>
+          <div class="panel-box">
+            <div class="panel-title"><i class="fas fa-chart-bar" style="color: var(--accent);"></i> Status Pengumpulan Tugas</div>
+            <div class="overview-chart-wrap"><canvas id="adminChartSubmissionStatus" height="90"></canvas></div>
+          </div>
+          <div class="panel-box">
+            <div class="panel-title"><i class="fas fa-chart-simple" style="color: var(--accent);"></i> Jumlah Siswa per Kelas (Top 10)</div>
+            <div class="overview-chart-wrap"><canvas id="adminChartClassStudents" height="90"></canvas></div>
+          </div>
+          <!-- RINGKASAN LAMA — JANGAN DIUBAH -->
           <div class="panel-box"><div class="panel-title">Ringkasan</div><p class="lms-muted">Pilih menu di sidebar kiri untuk mengelola konten LMS.</p></div>
         </div>
 
@@ -520,6 +696,75 @@
           </div>
         </div>
 
+        <!-- ============================================================ -->
+        <!-- TAMBAHAN BARU: ADMIN — RAPOR DIGITAL (Tahap 3B)              -->
+        <!-- ============================================================ -->
+        <div id="admin-view-rapor" class="admin-view hidden">
+          <h2 style="margin-bottom: 1.5rem;">Rapor Digital</h2>
+
+          <!-- 1. Form CRUD Periode Rapor -->
+          <div class="panel-box">
+            <div class="panel-title"><span><i class="fas fa-calendar-plus" style="color: var(--accent);"></i> Buat Periode Rapor</span></div>
+            <form onsubmit="adminCreateRaporPeriod(event)">
+              <div class="lms-grid">
+                <div class="lms-field"><label>Nama Periode</label><input id="rpName" required placeholder="Contoh: Rapor Semester Ganjil 2025/2026"></div>
+                <div class="lms-field"><label>Tipe</label>
+                  <select id="rpType" required>
+                    <option value="bulanan">Bulanan</option>
+                    <option value="semester">Semester</option>
+                    <option value="tahunan">Tahunan</option>
+                  </select>
+                </div>
+                <div class="lms-field"><label>Tanggal Mulai</label><input id="rpStart" type="date" required></div>
+                <div class="lms-field"><label>Tanggal Selesai</label><input id="rpEnd" type="date" required></div>
+              </div>
+              <label class="lms-muted" style="display:block;margin-bottom:.6rem"><input type="checkbox" id="rpPublish"> Publish (langsung tampil ke siswa)</label>
+              <button type="submit" class="lms-action primary"><i class="fas fa-save"></i> Simpan Periode</button>
+            </form>
+          </div>
+
+          <!-- Tabel Daftar Periode -->
+          <div class="panel-box">
+            <div class="panel-title"><span><i class="fas fa-list" style="color: var(--accent);"></i> Daftar Periode</span><button class="lms-action sm" onclick="loadAdminRaporPeriods()"><i class="fas fa-sync"></i> Refresh</button></div>
+            <div class="table-responsive">
+              <table>
+                <thead><tr><th>Nama</th><th>Tipe</th><th>Mulai</th><th>Selesai</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody id="adminRaporPeriodList"><tr><td colspan="6" style="text-align:center;">Memuat...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2. Panel Filter & Generate Rapor -->
+          <div class="panel-box">
+            <div class="panel-title"><span><i class="fas fa-filter" style="color: var(--accent);"></i> Filter & Generate</span></div>
+            <div class="lms-grid">
+              <div class="lms-field"><label>Periode Rapor</label><select id="raporPeriodFilter"><option value="">Pilih periode...</option></select></div>
+              <div class="lms-field"><label>Kelas</label><select id="raporClassFilter"><option value="">Pilih kelas...</option></select></div>
+              <div class="lms-field"><label>Siswa (opsional)</label><select id="raporStudentFilter"><option value="">Semua siswa</option></select></div>
+            </div>
+            <div class="lms-toolbar" style="margin-top: 0.5rem;">
+              <button class="lms-action success" id="btnGenerateRapor" onclick="adminGenerateRapor()"><i class="fas fa-gears"></i> ⚙️ Generate Rapor</button>
+              <button class="lms-action primary" onclick="loadAdminRapor()"><i class="fas fa-sync"></i> Tampilkan Rapor</button>
+            </div>
+          </div>
+
+          <!-- Tabel Rapor Hasil -->
+          <div class="panel-box">
+            <div class="panel-title"><span><i class="fas fa-table-list" style="color: var(--accent);"></i> Daftar Rapor</span></div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Siswa</th><th>Mapel</th><th>Rata-rata</th><th>Tugas</th>
+                    <th>Kehadiran</th><th>Catatan Guru</th><th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="adminRaporList"><tr><td colspan="7" style="text-align:center;">Pilih filter lalu klik "Tampilkan Rapor".</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- NEWS -->
         <div id="admin-view-news" class="admin-view hidden">
           <h2 style="margin-bottom: 1.5rem;">Berita</h2>
@@ -705,6 +950,8 @@
         <button class="sidebar-item" onclick="guruNav('assignments', this)"><i class="fas fa-tasks"></i> Tugas</button>
         <button class="sidebar-item" onclick="guruNav('grading', this)"><i class="fas fa-check-double"></i> Penilaian</button>
         <button class="sidebar-item" onclick="window.open('buat_kuis.html', '_blank')"><i class="fas fa-file-signature"></i> buat Kuis</button>
+        <!-- TAMBAHAN BARU: menu Rapor Guru -->
+        <button class="sidebar-item" onclick="guruNav('rapor', this)"><i class="fas fa-file-lines"></i> Rapor Siswa</button>
         <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="guruNav('menus', this)"><i class="fas fa-link"></i> Kelola Menu Siswa</button>
         <button class="sidebar-item" onclick="guruNav('files', this)"><i class="fas fa-folder"></i> File Saya</button>
@@ -721,6 +968,23 @@
             <div class="kpi-card"><div class="kpi-num" id="guruStatGroups">0</div><div class="kpi-label">Grup Diampu</div></div>
             <div class="kpi-card"><div class="kpi-num" id="guruStatStudents">0</div><div class="kpi-label">Total Siswa</div></div>
             <div class="kpi-card"><div class="kpi-num" id="guruStatAssignments">0</div><div class="kpi-label">Tugas Aktif</div></div>
+          </div>
+          <!-- KPI BARU GURU -->
+          <div class="grid-kpi">
+            <div class="kpi-card"><div class="kpi-num" id="guruStatGraded">0</div><div class="kpi-label">Tugas Dinilai</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="guruStatMaterials">0</div><div class="kpi-label">Materi Publik</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="guruStatSchedules">0</div><div class="kpi-label">Total Jadwal</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="guruStatAvgScore">0</div><div class="kpi-label">Rata-rata Nilai Siswa</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="guruStatQuizDone">-</div><div class="kpi-label">Kuis Dikerjakan</div></div>
+          </div>
+          <!-- GRAFIK BARU GURU -->
+          <div class="panel-box">
+            <div class="panel-title"><i class="fas fa-chart-pie" style="color: var(--accent);"></i> Status Pengumpulan Tugas</div>
+            <div class="overview-chart-wrap"><canvas id="guruChartSubmissionStatus" height="90"></canvas></div>
+          </div>
+          <div class="panel-box">
+            <div class="panel-title"><i class="fas fa-chart-bar" style="color: var(--accent);"></i> Rata-rata Nilai per Kelas</div>
+            <div class="overview-chart-wrap"><canvas id="guruChartAvgPerClass" height="90"></canvas></div>
           </div>
           <div class="panel-box"><div class="panel-title">Ringkasan</div><p class="lms-muted">Pilih menu di sidebar kiri untuk mengelola grup dan materi.</p></div>
         </div>
@@ -838,6 +1102,33 @@
           </div>
         </div>
 
+        <!-- TAMBAHAN BARU: GURU — RAPOR SISWA (Tahap 3B) -->
+        <div id="guru-view-rapor" class="guru-view hidden">
+          <h2 style="margin-bottom: 1.5rem;">Rapor Siswa</h2>
+          <div class="panel-box">
+            <div class="panel-title"><span><i class="fas fa-filter" style="color: var(--accent);"></i> Filter Rapor</span></div>
+            <div class="lms-grid">
+              <div class="lms-field"><label>Periode Rapor</label><select id="guruRaporPeriodFilter"><option value="">Pilih periode...</option></select></div>
+              <div class="lms-field"><label>Kelas Saya</label><select id="guruRaporClassFilter"><option value="">Pilih kelas...</option></select></div>
+            </div>
+            <button class="lms-action primary" onclick="loadGuruRapor()"><i class="fas fa-sync"></i> Tampilkan Rapor</button>
+          </div>
+          <div class="panel-box">
+            <div class="panel-title"><span><i class="fas fa-table-list" style="color: var(--accent);"></i> Daftar Rapor Siswa</span></div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Siswa</th><th>Mapel</th><th>Rata-rata</th><th>Tugas</th>
+                    <th>Kehadiran</th><th>Catatan Guru</th><th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="guruRaporList"><tr><td colspan="7" style="text-align:center;">Pilih filter lalu klik "Tampilkan Rapor".</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- FILES -->
                 <!-- GURU MENUS (KELOLA MENU SISWA) -->
         <div id="guru-view-menus" class="guru-view hidden">
@@ -931,6 +1222,9 @@
         <button class="sidebar-item" onclick="siswaNav('assignments', this)"><i class="fas fa-pen-to-square"></i> Tugas Saya</button>
         <button class="sidebar-item" onclick="window.open('kuis.html?siswa_id=' + currentUser.id + '&kelas=' + currentProfile.kelas + '&nama=' + encodeURIComponent(currentProfile.full_name), '_blank')"><i class="fas fa-pen-to-square"></i> Kerjakan Kuis</button>
         <div class="sidebar-divider"></div>
+        <!-- TAMBAHAN BARU: menu Rapor Siswa -->
+        <button class="sidebar-item" onclick="siswaNav('rapor', this)"><i class="fas fa-file-lines"></i> Rapor Saya</button>
+        <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="siswaNav('teachermenus', this)"><i class="fas fa-external-link-alt"></i> Materi </button>
         <button class="sidebar-item" onclick="siswaNav('files', this)"><i class="fas fa-folder-open"></i> File Kelas</button>
       </nav>
@@ -946,6 +1240,24 @@
             <div class="kpi-card"><div class="kpi-num" id="siswaStatGroups">0</div><div class="kpi-label">Grup Diikuti</div></div>
             <div class="kpi-card"><div class="kpi-num" id="siswaStatAssignments">0</div><div class="kpi-label">Tugas Aktif</div></div>
             <div class="kpi-card"><div class="kpi-num" id="siswaStatSubmitted">0</div><div class="kpi-label">Sudah Dikumpulkan</div></div>
+          </div>
+          <!-- KPI BARU SISWA -->
+          <div class="grid-kpi">
+            <div class="kpi-card"><div class="kpi-num" id="siswaStatPending">0</div><div class="kpi-label">Tugas Belum Dikumpulkan</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="siswaStatAvgScore">0</div><div class="kpi-label">Rata-rata Nilai Tugas</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="siswaStatQuizDone">0</div><div class="kpi-label">Kuis Dikerjakan</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="siswaStatQuizAvg">-</div><div class="kpi-label">Rata-rata Nilai Kuis</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="siswaStatAttendance">-</div><div class="kpi-label">Persentase Kehadiran</div></div>
+            <div class="kpi-card"><div class="kpi-num" id="siswaStatMaterials">0</div><div class="kpi-label">Materi Tersedia</div></div>
+          </div>
+          <!-- GRAFIK BARU SISWA -->
+          <div class="panel-box">
+            <div class="panel-title"><i class="fas fa-chart-pie" style="color: var(--accent);"></i> Status Tugas</div>
+            <div class="overview-chart-wrap"><canvas id="siswaChartAssignmentStatus" height="90"></canvas></div>
+          </div>
+          <div class="panel-box">
+            <div class="panel-title"><i class="fas fa-chart-bar" style="color: var(--accent);"></i> Rata-rata Nilai per Mapel</div>
+            <div class="overview-chart-wrap"><canvas id="siswaChartScorePerSubject" height="90"></canvas></div>
           </div>
           <div class="panel-box"><div class="panel-title">Ringkasan</div><p class="lms-muted">Pilih menu di sidebar kiri untuk melihat jadwal, materi, dan tugas.</p></div>
         </div>
@@ -983,6 +1295,68 @@
           <div class="panel-box">
             <div class="panel-title"><span>Tugas & Pengumpulan</span><button class="lms-action sm" onclick="loadSiswaAssignments()"><i class="fas fa-sync"></i> Refresh</button></div>
             <div id="siswaAssignmentList"><div class="lms-empty">Memuat...</div></div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAMBAHAN BARU: SISWA — RAPOR SAYA + GRAFIK + CETAK (Tahap 3B) -->
+        <!-- ============================================================ -->
+        <div id="siswa-view-rapor" class="siswa-view hidden">
+          <h2 style="margin-bottom: 1.5rem;">Rapor Saya</h2>
+
+          <!-- Filter + Cetak (no-print) -->
+          <div class="panel-box no-print">
+            <div class="panel-title"><span><i class="fas fa-filter" style="color: var(--accent);"></i> Filter Rapor</span></div>
+            <div class="lms-grid">
+              <div class="lms-field"><label>Periode Rapor</label><select id="siswaRaporPeriodFilter"><option value="">Pilih periode...</option></select></div>
+            </div>
+            <div class="lms-toolbar" style="margin-top: 0.5rem;">
+              <button class="lms-action primary" onclick="loadSiswaRapor()"><i class="fas fa-sync"></i> Tampilkan Rapor</button>
+              <button class="lms-action success" onclick="cetakRaporSiswa()"><i class="fas fa-print"></i> 🖨️ Cetak Rapor / PDF</button>
+            </div>
+          </div>
+
+          <!-- Konten yang akan dicetak -->
+          <div id="siswaRaporContent">
+            <div class="panel-box">
+              <div class="rapor-header-print">
+                <h2>RAPOR DIGITAL SISWA</h2>
+                <p>EduSmart LMS — Bimbel Cerdas</p>
+                <p id="siswaRaporPeriodeInfo" style="margin-top:4px;font-weight:700;">Periode: -</p>
+              </div>
+
+              <div class="lms-muted" style="margin-bottom:0.8rem;">
+                <b>Nama Siswa:</b> <span id="siswaRaporNama">-</span> |
+                <b>Kelas:</b> <span id="siswaRaporKelas">-</span>
+              </div>
+
+              <div class="table-responsive">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Mata Pelajaran</th>
+                      <th>Rata-rata Nilai</th>
+                      <th>Tugas Selesai</th>
+                      <th>Kehadiran</th>
+                      <th>Catatan Guru</th>
+                    </tr>
+                  </thead>
+                  <tbody id="siswaRaporTableBody">
+                    <tr><td colspan="5" style="text-align:center;">Pilih periode lalu klik "Tampilkan Rapor".</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 3. Grafik Chart.js -->
+              <div class="rapor-chart-wrap">
+                <h4><i class="fas fa-chart-line" style="color: var(--accent);"></i> Perkembangan Nilai per Tugas</h4>
+                <canvas id="siswaRaporLineChart" height="120"></canvas>
+              </div>
+              <div class="rapor-chart-wrap">
+                <h4><i class="fas fa-chart-column" style="color: var(--accent);"></i> Rata-rata Nilai per Mapel</h4>
+                <canvas id="siswaRaporBarChart" height="120"></canvas>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1166,7 +1540,9 @@ const ADMIN_LOADERS = {
   files: () => loadAdminFiles(),
   settings: () => { loadCloudinarySettings(); loadAdminSettings(); },
   stats: () => loadAdminStats(),
-  pendaftar: () => loadAdminPendaftar() // <--- CUKUP TAMBAHKAN BARIS INI SAJA
+  pendaftar: () => loadAdminPendaftar(), // <--- CUKUP TAMBAHKAN BARIS INI SAJA
+  // TAMBAHAN BARU: loader rapor admin
+  rapor: () => { loadAdminRaporPeriods(); loadAdminClasses(); loadAdminRapor(); }
 };
 
 function adminNav(view, btn) {
@@ -1183,7 +1559,9 @@ function guruNav(view, btn) {
     materials: () => { loadGuruGroupOptions(); loadGuruMaterials(); },
     assignments: () => { loadGuruGroupOptions(); loadGuruAssignments(); },
     grading: () => loadGuruAssignmentOptions(),
-    files: () => loadGuruFiles()
+    files: () => loadGuruFiles(),
+    // TAMBAHAN BARU: loader rapor guru
+    rapor: () => { loadGuruRaporPeriods(); loadGuruGroupOptions(); loadGuruRapor(); }
   };
   map[view]?.();
 }
@@ -1196,7 +1574,9 @@ function siswaNav(view, btn) {
     schedules: () => loadSiswaSchedules(),
     materials: () => loadSiswaMaterials(),
     assignments: () => loadSiswaAssignments(),
-    files: () => loadSiswaFiles()
+    files: () => loadSiswaFiles(),
+    // TAMBAHAN BARU: loader rapor siswa
+    rapor: () => { loadSiswaRaporPeriods(); loadSiswaRapor(); }
   };
   map[view]?.();
 }
@@ -1328,6 +1708,8 @@ async function handleLogout() {
   await supabaseClient.auth.signOut();
   currentUser = null;
   currentProfile = null;
+  NOTIF_CACHE.items = [];           // BARU
+  NOTIF_CACHE.isOpen = false;       // BARU
   showToast('👋 Berhasil keluar');
   showLoginView();
 }
@@ -1353,6 +1735,7 @@ function renderDashboardView() {
     showToast('Role tidak dikenali: ' + currentProfile.role);
     showLoginView();
   }
+  loadNotifications();
 }
 
 function showLoginView() {
@@ -1381,6 +1764,160 @@ async function loadAdminOverview() {
     document.getElementById('statTotalGroup').innerText = clsRes.count || 0;
   } catch (e) {
     showToast('Gagal memuat ringkasan: ' + e.message);
+  }
+  // TAMBAHAN BARU: statistik lengkap + grafik
+  try {
+    await loadAdminOverviewStats();
+  } catch (e) {
+    console.warn('Gagal memuat statistik overview admin:', e.message);
+  }
+}
+
+// TAMBAHAN BARU: statistik lengkap admin
+async function loadAdminOverviewStats() {
+  const data = {};
+  try {
+    const [pendRes, clsRes, subjRes, asgRes, matRes, gradedRes, reportRes, subAllRes, membersRes] = await Promise.all([
+      supabaseClient.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'siswa').eq('is_active', false),
+      supabaseClient.from('classes').select('id', { count: 'exact', head: true }),
+      supabaseClient.from('subjects').select('id', { count: 'exact', head: true }),
+      supabaseClient.from('assignments').select('id', { count: 'exact', head: true }).eq('is_published', true),
+      supabaseClient.from('learning_materials').select('id', { count: 'exact', head: true }).eq('is_published', true),
+      supabaseClient.from('assignment_submissions').select('id', { count: 'exact', head: true }).eq('status', 'dinilai'),
+      supabaseClient.from('student_reports').select('id', { count: 'exact', head: true }),
+      supabaseClient.from('assignment_submissions').select('score').eq('status', 'dinilai'),
+      supabaseClient.from('class_members').select('class_id, classes:class_id(class_name)')
+    ]);
+
+    const setKpi = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+
+    setKpi('statPendaftarPending', pendRes.count || 0);
+    setKpi('statTotalClasses', clsRes.count || 0);
+    setKpi('statTotalSubjects', subjRes.count || 0);
+    setKpi('statTotalAssignments', asgRes.count || 0);
+    setKpi('statTotalMaterials', matRes.count || 0);
+    setKpi('statTotalGraded', gradedRes.count || 0);
+    setKpi('statTotalReports', reportRes.count || 0);
+
+    const scores = (subAllRes.data || []).map(s => Number(s.score)).filter(n => Number.isFinite(n));
+    const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+    setKpi('statAvgGlobalScore', avg !== null ? avg.toFixed(2) : '0');
+
+    // Kumpulkan data grafik
+    data.roles = {
+      admin: (await supabaseClient.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'admin')).count || 0,
+      guru: (await supabaseClient.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'guru')).count || 0,
+      siswa: (await supabaseClient.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'siswa')).count || 0
+    };
+
+    // Submission per status (terkirim vs dinilai)
+    const [terkirimRes, dinilaiRes] = await Promise.all([
+      supabaseClient.from('assignment_submissions').select('id', { count: 'exact', head: true }).eq('status', 'terkirim'),
+      supabaseClient.from('assignment_submissions').select('id', { count: 'exact', head: true }).eq('status', 'dinilai')
+    ]);
+    data.submissionStatus = {
+      terkirim: terkirimRes.count || 0,
+      dinilai: dinilaiRes.count || 0
+    };
+
+    // Siswa per kelas (top 10)
+    const perClass = {};
+    (membersRes.data || []).forEach(m => {
+      const name = m.classes?.class_name || 'Tanpa Kelas';
+      perClass[name] = (perClass[name] || 0) + 1;
+    });
+    data.classStudents = Object.entries(perClass)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+
+    renderAdminOverviewCharts(data);
+  } catch (e) {
+    console.warn('loadAdminOverviewStats error:', e.message);
+    renderAdminOverviewCharts(data);
+  }
+}
+
+// TAMBAHAN BARU: render grafik admin
+function renderAdminOverviewCharts(data) {
+  if (typeof Chart === 'undefined') { console.warn('Chart.js belum dimuat'); return; }
+
+  const destroyIf = (key) => { if (window[key]) { try { window[key].destroy(); } catch (_) {} window[key] = null; } };
+
+  // Doughnut: distribusi role
+  destroyIf('__adminChartUserRoles');
+  const rolesCanvas = document.getElementById('adminChartUserRoles');
+  if (rolesCanvas) {
+    const roles = data?.roles || { admin: 0, guru: 0, siswa: 0 };
+    window.__adminChartUserRoles = new Chart(rolesCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Admin', 'Guru', 'Siswa'],
+        datasets: [{
+          data: [roles.admin || 0, roles.guru || 0, roles.siswa || 0],
+          backgroundColor: ['#fce7f3', '#dbeafe', '#fef3c7'],
+          borderColor: ['#9d174d', '#1e40af', '#92400e'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+  }
+
+  // Bar: submission per status
+  destroyIf('__adminChartSubmissionStatus');
+  const subCanvas = document.getElementById('adminChartSubmissionStatus');
+  if (subCanvas) {
+    const st = data?.submissionStatus || { terkirim: 0, dinilai: 0 };
+    window.__adminChartSubmissionStatus = new Chart(subCanvas, {
+      type: 'bar',
+      data: {
+        labels: ['Terkirim', 'Dinilai'],
+        datasets: [{
+          label: 'Jumlah Submission',
+          data: [st.terkirim || 0, st.dinilai || 0],
+          backgroundColor: ['#f59e0b', '#10b981'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+  }
+
+  // Bar horizontal: jumlah siswa per kelas top 10
+  destroyIf('__adminChartClassStudents');
+  const classCanvas = document.getElementById('adminChartClassStudents');
+  if (classCanvas) {
+    const rows = data?.classStudents || [];
+    window.__adminChartClassStudents = new Chart(classCanvas, {
+      type: 'bar',
+      data: {
+        labels: rows.map(r => r[0]),
+        datasets: [{
+          label: 'Jumlah Siswa',
+          data: rows.map(r => r[1]),
+          backgroundColor: 'rgba(37,99,235,0.65)',
+          borderColor: '#1d4ed8',
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
   }
 }
 
@@ -1448,7 +1985,13 @@ async function adminCreateUser(e) {
     const { data, error } = await tempClient.auth.signUp({
       email: payload.email,
       password: document.getElementById('nuPassword').value,
-      options: { data: { full_name: payload.full_name, role: payload.role, nip_nisn: payload.nip_nisn, kelas: payload.kelas } }
+      options: { data: {
+  full_name: payload.full_name,
+  role: payload.role,
+  nip_nisn: payload.nip_nisn,
+  kelas: payload.kelas,
+  is_active: true  // BARU: admin buat akun = langsung aktif
+} }
     });
     if (error) throw error;
     showToast('✅ Akun berhasil dibuat: ' + payload.email);
@@ -1508,6 +2051,8 @@ async function loadAdminClasses() {
     fillSelect('nschClass', CACHE.allClasses, 'Pilih grup...', 'id', c => c.class_name);
     fillSelect('nmClass', CACHE.allClasses, 'Pilih grup...', 'id', c => c.class_name);
     fillSelect('naClass', CACHE.allClasses, 'Pilih grup...', 'id', c => c.class_name);
+    // TAMBAHAN BARU: isi dropdown filter rapor admin
+    fillSelect('raporClassFilter', CACHE.allClasses, 'Pilih kelas...', 'id', c => c.class_name);
     if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada grup.</div>'; return; }
     el.innerHTML = data.map(c => `
       <div class="lms-card">
@@ -1677,6 +2222,14 @@ async function adminCreateSchedule(e) {
     });
     if (error) throw error;
     showToast('✅ Jadwal dibuat.');
+        // NOTIF
+    createNotificationsForClass(Number(document.getElementById('nschClass').value), {
+      title: '📅 Jadwal Baru',
+      message: document.getElementById('nschTitle').value.trim(),
+      type: 'schedule',
+      link: '#schedules',
+      excludeUserId: currentUser.id
+    });
     e.target.reset();
     await loadAdminSchedules();
   } catch (e) { showToast('❌ ' + e.message); }
@@ -1730,6 +2283,16 @@ async function adminCreateMaterial(e) {
     });
     if (error) throw error;
     showToast('✅ Materi dibuat.');
+        // NOTIF: kirim ke siswa jika published
+    if (document.getElementById('nmPublished').checked) {
+      createNotificationsForClass(Number(document.getElementById('nmClass').value), {
+        title: '📚 Materi Baru',
+        message: document.getElementById('nmTitle').value.trim(),
+        type: 'material',
+        link: '#materials',
+        excludeUserId: currentUser.id
+      });
+    }
     e.target.reset();
     await loadAdminMaterials();
   } catch (e) { showToast('❌ ' + e.message); }
@@ -1792,6 +2355,16 @@ async function adminCreateAssignment(e) {
     });
     if (error) throw error;
     showToast('✅ Tugas dibuat.');
+        // NOTIF: kirim ke siswa di kelas
+    if (document.getElementById('naPublished').checked) {
+      createNotificationsForClass(Number(document.getElementById('naClass').value), {
+        title: '📝 Tugas Baru',
+        message: document.getElementById('naTitle').value.trim(),
+        type: 'assignment',
+        link: '#assignments',
+        excludeUserId: currentUser.id
+      });
+    }
     e.target.reset();
     await loadAdminAssignments();
     await loadAdminAssignmentOptions();
@@ -1862,12 +2435,22 @@ async function adminGradeSubmission(id) {
   const feedback = document.getElementById('adFeedback-' + id).value.trim();
   if (!Number.isFinite(score) || score < 0 || score > 100) { showToast('⚠️ Nilai harus 0–100.'); return; }
   try {
-    const { error } = await supabaseClient.from('assignment_submissions').update({
+        const { data: subData, error } = await supabaseClient.from('assignment_submissions').update({
       score, feedback, status: 'dinilai',
       graded_by: currentUser.id, graded_at: new Date().toISOString(), updated_at: new Date().toISOString()
-    }).eq('id', id);
+    }).eq('id', id).select('student_id, assignment_id').single();
     if (error) throw error;
     showToast('✅ Nilai disimpan.');
+    // NOTIF: kirim ke siswa yang dinilai
+    if (subData?.student_id) {
+      createNotification(
+        subData.student_id,
+        '✅ Nilai Tugas',
+        `Nilai tugas kamu: ${score}${feedback ? ' — ' + feedback : ''}`,
+        'grade',
+        '#assignments'
+      );
+    }
     await loadAdminSubmissions();
   } catch (e) { showToast('❌ ' + e.message); }
 }
@@ -1905,6 +2488,13 @@ async function adminCreateNews(e) {
     });
     if (error) throw error;
     showToast('✅ Berita dibuat.');
+        // NOTIF: kirim ke SEMUA user
+    createNotificationsForAllUsers({
+      title: '📢 Pengumuman',
+      message: document.getElementById('nwTitle').value.trim() || 'Berita baru diterbitkan',
+      type: 'announcement',
+      link: '#news'
+    });
     e.target.reset();
     await loadAdminNews();
   } catch (e) { showToast('❌ ' + e.message); }
@@ -2110,7 +2700,7 @@ async function loadAdminFiles() {
 function renderFileList() {
   const el = document.getElementById('adminFileList');
   const q = (document.getElementById('fileSearch')?.value || '').toLowerCase();
-  const pf = document.getElementById('filePurposeFilter')?.value || '';
+  const pf = (document.getElementById('filePurposeFilter')?.value || '');
   const rows = CACHE.files.filter(f => {
     if (pf && f.purpose !== pf) return false;
     if (q && !((f.original_filename || '') + ' ' + (f.caption || '') + ' ' + (f.public_id || '')).toLowerCase().includes(q)) return false;
@@ -2241,6 +2831,160 @@ async function loadGuruOverview() {
   } catch (e) {
     showToast('Gagal memuat ringkasan guru: ' + e.message);
   }
+  // TAMBAHAN BARU: statistik lengkap + grafik guru
+  try {
+    await loadGuruOverviewStats();
+  } catch (e) {
+    console.warn('Gagal memuat statistik overview guru:', e.message);
+  }
+}
+
+// TAMBAHAN BARU: statistik lengkap guru
+async function loadGuruOverviewStats() {
+  const data = { avgPerClass: [] };
+  try {
+    // Ambil grup milik guru
+    const { data: myGroups } = await supabaseClient.from('classes').select('id, class_name').eq('teacher_id', currentUser.id);
+    const groupIds = (myGroups || []).map(g => g.id);
+
+    if (!groupIds.length) {
+      ['guruStatGraded', 'guruStatMaterials', 'guruStatSchedules', 'guruStatAvgScore', 'guruStatQuizDone'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.innerText = '0';
+      });
+      renderGuruOverviewCharts(data);
+      return;
+    }
+
+    // Ambil assignment IDs milik guru (via class)
+    const { data: asgs } = await supabaseClient.from('assignments').select('id, class_id').in('class_id', groupIds);
+    const assignmentIds = (asgs || []).map(a => a.id);
+
+    // Kumpulkan data submission di assignment milik guru
+    let subs = [];
+    if (assignmentIds.length) {
+      const { data: subData } = await supabaseClient.from('assignment_submissions')
+        .select('id, status, score, assignment_id')
+        .in('assignment_id', assignmentIds);
+      subs = subData || [];
+    }
+
+    const gradedCount = subs.filter(s => s.status === 'dinilai').length;
+    const setKpi = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    setKpi('guruStatGraded', gradedCount);
+
+    // Materi publik di kelas guru
+    const { count: matCount } = await supabaseClient.from('learning_materials')
+      .select('id', { count: 'exact', head: true })
+      .in('class_id', groupIds)
+      .eq('is_published', true);
+    setKpi('guruStatMaterials', matCount || 0);
+
+    // Jadwal di kelas guru
+    const { count: schCount } = await supabaseClient.from('schedules')
+      .select('id', { count: 'exact', head: true })
+      .in('class_id', groupIds);
+    setKpi('guruStatSchedules', schCount || 0);
+
+    // Rata-rata nilai siswa (submission dinilai)
+    const scoreVals = subs.filter(s => s.status === 'dinilai' && s.score != null).map(s => Number(s.score)).filter(n => Number.isFinite(n));
+    const avg = scoreVals.length ? scoreVals.reduce((a, b) => a + b, 0) / scoreVals.length : null;
+    setKpi('guruStatAvgScore', avg !== null ? avg.toFixed(2) : '0');
+
+    // Kuis dikerjakan: hasil_ujian untuk siswa di kelas guru
+    let quizDone = '-';
+    try {
+      // Ambil siswa di kelas guru
+      const { data: members } = await supabaseClient.from('class_members').select('student_id').in('class_id', groupIds);
+      const studentIds = [...new Set((members || []).map(m => m.student_id).filter(Boolean))];
+      if (studentIds.length) {
+        const { count: qCount, error: qErr } = await supabaseClient.from('hasil_ujian')
+          .select('id', { count: 'exact', head: true })
+          .in('siswa_id', studentIds);
+        if (!qErr) quizDone = qCount || 0;
+      }
+    } catch (e) { console.warn('Gagal hitung kuis guru:', e.message); }
+    setKpi('guruStatQuizDone', quizDone);
+
+    // Data grafik: status submission
+    data.submissionStatus = {
+      terkirim: subs.filter(s => s.status !== 'dinilai').length,
+      dinilai: gradedCount
+    };
+
+    // Rata-rata per kelas
+    const avgMap = {};
+    (asgs || []).forEach(a => {
+      const classSubs = subs.filter(s => s.assignment_id === a.id && s.status === 'dinilai' && s.score != null);
+      const vals = classSubs.map(s => Number(s.score)).filter(n => Number.isFinite(n));
+      if (vals.length) {
+        if (!avgMap[a.class_id]) avgMap[a.class_id] = { sum: 0, count: 0 };
+        avgMap[a.class_id].sum += vals.reduce((x, y) => x + y, 0);
+        avgMap[a.class_id].count += vals.length;
+      }
+    });
+    data.avgPerClass = (myGroups || []).map(g => {
+      const rec = avgMap[g.id];
+      return { label: g.class_name, value: rec && rec.count ? rec.sum / rec.count : 0 };
+    });
+
+    renderGuruOverviewCharts(data);
+  } catch (e) {
+    console.warn('loadGuruOverviewStats error:', e.message);
+    renderGuruOverviewCharts(data);
+  }
+}
+
+// TAMBAHAN BARU: render grafik guru
+function renderGuruOverviewCharts(data) {
+  if (typeof Chart === 'undefined') return;
+  const destroyIf = (key) => { if (window[key]) { try { window[key].destroy(); } catch (_) {} window[key] = null; } };
+
+  // Doughnut status submission
+  destroyIf('__guruChartSubmissionStatus');
+  const subCanvas = document.getElementById('guruChartSubmissionStatus');
+  if (subCanvas) {
+    const st = data?.submissionStatus || { terkirim: 0, dinilai: 0 };
+    window.__guruChartSubmissionStatus = new Chart(subCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Terkirim', 'Dinilai'],
+        datasets: [{
+          data: [st.terkirim || 0, st.dinilai || 0],
+          backgroundColor: ['#f59e0b', '#10b981'],
+          borderColor: ['#b45309', '#047857'],
+          borderWidth: 1
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  // Bar rata-rata nilai per kelas
+  destroyIf('__guruChartAvgPerClass');
+  const avgCanvas = document.getElementById('guruChartAvgPerClass');
+  if (avgCanvas) {
+    const rows = data?.avgPerClass || [];
+    window.__guruChartAvgPerClass = new Chart(avgCanvas, {
+      type: 'bar',
+      data: {
+        labels: rows.map(r => r.label),
+        datasets: [{
+          label: 'Rata-rata Nilai',
+          data: rows.map(r => Number(r.value.toFixed(2))),
+          backgroundColor: 'rgba(37,99,235,0.65)',
+          borderColor: '#1d4ed8',
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } }
+      }
+    });
+  }
 }
 
 // ---------- GROUPS (GRUP SAYA) ----------
@@ -2255,6 +2999,8 @@ async function loadGuruGroups() {
     fillSelect('gschClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
     fillSelect('gmatClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
     fillSelect('gasgClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
+    // TAMBAHAN BARU: isi dropdown filter rapor guru
+    fillSelect('guruRaporClassFilter', GURU_CACHE.groups, 'Pilih kelas...', 'id', g => g.class_name);
     if (!data?.length) {
       el.innerHTML = '<div class="lms-empty">Anda belum mengampu grup. Buat grup baru di atas.</div>';
       return;
@@ -2356,8 +3102,11 @@ async function guruAddMember(e) {
   if (!classId) { showToast('⚠️ Pilih grup dulu.'); return; }
   const email = document.getElementById('gmStudentEmail').value.trim().toLowerCase();
   try {
-    const { data: prof, error: pErr } = await supabaseClient.from('profiles').select('id, role, full_name').eq('email', email).maybeSingle();
+        // BARU: pakai RPC karena RLS profiles sekarang membatasi SELECT
+    const { data: profArr, error: pErr } = await supabaseClient
+      .rpc('find_student_by_email', { p_email: email });
     if (pErr) throw pErr;
+    const prof = profArr?.[0];
     if (!prof) throw new Error('Siswa dengan email tersebut tidak ditemukan.');
     if (prof.role !== 'siswa') throw new Error('Akun bukan siswa (role: ' + prof.role + ').');
     const { error } = await supabaseClient.from('class_members').insert({
@@ -2394,6 +3143,8 @@ async function loadGuruGroupOptions() {
     fillSelect('gschClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
     fillSelect('gmatClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
     fillSelect('gasgClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
+    // TAMBAHAN BARU: isi dropdown filter rapor guru
+    fillSelect('guruRaporClassFilter', GURU_CACHE.groups, 'Pilih kelas...', 'id', g => g.class_name);
   } catch (e) { /* silent */ }
   await loadGuruSubjectOptions();
 }
@@ -2453,6 +3204,14 @@ async function guruCreateSchedule(e) {
     });
     if (error) throw error;
     showToast('✅ Jadwal dibuat.');
+        // NOTIF
+    createNotificationsForClass(Number(document.getElementById('gschClass').value), {
+      title: '📅 Jadwal Baru',
+      message: document.getElementById('gschTitle').value.trim(),
+      type: 'schedule',
+      link: '#schedules',
+      excludeUserId: currentUser.id
+    });
     e.target.reset();
     await loadGuruSchedules();
   } catch (e) { showToast('❌ ' + e.message); }
@@ -2510,6 +3269,16 @@ async function guruCreateMaterial(e) {
     });
     if (error) throw error;
     showToast('✅ Materi dibuat.');
+        // NOTIF
+    if (document.getElementById('gmatPublished').checked) {
+      createNotificationsForClass(Number(document.getElementById('gmatClass').value), {
+        title: '📚 Materi Baru',
+        message: document.getElementById('gmatTitle').value.trim(),
+        type: 'material',
+        link: '#materials',
+        excludeUserId: currentUser.id
+      });
+    }
     e.target.reset();
     await loadGuruMaterials();
   } catch (e) { showToast('❌ ' + e.message); }
@@ -2577,6 +3346,16 @@ async function guruCreateAssignment(e) {
     });
     if (error) throw error;
     showToast('✅ Tugas dibuat.');
+        // NOTIF: kirim ke siswa di kelas
+    if (document.getElementById('gasgPublished').checked) {
+      createNotificationsForClass(Number(document.getElementById('gasgClass').value), {
+        title: '📝 Tugas Baru',
+        message: document.getElementById('gasgTitle').value.trim(),
+        type: 'assignment',
+        link: '#assignments',
+        excludeUserId: currentUser.id
+      });
+    }
     e.target.reset();
     await loadGuruAssignments();
   } catch (e) { showToast('❌ ' + e.message); }
@@ -2652,12 +3431,26 @@ async function guruGradeSubmission(id) {
   const feedback = document.getElementById('grFeedback-' + id).value.trim();
   if (!Number.isFinite(score) || score < 0 || score > 100) { showToast('⚠️ Nilai harus 0–100.'); return; }
   try {
-    const { error } = await supabaseClient.from('assignment_submissions').update({
+        // UBAH BARIS 2837: tambahkan data: subData dan .select().single()
+    const { data: subData, error } = await supabaseClient.from('assignment_submissions').update({
       score, feedback, status: 'dinilai',
       graded_by: currentUser.id, graded_at: new Date().toISOString(), updated_at: new Date().toISOString()
-    }).eq('id', id);
+    }).eq('id', id).select('student_id, assignment_id').single();
+
     if (error) throw error;
     showToast('✅ Nilai disimpan.');
+
+    // NOTIF: kirim ke siswa yang dinilai (BLOK BARU)
+    if (subData?.student_id) {
+      createNotification(
+        subData.student_id,
+        '✅ Nilai Tugas',
+        `Nilai tugas kamu: ${score}${feedback ? ' — ' + feedback : ''}`,
+        'grade',
+        '#assignments'
+      );
+    }
+
     await loadGuruSubmissions();
   } catch (e) { showToast('❌ ' + e.message); }
 }
@@ -2757,6 +3550,179 @@ async function loadSiswaOverview() {
     document.getElementById('siswaStatSubmitted').innerText = subRes.count || 0;
   } catch (e) {
     showToast('Gagal memuat ringkasan siswa: ' + e.message);
+  }
+  // TAMBAHAN BARU: statistik lengkap + grafik siswa
+  try {
+    await loadSiswaOverviewStats();
+  } catch (e) {
+    console.warn('Gagal memuat statistik overview siswa:', e.message);
+  }
+}
+
+// TAMBAHAN BARU: statistik lengkap siswa
+async function loadSiswaOverviewStats() {
+  const data = { perSubject: [] };
+  try {
+    const setKpi = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+
+    // Grup siswa
+    const { data: members } = await supabaseClient.from('class_members').select('class_id').eq('student_id', currentUser.id);
+    const groupIds = [...new Set((members || []).map(m => m.class_id).filter(Boolean))];
+
+    // Tugas published di grup siswa
+    let assignments = [];
+    if (groupIds.length) {
+      const { data } = await supabaseClient.from('assignments')
+        .select('id, subject_id')
+        .in('class_id', groupIds)
+        .eq('is_published', true);
+      assignments = data || [];
+    }
+    const assignmentIds = assignments.map(a => a.id);
+
+    // Submission siswa
+    let submissions = [];
+    if (assignmentIds.length) {
+      const { data } = await supabaseClient.from('assignment_submissions')
+        .select('id, assignment_id, status, score')
+        .eq('student_id', currentUser.id)
+        .in('assignment_id', assignmentIds);
+      submissions = data || [];
+    }
+    const submittedSet = new Set(submissions.map(s => s.assignment_id));
+    const pendingCount = assignmentIds.filter(id => !submittedSet.has(id)).length;
+    setKpi('siswaStatPending', pendingCount);
+
+    // Rata-rata nilai tugas (dinilai)
+    const graded = submissions.filter(s => s.status === 'dinilai' && s.score != null).map(s => Number(s.score)).filter(n => Number.isFinite(n));
+    const avgScore = graded.length ? graded.reduce((a, b) => a + b, 0) / graded.length : null;
+    setKpi('siswaStatAvgScore', avgScore !== null ? avgScore.toFixed(2) : '0');
+
+    // Kuis dikerjakan + rata-rata nilai kuis
+    let quizDone = 0;
+    let quizAvg = '-';
+    try {
+      const { data: quizzes, error: qErr } = await supabaseClient.from('hasil_ujian')
+        .select('nilai')
+        .eq('siswa_id', currentUser.id);
+      if (!qErr) {
+        quizDone = (quizzes || []).length;
+        const qVals = (quizzes || []).map(q => Number(q.nilai)).filter(n => Number.isFinite(n));
+        if (qVals.length) quizAvg = (qVals.reduce((a, b) => a + b, 0) / qVals.length).toFixed(2);
+      }
+    } catch (e) { console.warn('Gagal hitung kuis siswa:', e.message); }
+    setKpi('siswaStatQuizDone', quizDone);
+    setKpi('siswaStatQuizAvg', quizAvg);
+
+    // Persentase kehadiran
+    let attendance = '-';
+    try {
+      const { data: att, error: attErr } = await supabaseClient.from('attendance')
+        .select('status')
+        .eq('student_id', currentUser.id);
+      if (!attErr && att?.length) {
+        const hadir = att.filter(a => String(a.status || '').toLowerCase() === 'hadir').length;
+        attendance = ((hadir / att.length) * 100).toFixed(1) + '%';
+      }
+    } catch (e) { console.warn('Gagal hitung kehadiran:', e.message); }
+    setKpi('siswaStatAttendance', attendance);
+
+    // Total materi published di grup siswa
+    let materialCount = 0;
+    if (groupIds.length) {
+      const { count } = await supabaseClient.from('learning_materials')
+        .select('id', { count: 'exact', head: true })
+        .in('class_id', groupIds)
+        .eq('is_published', true);
+      materialCount = count || 0;
+    }
+    setKpi('siswaStatMaterials', materialCount);
+
+    // Data grafik: status tugas
+    const gradedAssignmentIds = new Set(submissions.filter(s => s.status === 'dinilai').map(s => s.assignment_id));
+    const submittedNotGraded = submissions.filter(s => s.status !== 'dinilai').length;
+    data.assignmentStatus = {
+      submitted: submissions.length,
+      pending: pendingCount,
+      graded: gradedAssignmentIds.size
+    };
+
+    // Data grafik: rata-rata nilai per mapel
+    if (assignments.length) {
+      const { data: subjectRows } = await supabaseClient.from('subjects').select('id, subject_name');
+      const subjectMap = new Map((subjectRows || []).map(s => [s.id, s.subject_name]));
+      const mapScores = {};
+      assignments.forEach(a => {
+        if (!a.subject_id) return;
+        const sub = submissions.find(s => s.assignment_id === a.id && s.status === 'dinilai' && s.score != null);
+        if (!sub) return;
+        const name = subjectMap.get(a.subject_id) || 'Mapel';
+        if (!mapScores[name]) mapScores[name] = { sum: 0, count: 0 };
+        mapScores[name].sum += Number(sub.score) || 0;
+        mapScores[name].count += 1;
+      });
+      data.perSubject = Object.entries(mapScores).map(([label, rec]) => ({
+        label, value: rec.count ? rec.sum / rec.count : 0
+      }));
+    }
+
+    renderSiswaOverviewCharts(data);
+  } catch (e) {
+    console.warn('loadSiswaOverviewStats error:', e.message);
+    renderSiswaOverviewCharts(data);
+  }
+}
+
+// TAMBAHAN BARU: render grafik siswa
+function renderSiswaOverviewCharts(data) {
+  if (typeof Chart === 'undefined') return;
+  const destroyIf = (key) => { if (window[key]) { try { window[key].destroy(); } catch (_) {} window[key] = null; } };
+
+  // Doughnut status tugas
+  destroyIf('__siswaChartAssignmentStatus');
+  const asgCanvas = document.getElementById('siswaChartAssignmentStatus');
+  if (asgCanvas) {
+    const st = data?.assignmentStatus || { submitted: 0, pending: 0, graded: 0 };
+    window.__siswaChartAssignmentStatus = new Chart(asgCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Sudah Dikumpulkan', 'Belum Dikumpulkan', 'Sudah Dinilai'],
+        datasets: [{
+          data: [st.submitted || 0, st.pending || 0, st.graded || 0],
+          backgroundColor: ['#dbeafe', '#fef3c7', '#dcfce7'],
+          borderColor: ['#1e40af', '#92400e', '#166534'],
+          borderWidth: 1
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  // Bar rata-rata nilai per mapel
+  destroyIf('__siswaChartScorePerSubject');
+  const scoreCanvas = document.getElementById('siswaChartScorePerSubject');
+  if (scoreCanvas) {
+    const rows = data?.perSubject || [];
+    window.__siswaChartScorePerSubject = new Chart(scoreCanvas, {
+      type: 'bar',
+      data: {
+        labels: rows.length ? rows.map(r => r.label) : ['Belum ada data'],
+        datasets: [{
+          label: 'Rata-rata Nilai',
+          data: rows.length ? rows.map(r => Number(r.value.toFixed(2))) : [0],
+          backgroundColor: 'rgba(37,99,235,0.65)',
+          borderColor: '#1d4ed8',
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } }
+      }
+    });
   }
 }
 
@@ -3016,7 +3982,8 @@ guruNav = function(view, btn) {
     assignments: () => { loadGuruGroupOptions(); loadGuruAssignments(); },
     grading: () => loadGuruAssignmentOptions(),
     files: () => loadGuruFiles(),
-    menus: () => loadGuruMenus() // <--- Menu Baru
+    menus: () => loadGuruMenus(), // <--- Menu Baru
+    rapor: () => { loadGuruRaporPeriods(); loadGuruGroupOptions(); loadGuruRapor(); } // TAMBAHAN BARU
   };
   map[view]?.();
 };
@@ -3032,7 +3999,8 @@ siswaNav = function(view, btn) {
     materials: () => loadSiswaMaterials(),
     assignments: () => loadSiswaAssignments(),
     files: () => loadSiswaFiles(),
-    teachermenus: () => loadSiswaTeacherMenus() // <--- Menu Baru
+    teachermenus: () => loadSiswaTeacherMenus(), // <--- Menu Baru
+    rapor: () => { loadSiswaRaporPeriods(); loadSiswaRapor(); } // TAMBAHAN BARU
   };
   map[view]?.();
 };
@@ -3265,6 +4233,822 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 2000);
 });
+// ============================================================
+// MODUL NOTIFIKASI
+// ============================================================
+const NOTIF_CACHE = {
+  items: [],
+  isOpen: false
+};
+
+const NOTIF_ICONS = {
+  assignment: 'fa-tasks',
+  material: 'fa-book-open',
+  grade: 'fa-check-double',
+  schedule: 'fa-calendar-days',
+  announcement: 'fa-bullhorn',
+  info: 'fa-info-circle'
+};
+
+function timeAgo(iso) {
+  if (!iso) return '-';
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return 'Baru saja';
+  if (diff < 3600) return Math.floor(diff / 60) + ' menit lalu';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' jam lalu';
+  if (diff < 604800) return Math.floor(diff / 86400) + ' hari lalu';
+  return formatDate(iso);
+}
+
+function toggleNotifPanel(e) {
+  if (e) e.stopPropagation();
+  const panel = document.getElementById('notifPanel');
+  if (!panel) return;
+  NOTIF_CACHE.isOpen = !NOTIF_CACHE.isOpen;
+  panel.classList.toggle('show', NOTIF_CACHE.isOpen);
+  if (NOTIF_CACHE.isOpen) loadNotifications();
+}
+
+// Tutup panel saat klik di luar
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('notifPanel');
+  const btn = document.getElementById('notifBtn');
+  if (!panel || !NOTIF_CACHE.isOpen) return;
+  if (!panel.contains(e.target) && !btn?.contains(e.target)) {
+    NOTIF_CACHE.isOpen = false;
+    panel.classList.remove('show');
+  }
+});
+
+async function createNotification(userId, title, message, type = 'info', link = null) {
+  if (!userId || !title) return null;
+  try {
+    const { data, error } = await supabaseClient.from('notifications').insert({
+      user_id: userId,
+      title,
+      message: message || null,
+      type,
+      link,
+      is_read: false
+    }).select('id').single();
+    if (error) throw error;
+    return data.id;
+  } catch (e) {
+    console.warn('createNotification error:', e.message);
+    return null;
+  }
+}
+
+// Notifikasi ke semua siswa dalam kelas + cegah duplikat
+async function createNotificationsForClass(classId, payload) {
+  if (!classId) return;
+  const { userIds, excludeUserId } = payload;
+  try {
+    let ids = userIds;
+    if (!ids) {
+      const { data: members, error } = await supabaseClient
+        .from('class_members').select('student_id').eq('class_id', classId);
+      if (error) throw error;
+      ids = (members || []).map(m => m.student_id);
+    }
+    if (excludeUserId) ids = ids.filter(id => id !== excludeUserId);
+
+    // Cek duplikat: user + link + title sama dalam 5 menit terakhir
+        // Cek duplikat: user + link + title sama dalam 5 menit terakhir
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const dupQuery = supabaseClient
+      .from('notifications')
+      .select('user_id')
+      .in('user_id', ids)
+      .eq('title', payload.title)
+      .gte('created_at', fiveMinAgo);
+      
+    // Cek NULL vs string dengan benar
+    if (payload.link) {
+      dupQuery.eq('link', payload.link);
+    } else {
+      dupQuery.is('link', null);
+    }
+    
+    const { data: existing } = await dupQuery;
+    const dupIds = new Set((existing || []).map(n => n.user_id));
+    ids = ids.filter(id => !dupIds.has(id));
+
+    if (!ids.length) return;
+    const rows = ids.map(uid => ({
+      user_id: uid,
+      title: payload.title,
+      message: payload.message || null,
+      type: payload.type || 'info',
+      link: payload.link || null,
+      is_read: false
+    }));
+    const { error } = await supabaseClient.from('notifications').insert(rows);
+    if (error) throw error;
+  } catch (e) {
+    console.warn('createNotificationsForClass error:', e.message);
+  }
+}
+
+async function createNotificationsForAllUsers(payload) {
+  try {
+    const { data: users, error } = await supabaseClient.from('profiles').select('id');
+    if (error) throw error;
+    const ids = (users || []).map(u => u.id).filter(id => id !== currentUser.id);
+    if (!ids.length) return;
+    const rows = ids.map(uid => ({
+      user_id: uid,
+      title: payload.title,
+      message: payload.message || null,
+      type: payload.type || 'info',
+      link: payload.link || null,
+      is_read: false
+    }));
+    await supabaseClient.from('notifications').insert(rows);
+  } catch (e) {
+    console.warn('createNotificationsForAllUsers error:', e.message);
+  }
+}
+
+async function loadNotifications() {
+  if (!currentUser) return;
+  const listEl = document.getElementById('notifList');
+  if (!listEl) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('notifications')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+    if (error) throw error;
+    NOTIF_CACHE.items = data || [];
+    renderNotificationPanel();
+    updateNotificationBadge();
+  } catch (e) {
+    if (listEl) listEl.innerHTML = `<div class="notif-empty" style="color:var(--danger)">Gagal memuat: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderNotificationPanel() {
+  const listEl = document.getElementById('notifList');
+  if (!listEl) return;
+  if (!NOTIF_CACHE.items.length) {
+    listEl.innerHTML = '<div class="notif-empty">🔔 Belum ada notifikasi.</div>';
+    return;
+  }
+  listEl.innerHTML = NOTIF_CACHE.items.map(n => `
+    <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="handleNotifClick('${n.id}', '${escapeHtml(n.link || '')}')">
+      <div class="notif-icon ${escapeHtml(n.type || 'info')}">
+        <i class="fas ${NOTIF_ICONS[n.type] || 'fa-info-circle'}"></i>
+      </div>
+      <div class="notif-body">
+        <div class="notif-title">${escapeHtml(n.title)}</div>
+        ${n.message ? `<div class="notif-msg">${escapeHtml(n.message)}</div>` : ''}
+        <div class="notif-time">${timeAgo(n.created_at)}</div>
+      </div>
+      ${n.is_read ? '' : '<div class="notif-dot"></div>'}
+    </div>
+  `).join('');
+}
+
+function updateNotificationBadge() {
+  const badge = document.getElementById('notifBadge');
+  if (!badge) return;
+  const count = NOTIF_CACHE.items.filter(n => !n.is_read).length;
+  if (count > 0) {
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+async function handleNotifClick(id, link) {
+  const item = NOTIF_CACHE.items.find(n => n.id === id);
+  if (item && !item.is_read) {
+    try {
+      await supabaseClient.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', currentUser.id);
+      item.is_read = true;
+      renderNotificationPanel();
+      updateNotificationBadge();
+    } catch (e) { console.warn(e); }
+  }
+  const panel = document.getElementById('notifPanel');
+  if (panel) { panel.classList.remove('show'); NOTIF_CACHE.isOpen = false; }
+  if (link) {
+    // Link bisa berupa anchor view, mis. "#assignments" atau URL eksternal
+    if (link.startsWith('#')) {
+      const v = link.substring(1);
+      if (currentProfile.role === 'admin' && typeof adminNav === 'function') adminNav(v);
+      else if (currentProfile.role === 'guru' && typeof guruNav === 'function') guruNav(v);
+      else if (currentProfile.role === 'siswa' && typeof siswaNav === 'function') siswaNav(v);
+    } else {
+      window.open(link, '_blank');
+    }
+  }
+}
+
+async function markNotificationRead(id) {
+  try {
+    await supabaseClient.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', currentUser.id);
+    const item = NOTIF_CACHE.items.find(n => n.id === id);
+    if (item) item.is_read = true;
+    renderNotificationPanel();
+    updateNotificationBadge();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function markAllNotificationsRead() {
+  const unread = NOTIF_CACHE.items.filter(n => !n.is_read);
+  if (!unread.length) { showToast('Semua notifikasi sudah dibaca.'); return; }
+  try {
+    const ids = unread.map(n => n.id);
+    await supabaseClient.from('notifications').update({ is_read: true }).in('id', ids).eq('user_id', currentUser.id);
+    NOTIF_CACHE.items.forEach(n => { n.is_read = true; });
+    renderNotificationPanel();
+    updateNotificationBadge();
+    showToast('✅ Semua ditandai dibaca.');
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function deleteNotification(id) {
+  try {
+    await supabaseClient.from('notifications').delete().eq('id', id).eq('user_id', currentUser.id);
+    NOTIF_CACHE.items = NOTIF_CACHE.items.filter(n => n.id !== id);
+    renderNotificationPanel();
+    updateNotificationBadge();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function deleteAllNotifications() {
+  if (!confirm('Hapus semua notifikasi? Tidak bisa dibatalkan.')) return;
+  try {
+    await supabaseClient.from('notifications').delete().eq('user_id', currentUser.id);
+    NOTIF_CACHE.items = [];
+    renderNotificationPanel();
+    updateNotificationBadge();
+    showToast('✅ Semua notifikasi dihapus.');
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+// Polling ringan tiap 60 detik (opsional)
+setInterval(() => {
+  if (currentUser) loadNotifications();
+}, 60000);
+
+// ============================================================
+// ============================================================
+// TAMBAHAN BARU — MODUL RAPOR DIGITAL (TAHAP 3B)
+// ============================================================
+// ============================================================
+
+const RAPOR_CACHE = {
+  periods: [],
+  adminRapor: [],
+  guruRapor: [],
+  siswaRapor: []
+};
+
+// ---------- HELPER: FORMAT PERSEN ----------
+function formatPercent(val) {
+  if (val === null || val === undefined || val === '') return '-';
+  const n = Number(val);
+  if (!Number.isFinite(n)) return '-';
+  return n.toFixed(1).replace('.0', '') + '%';
+}
+
+// ============================================================
+// 1. ADMIN — CRUD PERIODE RAPOR
+// ============================================================
+
+async function loadAdminRaporPeriods() {
+  const tbody = document.getElementById('adminRaporPeriodList');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Memuat...</td></tr>';
+  try {
+    const { data, error } = await supabaseClient.from('report_periods').select('*').order('start_date', { ascending: false });
+    if (error) throw error;
+    RAPOR_CACHE.periods = data || [];
+
+    // Isi dropdown filter admin & guru
+    fillSelect('raporPeriodFilter', data || [], 'Pilih periode...', 'id', p => p.name);
+    fillSelect('guruRaporPeriodFilter', data || [], 'Pilih periode...', 'id', p => p.name);
+
+    // Isi dropdown periode siswa (hanya yang publish)
+    const published = (data || []).filter(p => p.is_published);
+    fillSelect('siswaRaporPeriodFilter', published, 'Pilih periode...', 'id', p => p.name);
+
+    if (!data || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada periode rapor.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(p => `
+      <tr>
+        <td><strong>${escapeHtml(p.name || '-')}</strong></td>
+        <td><span class="lms-status info">${escapeHtml(p.period_type || '-')}</span></td>
+        <td>${formatDate(p.start_date)}</td>
+        <td>${formatDate(p.end_date)}</td>
+        <td>${p.is_published ? '<span class="lms-status">Publish</span>' : '<span class="lms-status warn">Draft</span>'}</td>
+        <td>
+          <button class="lms-action sm" onclick="adminTogglePeriod(${p.id}, ${!p.is_published})" title="${p.is_published ? 'Jadikan Draft' : 'Publish'}">
+            <i class="fas fa-toggle-${p.is_published ? 'on' : 'off'}"></i> ${p.is_published ? 'Unpublish' : 'Publish'}
+          </button>
+          <button class="lms-action sm danger" onclick="adminDeletePeriod(${p.id})"><i class="fas fa-trash"></i> Hapus</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+async function adminCreateRaporPeriod(e) {
+  e.preventDefault();
+  try {
+    const name = document.getElementById('rpName').value.trim();
+    const start = document.getElementById('rpStart').value;
+    const end = document.getElementById('rpEnd').value;
+    if (!name || !start || !end) { showToast('⚠️ Lengkapi nama, tanggal mulai, dan tanggal selesai.'); return; }
+    if (new Date(start) > new Date(end)) { showToast('⚠️ Tanggal mulai tidak boleh setelah tanggal selesai.'); return; }
+    const { error } = await supabaseClient.from('report_periods').insert({
+      name,
+      period_type: document.getElementById('rpType').value,
+      start_date: start,
+      end_date: end,
+      is_published: document.getElementById('rpPublish').checked,
+      created_by: currentUser.id
+    });
+    if (error) throw error;
+    showToast('✅ Periode rapor berhasil dibuat.');
+    e.target.reset();
+    await loadAdminRaporPeriods();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function adminTogglePeriod(id, publish) {
+  try {
+    const { error } = await supabaseClient.from('report_periods').update({
+      is_published: publish, updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (error) throw error;
+    showToast(publish ? '✅ Periode di-publish.' : '✅ Periode dijadikan draft.');
+    await loadAdminRaporPeriods();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function adminDeletePeriod(id) {
+  if (!confirm('Hapus periode ini? Semua rapor terkait periode ini mungkin ikut terhapus.')) return;
+  try {
+    const { error } = await supabaseClient.from('report_periods').delete().eq('id', id);
+    if (error) throw error;
+    showToast('✅ Periode dihapus.');
+    await loadAdminRaporPeriods();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+// ============================================================
+// 2. ADMIN — GENERATE RAPOR
+// ============================================================
+
+async function adminGenerateRapor() {
+  const periodId = document.getElementById('raporPeriodFilter').value;
+  const classId = document.getElementById('raporClassFilter').value;
+  if (!periodId || !classId) { showToast('⚠️ Pilih periode dan kelas terlebih dahulu.'); return; }
+  const btn = document.getElementById('btnGenerateRapor');
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generate...'; }
+  try {
+    // Ambil periode
+    const { data: period, error: pErr } = await supabaseClient.from('report_periods').select('*').eq('id', periodId).single();
+    if (pErr) throw pErr;
+    const startDate = period.start_date;
+    const endDate = period.end_date + 'T23:59:59';
+
+    // Ambil anggota kelas
+    const { data: members, error: mErr } = await supabaseClient
+      .from('class_members')
+      .select('student_id, profiles:student_id(full_name, email)')
+      .eq('class_id', classId);
+    if (mErr) throw mErr;
+    if (!members?.length) { showToast('⚠️ Tidak ada siswa di kelas ini.'); return; }
+
+    // Ambil semua mapel
+    const { data: subjects, error: sErr } = await supabaseClient.from('subjects').select('*');
+    if (sErr) throw sErr;
+
+    // Ambil tugas published di kelas ini, kelompokkan per subject
+    const { data: assignments, error: aErr } = await supabaseClient
+      .from('assignments')
+      .select('id, subject_id')
+      .eq('class_id', classId)
+      .eq('is_published', true);
+    if (aErr) throw aErr;
+    const assignmentsBySubject = {};
+    (assignments || []).forEach(a => {
+      if (!assignmentsBySubject[a.subject_id]) assignmentsBySubject[a.subject_id] = [];
+      assignmentsBySubject[a.subject_id].push(a.id);
+    });
+
+    let processed = 0;
+    const totalSiswa = members.length;
+    let successCount = 0;
+
+    for (const member of members) {
+      for (const subj of (subjects || [])) {
+        const asgIds = assignmentsBySubject[subj.id] || [];
+        if (!asgIds.length) continue; // skip mapel tanpa tugas
+
+        // Rata-rata nilai tugas (submission dinilai) dalam range periode
+        const { data: subs, error: subErr } = await supabaseClient
+          .from('assignment_submissions')
+          .select('score, status')
+          .eq('student_id', member.student_id)
+          .in('assignment_id', asgIds)
+          .eq('status', 'dinilai')
+          .gte('submitted_at', startDate)
+          .lte('submitted_at', endDate);
+        if (subErr) throw subErr;
+
+        // Rata-rata nilai kuis (hasil_ujian) dalam range
+        let quizAvg = null;
+        try {
+          const { data: quizzes, error: qErr } = await supabaseClient
+            .from('hasil_ujian')
+            .select('nilai')
+            .eq('siswa_id', member.student_id)
+            .gte('created_at', startDate)
+            .lte('created_at', endDate);
+          if (!qErr && quizzes?.length) {
+            const qSum = quizzes.reduce((acc, q) => acc + (Number(q.nilai) || 0), 0);
+            quizAvg = qSum / quizzes.length;
+          }
+        } catch (_) { /* abaikan jika tabel/kolom berbeda */ }
+
+        const scores = (subs || []).map(s => Number(s.score)).filter(n => Number.isFinite(n));
+        const taskAvg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+        let avgScore = null;
+        if (taskAvg !== null && quizAvg !== null) avgScore = (taskAvg + quizAvg) / 2;
+        else if (taskAvg !== null) avgScore = taskAvg;
+        else if (quizAvg !== null) avgScore = quizAvg;
+
+        const assignmentDone = scores.length;
+        const assignmentTotal = asgIds.length;
+
+        // Kehadiran
+        let attendancePercent = null;
+        try {
+          const { data: att, error: attErr } = await supabaseClient
+            .from('attendance')
+            .select('status')
+            .eq('student_id', member.student_id)
+            .gte('date', startDate)
+            .lte('date', period.end_date);
+          if (!attErr && att?.length) {
+            const hadir = att.filter(a => String(a.status || '').toLowerCase() === 'hadir').length;
+            attendancePercent = (hadir / att.length) * 100;
+          }
+        } catch (_) { /* tabel attendance mungkin beda nama kolom tanggal */ }
+
+        // Upsert ke student_reports
+        const payload = {
+          student_id: member.student_id,
+          period_id: Number(periodId),
+          subject_id: subj.id,
+          avg_score: avgScore !== null ? Number(avgScore.toFixed(2)) : null,
+          assignment_done: assignmentDone,
+          assignment_total: assignmentTotal,
+          attendance_percent: attendancePercent !== null ? Number(attendancePercent.toFixed(2)) : null,
+          updated_at: new Date().toISOString()
+        };
+        const { error: upErr } = await supabaseClient
+          .from('student_reports')
+          .upsert(payload, { onConflict: 'student_id,period_id,subject_id' });
+        if (upErr) {
+          console.warn('Upsert rapor gagal untuk', member.student_id, subj.id, upErr.message);
+        } else {
+          successCount++;
+        }
+      }
+      processed++;
+      if (btn) btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generate... (${processed}/${totalSiswa})`;
+    }
+
+    showToast(`✅ Generate selesai. ${successCount} baris rapor tersimpan.`);
+    await loadAdminRapor();
+  } catch (e) {
+    showToast('❌ ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+  }
+}
+
+// ============================================================
+// 3. ADMIN — TAMPILKAN DAFTAR RAPOR + EDIT CATATAN GURU
+// ============================================================
+
+async function loadAdminRapor() {
+  const tbody = document.getElementById('adminRaporList');
+  if (!tbody) return;
+  const periodId = document.getElementById('raporPeriodFilter')?.value;
+  const classId = document.getElementById('raporClassFilter')?.value;
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Memuat...</td></tr>';
+  try {
+    let query = supabaseClient
+      .from('student_reports')
+      .select('*, profiles:student_id(full_name, email, kelas), subjects:subject_id(subject_name), report_periods:period_id(name, start_date, end_date)');
+    if (periodId) query = query.eq('period_id', periodId);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    RAPOR_CACHE.adminRapor = data || [];
+    if (!data?.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Belum ada rapor. Klik "Generate Rapor" terlebih dahulu.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td><strong>${escapeHtml(r.profiles?.full_name || r.student_id)}</strong><br><span class="lms-muted" style="font-size:0.75rem">${escapeHtml(r.profiles?.kelas || '')}</span></td>
+        <td>${escapeHtml(r.subjects?.subject_name || '-')}</td>
+        <td>${r.avg_score != null ? Number(r.avg_score).toFixed(2) : '-'}</td>
+        <td>${r.assignment_done ?? 0}/${r.assignment_total ?? 0}</td>
+        <td>${formatPercent(r.attendance_percent)}</td>
+        <td><span class="lms-muted">${escapeHtml(r.teacher_note || '-')}</span></td>
+        <td>
+          <button class="lms-action sm" onclick="adminEditRaporNote(${r.id})"><i class="fas fa-pen"></i> Catatan</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+async function adminEditRaporNote(id) {
+  const r = RAPOR_CACHE.adminRapor.find(x => x.id === id);
+  if (!r) return;
+  const note = prompt('Catatan guru untuk rapor ini:', r.teacher_note || '');
+  if (note === null) return;
+  try {
+    const { error } = await supabaseClient.from('student_reports').update({
+      teacher_note: note.trim() || null,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (error) throw error;
+    showToast('✅ Catatan tersimpan.');
+    await loadAdminRapor();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+// ============================================================
+// 4. GURU — PERIODE & DAFTAR RAPOR SISWA
+// ============================================================
+
+async function loadGuruRaporPeriods() {
+  try {
+    const { data, error } = await supabaseClient.from('report_periods').select('*').order('start_date', { ascending: false });
+    if (error) throw error;
+    fillSelect('guruRaporPeriodFilter', data || [], 'Pilih periode...', 'id', p => p.name);
+  } catch (e) { /* silent */ }
+}
+
+async function loadGuruRapor() {
+  const tbody = document.getElementById('guruRaporList');
+  if (!tbody) return;
+  const periodId = document.getElementById('guruRaporPeriodFilter')?.value;
+  const classId = document.getElementById('guruRaporClassFilter')?.value;
+  if (!periodId || !classId) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Pilih periode dan kelas lalu klik "Tampilkan Rapor".</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Memuat...</td></tr>';
+  try {
+    // Ambil siswa di kelas
+    const { data: members, error: mErr } = await supabaseClient
+      .from('class_members').select('student_id').eq('class_id', classId);
+    if (mErr) throw mErr;
+    const studentIds = (members || []).map(m => m.student_id);
+    if (!studentIds.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Tidak ada siswa di kelas ini.</td></tr>';
+      return;
+    }
+    const { data, error } = await supabaseClient
+      .from('student_reports')
+      .select('*, profiles:student_id(full_name, email, kelas), subjects:subject_id(subject_name)')
+      .eq('period_id', periodId)
+      .in('student_id', studentIds)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    RAPOR_CACHE.guruRapor = data || [];
+    if (!data?.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Belum ada rapor. Minta admin generate dulu.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td><strong>${escapeHtml(r.profiles?.full_name || r.student_id)}</strong></td>
+        <td>${escapeHtml(r.subjects?.subject_name || '-')}</td>
+        <td>${r.avg_score != null ? Number(r.avg_score).toFixed(2) : '-'}</td>
+        <td>${r.assignment_done ?? 0}/${r.assignment_total ?? 0}</td>
+        <td>${formatPercent(r.attendance_percent)}</td>
+        <td><span class="lms-muted">${escapeHtml(r.teacher_note || '-')}</span></td>
+        <td>
+          <button class="lms-action sm" onclick="guruEditRaporNote(${r.id})"><i class="fas fa-pen"></i> Catatan</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+async function guruEditRaporNote(id) {
+  const r = RAPOR_CACHE.guruRapor.find(x => x.id === id);
+  if (!r) return;
+  const note = prompt('Catatan guru untuk rapor ini:', r.teacher_note || '');
+  if (note === null) return;
+  try {
+    const { error } = await supabaseClient.from('student_reports').update({
+      teacher_note: note.trim() || null,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (error) throw error;
+    showToast('✅ Catatan tersimpan.');
+    await loadGuruRapor();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+// ============================================================
+// 5. SISWA — PERIODE, DAFTAR RAPOR, GRAFIK, CETAK
+// ============================================================
+
+async function loadSiswaRaporPeriods() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('report_periods')
+      .select('*')
+      .eq('is_published', true)
+      .order('start_date', { ascending: false });
+    if (error) throw error;
+    fillSelect('siswaRaporPeriodFilter', data || [], 'Pilih periode...', 'id', p => p.name);
+  } catch (e) { /* silent */ }
+}
+
+async function loadSiswaRapor() {
+  const tbody = document.getElementById('siswaRaporTableBody');
+  if (!tbody) return;
+  const periodId = document.getElementById('siswaRaporPeriodFilter')?.value;
+  const contentEl = document.getElementById('siswaRaporContent');
+  if (!periodId) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Pilih periode lalu klik "Tampilkan Rapor".</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat...</td></tr>';
+
+  // Set info header cetak
+  const periodSelect = document.getElementById('siswaRaporPeriodFilter');
+  const periodText = periodSelect?.options[periodSelect.selectedIndex]?.text || '-';
+  document.getElementById('siswaRaporPeriodeInfo').innerText = 'Periode: ' + periodText;
+  document.getElementById('siswaRaporNama').innerText = currentProfile?.full_name || currentUser?.email || '-';
+  document.getElementById('siswaRaporKelas').innerText = currentProfile?.kelas || '-';
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('student_reports')
+      .select('*, subjects:subject_id(subject_name)')
+      .eq('student_id', currentUser.id)
+      .eq('period_id', periodId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    RAPOR_CACHE.siswaRapor = data || [];
+    if (!data?.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada data rapor untuk periode ini.</td></tr>';
+      renderSiswaRaporCharts([]);
+      return;
+    }
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td><strong>${escapeHtml(r.subjects?.subject_name || '-')}</strong></td>
+        <td>${r.avg_score != null ? Number(r.avg_score).toFixed(2) : '-'}</td>
+        <td>${r.assignment_done ?? 0}/${r.assignment_total ?? 0}</td>
+        <td>${formatPercent(r.attendance_percent)}</td>
+        <td>${escapeHtml(r.teacher_note || '-')}</td>
+      </tr>
+    `).join('');
+
+    // Render grafik setelah tabel terisi
+    await renderSiswaRaporCharts(data, periodId);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`;
+    renderSiswaRaporCharts([]);
+  }
+}
+
+// ---------- GRAFIK SISWA (Chart.js) ----------
+async function renderSiswaRaporCharts(reportRows, periodId) {
+  // Line Chart: perkembangan nilai per tugas
+  const lineCanvas = document.getElementById('siswaRaporLineChart');
+  const barCanvas = document.getElementById('siswaRaporBarChart');
+
+  // Destroy instance lama
+  if (window.__siswaLineChart) { try { window.__siswaLineChart.destroy(); } catch (_) {} window.__siswaLineChart = null; }
+  if (window.__siswaBarChart) { try { window.__siswaBarChart.destroy(); } catch (_) {} window.__siswaBarChart = null; }
+
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js belum dimuat.');
+    return;
+  }
+
+  // ---- LINE: ambil submission dinilai milik siswa dalam range periode ----
+  let lineLabels = [];
+  let lineData = [];
+  try {
+    if (periodId) {
+      const { data: period } = await supabaseClient.from('report_periods').select('start_date,end_date').eq('id', periodId).maybeSingle();
+      const startDate = period?.start_date;
+      const endDate = period ? period.end_date + 'T23:59:59' : null;
+
+      let q = supabaseClient
+        .from('assignment_submissions')
+        .select('score, submitted_at, assignments:assignment_id(title, due_at)')
+        .eq('student_id', currentUser.id)
+        .eq('status', 'dinilai');
+      if (startDate) q = q.gte('submitted_at', startDate);
+      if (endDate) q = q.lte('submitted_at', endDate);
+      const { data: subs, error } = await q.order('submitted_at', { ascending: true });
+      if (!error && subs?.length) {
+        subs.forEach(s => {
+          if (s.score != null && Number.isFinite(Number(s.score))) {
+            lineLabels.push(formatDate(s.submitted_at));
+            lineData.push(Number(s.score));
+          }
+        });
+      }
+    }
+  } catch (e) { console.warn('Line chart data error:', e.message); }
+
+  if (lineCanvas && lineLabels.length) {
+    window.__siswaLineChart = new Chart(lineCanvas, {
+      type: 'line',
+      data: {
+        labels: lineLabels,
+        datasets: [{
+          label: 'Nilai Tugas',
+          data: lineData,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,0.12)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 4,
+          pointBackgroundColor: '#2563eb'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } }
+      }
+    });
+  } else if (lineCanvas) {
+    // Tampilkan chart kosong sebagai fallback
+    window.__siswaLineChart = new Chart(lineCanvas, {
+      type: 'line',
+      data: { labels: ['Belum ada data'], datasets: [{ label: 'Nilai Tugas', data: [0], borderColor: '#94a3b8', backgroundColor: 'rgba(148,163,184,0.1)' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+    });
+  }
+
+  // ---- BAR: rata-rata per mapel ----
+  const barLabels = (reportRows || []).map(r => r.subjects?.subject_name || 'Mapel');
+  const barData = (reportRows || []).map(r => r.avg_score != null ? Number(r.avg_score) : 0);
+  if (barCanvas) {
+    window.__siswaBarChart = new Chart(barCanvas, {
+      type: 'bar',
+      data: {
+        labels: barLabels.length ? barLabels : ['Belum ada data'],
+        datasets: [{
+          label: 'Rata-rata Nilai',
+          data: barData.length ? barData : [0],
+          backgroundColor: 'rgba(37,99,235,0.65)',
+          borderColor: '#1d4ed8',
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } }
+      }
+    });
+  }
+}
+
+// ---------- CETAK RAPOR ----------
+function cetakRaporSiswa() {
+  window.print();
+}
   </script>
 </body>
 </html>
