@@ -6,212 +6,375 @@
   <title>EduSmart — LMS Bimbel Cerdas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Chart.js SUDAH dimuat di head (sesuai konteks) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <style>
-        :root {
-      /* Palet Warna Biru & Putih */
-      --ink: #0f172a;          /* Teks utama (gelap) */
-      --accent: #2563eb;       /* Biru utama */
-      --accent-hover: #1d4ed8; /* Biru lebih gelap */
-      --surface: #f8fafc;      /* Background halaman (putih kebiruan) */
-      --line: #e2e8f0;         /* Garis border (abu-abu terang) */
-      --muted: #64748b;        /* Teks sekunder */
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      
-      --bg-card: #ffffff;      /* Putih bersih untuk card/panel */
-      --bg-sidebar: #ffffff;   /* Sidebar jadi putih */
-      --bg-header: #ffffff;    /* Header jadi putih */
-      --text-header: #0f172a;  /* Teks header jadi gelap */
-      --text-sidebar: #334155; /* Teks sidebar abu-abu gelap */
-      --hover-sidebar: #eff6ff;/* Hover biru sangat muda */
+    /* ==========================================
+       1. SKEMA WARNA (mirip referensi)
+       ========================================== */
+    :root {
+      --bg-main: #EBF2F7;
+      --sidebar-bg: #0B2238;
+      --accent-color: #0A66C2;
+      --accent-hover: #0852a0;
+      --accent-badge: #00C897;
+      --card-gradient: linear-gradient(135deg, #0A66C2, #2563EB);
+
+      --card-bg: #FFFFFF;
+      --text-main: #1E293B;
+      --text-muted: #8899A6;
+      --border-radius-lg: 20px;
+      --border-radius-md: 12px;
+
+      /* alias agar CSS lama/JS-driven style tetap valid */
+      --ink: #1E293B;
+      --accent: #0A66C2;
+      --surface: #EBF2F7;
+      --line: #E2E8F0;
+      --muted: #8899A6;
+      --success: #10B981;
+      --danger: #E11D48;
+      --warning: #F59E0B;
+      --bg-card: #FFFFFF;
+      --bg-sidebar: #0B2238;
+      --bg-header: #FFFFFF;
+      --text-header: #1E293B;
+      --text-sidebar: #CBD5E1;
+      --hover-sidebar: #12314f;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Onest', sans-serif; background: var(--surface); color: var(--ink); min-height: 100vh; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
     .hidden { display: none !important; }
 
-    /* ===== TOAST ===== */
+    /* ==========================================
+       2. TOAST
+       ========================================== */
     .toast {
-      position: fixed; bottom: 20px; right: 20px; background: var(--ink); color: #fff;
-      padding: 12px 20px; border-radius: 99px; font-size: 0.85rem; font-weight: 600;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 9999; display: none; align-items: center; gap: 8px;
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--sidebar-bg); color: #fff;
+      padding: 12px 20px; border-radius: 999px;
+      font-size: 0.85rem; font-weight: 600;
+      box-shadow: 0 10px 30px rgba(11,34,56,0.28);
+      z-index: 9999; display: none; align-items: center; gap: 8px;
     }
     .toast.show { display: flex; }
 
-    /* ===== HEADER ===== */
+    /* ==========================================
+       3. HEADER ATAS
+       ========================================== */
     .app-header {
-      background: var(--bg-header); color: var(--text-header); padding: 0 1.25rem; height: 60px;
+      background: var(--bg-header);
+      color: var(--text-header);
+      padding: 0 1.5rem; height: 64px;
       display: flex; justify-content: space-between; align-items: center;
-      position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      position: sticky; top: 0; z-index: 200;
+      box-shadow: 0 2px 12px rgba(15,23,42,0.04);
       border-bottom: 1px solid var(--line);
     }
-    .brand-title { font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem; color: var(--accent); }
+    .brand-title {
+      font-size: 1.1rem; font-weight: 800;
+      display: flex; align-items: center; gap: 0.6rem;
+      color: var(--sidebar-bg);
+    }
     .user-badge { display: flex; align-items: center; gap: 0.9rem; }
     .role-tag {
-      background: #eff6ff; color: var(--accent); padding: 0.25rem 0.7rem;
-      border-radius: 99px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; margin-left: 6px;
+      background: #E0F2FE; color: var(--accent-color);
+      padding: 0.25rem 0.7rem; border-radius: 999px;
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; margin-left: 6px;
     }
     .btn-logout {
-      background: #fee2e2; color: var(--danger); border: none; padding: 0.4rem 0.9rem;
-      border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+      background: #FFF1F2; color: var(--danger); border: none;
+      padding: 0.45rem 0.95rem; border-radius: 10px;
+      font-weight: 600; font-size: 0.8rem; cursor: pointer;
+      transition: all 0.2s;
     }
     .btn-logout:hover { background: var(--danger); color: #fff; }
     .btn-sidebar-toggle {
-      background: var(--surface); color: var(--ink); border: 1px solid var(--line);
-      width: 38px; height: 38px; border-radius: 9px; cursor: pointer; font-size: 1rem;
-      display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s;
+      background: var(--bg-main); color: var(--sidebar-bg);
+      border: 1px solid var(--line);
+      width: 38px; height: 38px; border-radius: 12px;
+      cursor: pointer; font-size: 1rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
     }
-    .btn-sidebar-toggle:hover { background: var(--hover-sidebar); color: var(--accent); border-color: #bfdbfe; }
+    .btn-sidebar-toggle:hover { background: #E0F2FE; color: var(--accent-color); border-color: #bae6fd; }
 
-    /* ===== LOGIN ===== */
+    /* ==========================================
+       4. LOGIN
+       ========================================== */
     .login-wrapper {
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      background: var(--surface); padding: 1rem;
+      background: linear-gradient(135deg, #EBF2F7 0%, #dbeafe 100%);
+      padding: 1rem;
     }
     .login-card {
-      background: #fff; width: 100%; max-width: 400px; padding: 2.5rem 2rem;
-      border-radius: 20px; box-shadow: 0 10px 30px rgba(37, 99, 235, 0.1); border: 1px solid var(--line);
+      background: #fff; width: 100%; max-width: 420px;
+      padding: 2.5rem 2.25rem;
+      border-radius: var(--border-radius-lg);
+      box-shadow: 0 20px 50px rgba(11,34,56,0.12);
+      border: 1px solid var(--line);
     }
+    .login-card i.fa-graduation-cap { color: var(--accent-color) !important; }
     .form-group { margin-bottom: 1.2rem; text-align: left; }
-    .form-group label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; color: var(--ink); }
+    .form-group label {
+      display: block; font-size: 0.72rem; font-weight: 700;
+      margin-bottom: 6px; text-transform: uppercase;
+      letter-spacing: 0.04em; color: var(--text-muted);
+    }
     .input-icon-wrapper { position: relative; }
-    .input-icon-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .input-icon-wrapper i {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%); color: var(--text-muted);
+    }
     .input-icon-wrapper input, .form-group select {
-      width: 100%; padding: 11px 14px 11px 40px; border: 1px solid var(--line); border-radius: 10px;
-      font-size: 0.9rem; font-family: inherit; outline: none; transition: all 0.2s; background: var(--surface);
+      width: 100%; padding: 12px 14px 12px 40px;
+      border: 1px solid var(--line); border-radius: var(--border-radius-md);
+      font-size: 0.9rem; font-family: inherit; outline: none;
+      transition: all 0.2s; background: #F8FAFC;
     }
     .form-group select { padding-left: 14px; }
-    .input-icon-wrapper input:focus, .form-group select:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-    .btn-submit {
-      width: 100%; padding: 12px; background: var(--accent); color: #fff; border: none;
-      border-radius: 10px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+    .input-icon-wrapper input:focus, .form-group select:focus {
+      border-color: var(--accent-color); background: #fff;
+      box-shadow: 0 0 0 4px rgba(10,102,194,0.1);
     }
-    .btn-submit:hover { background: var(--accent-hover); }
+    .btn-submit {
+      width: 100%; padding: 13px;
+      background: var(--sidebar-bg); color: #fff; border: none;
+      border-radius: var(--border-radius-md);
+      font-weight: 700; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-submit:hover { background: var(--accent-color); }
     .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    /* ===== LAYOUT SHELL ===== */
-    .app-shell { display: flex; min-height: calc(100vh - 60px); }
+    /* ==========================================
+       5. LAYOUT SHELL (SIDEBAR + MAIN)
+       ========================================== */
+    .app-shell { display: flex; min-height: calc(100vh - 64px); }
 
     .sidebar {
-      width: 260px; background: var(--bg-sidebar); color: var(--text-sidebar);
-      display: flex; flex-direction: column; padding: 1rem 0;
-      position: sticky; top: 60px; height: calc(100vh - 60px);
-      overflow-y: auto; transition: transform 0.25s ease, width 0.25s ease;
-      flex-shrink: 0; z-index: 150; border-right: 1px solid var(--line);
+      width: 260px;
+      background: var(--sidebar-bg);
+      color: var(--text-sidebar);
+      display: flex; flex-direction: column; padding: 1.25rem 0;
+      position: sticky; top: 64px; height: calc(100vh - 64px);
+      overflow-y: auto;
+      transition: transform 0.25s ease, width 0.25s ease;
+      flex-shrink: 0; z-index: 150;
+      border-right: none;
     }
     .sidebar-header {
-      padding: 0 1.25rem 0.75rem; font-size: 0.7rem; font-weight: 800;
-      text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+      padding: 0 1.5rem 0.75rem; font-size: 0.68rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: #6b8bb0;
     }
-    .sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 0.5rem; }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 4px; padding: 0 0.75rem; }
     .sidebar-item {
-      display: flex; align-items: center; gap: 0.75rem;
-      padding: 0.65rem 0.85rem; border-radius: 9px; cursor: pointer;
-      font-size: 0.87rem; font-weight: 600; color: var(--text-sidebar);
-      text-decoration: none; border: none; background: none; width: 100%; text-align: left;
-      transition: background 0.15s, color 0.15s; font-family: inherit;
+      display: flex; align-items: center; gap: 0.8rem;
+      padding: 0.7rem 0.9rem; border-radius: 12px; cursor: pointer;
+      font-size: 0.86rem; font-weight: 600;
+      color: #CBD5E1;
+      text-decoration: none; border: none; background: none;
+      width: 100%; text-align: left;
+      transition: background 0.15s, color 0.15s;
+      font-family: inherit;
     }
-    .sidebar-item i { width: 18px; text-align: center; font-size: 0.9rem; color: #94a3b8; }
-    .sidebar-item:hover { background: var(--hover-sidebar); color: var(--accent); }
-    .sidebar-item:hover i { color: var(--accent); }
-    .sidebar-item.active { background: var(--accent); color: #fff; box-shadow: 0 4px 10px rgba(37,99,235,0.2); }
-    .sidebar-item.active i { color: #fff; }
+    .sidebar-item i { width: 18px; text-align: center; font-size: 0.9rem; color: #6b8bb0; }
+    .sidebar-item:hover { background: #12314f; color: #fff; }
+    .sidebar-item:hover i { color: #fff; }
+    .sidebar-item.active {
+      background: #FFFFFF; color: var(--sidebar-bg);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      font-weight: 700;
+    }
+    .sidebar-item.active i { color: var(--sidebar-bg); }
     .sidebar-item .sidebar-badge {
-      margin-left: auto; background: var(--accent); color: #fff;
-      font-size: 0.62rem; padding: 1px 7px; border-radius: 99px; font-weight: 700;
+      margin-left: auto; background: var(--accent-badge); color: #fff;
+      font-size: 0.62rem; padding: 1px 7px; border-radius: 999px; font-weight: 700;
     }
-    .sidebar-divider { height: 1px; background: var(--line); margin: 0.5rem 1rem; }
-    .sidebar-footer { margin-top: auto; padding: 1rem 1.25rem; font-size: 0.7rem; color: var(--muted); }
+    .sidebar-divider { height: 1px; background: #1e3a5c; margin: 0.6rem 1rem; }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.5rem; font-size: 0.7rem; color: #6b8bb0; }
 
-    .main-content { flex: 1; min-width: 0; background: var(--surface); }
-    .dashboard-container { padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+    .main-content { flex: 1; min-width: 0; background: var(--bg-main); }
+    .dashboard-container { padding: 1.75rem 2.25rem; max-width: 1440px; margin: 0 auto; }
 
     .sidebar-overlay {
-      display: none; position: fixed; inset: 60px 0 0 0; background: rgba(15,23,42,0.4); z-index: 140;
+      display: none; position: fixed; inset: 64px 0 0 0;
+      background: rgba(11,34,56,0.45); z-index: 140;
     }
     .sidebar-overlay.show { display: block; }
 
-    /* ===== KPI & PANEL ===== */
-    .grid-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem; }
-    .kpi-card { 
-      background: var(--bg-card); padding: 1.35rem; border-radius: 14px; 
-      border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-      border-top: 3px solid var(--accent);
+    /* ==========================================
+       6. KPI CARDS
+       ========================================== */
+    .grid-kpi {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem; margin-bottom: 1.75rem;
     }
-    .kpi-num { font-size: 1.9rem; font-weight: 800; color: var(--accent); }
-    .kpi-label { font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
-    .panel-box { background: var(--bg-card); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--line); margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-    .panel-title { font-size: 1.05rem; font-weight: 800; margin-bottom: 1.1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; color: var(--ink); border-bottom: 1px solid var(--line); padding-bottom: 0.8rem;}
+    .kpi-card {
+      background: var(--card-bg); padding: 1.5rem;
+      border-radius: var(--border-radius-lg);
+      border: 1px solid transparent;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.03);
+      border-top: none;
+      position: relative; overflow: hidden;
+    }
+    .kpi-card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 100%; height: 4px; background: var(--card-gradient);
+    }
+    .kpi-num {
+      font-size: 2rem; font-weight: 800; color: var(--sidebar-bg);
+      line-height: 1.1;
+    }
+    .kpi-label {
+      font-size: 0.82rem; color: var(--text-muted);
+      font-weight: 600; margin-top: 6px;
+    }
 
-    /* ===== TABLE ===== */
+    /* ==========================================
+       7. PANEL / CARD
+       ========================================== */
+    .panel-box {
+      background: var(--card-bg); padding: 1.5rem;
+      border-radius: var(--border-radius-lg);
+      border: 1px solid transparent;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.03);
+    }
+    .panel-title {
+      font-size: 1.05rem; font-weight: 800; margin-bottom: 1.1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.5rem; color: var(--text-main);
+      border-bottom: 1px solid #F1F5F9; padding-bottom: 0.85rem;
+    }
+
+    /* ==========================================
+       8. TABLE
+       ========================================== */
     .table-responsive { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
-    th { background: var(--surface); padding: 12px; font-weight: 700; border-bottom: 1px solid var(--line); color: var(--muted); }
-    td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink); }
-    tr:hover td { background: var(--hover-sidebar); }
+    th {
+      background: #F8FAFC; padding: 12px; font-weight: 700;
+      border-bottom: 1px solid var(--line); color: var(--text-muted);
+      text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.04em;
+    }
+    td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--text-main); }
+    tr:hover td { background: #F8FAFC; }
 
-    /* ===== LMS FORM ELEMENTS ===== */
+    /* ==========================================
+       9. FORM FIELDS
+       ========================================== */
     .lms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
     .lms-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 0.8rem; }
-    .lms-field label { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
-    .lms-field input, .lms-field select, .lms-field textarea {
-      width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px;
-      font: inherit; font-size: 0.88rem; outline: none; transition: border-color 0.15s; background: var(--surface);
+    .lms-field label {
+      font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
     }
-    .lms-field input:focus, .lms-field select:focus, .lms-field textarea:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .lms-field input, .lms-field select, .lms-field textarea {
+      width: 100%; padding: 11px 13px;
+      border: 1px solid var(--line); border-radius: var(--border-radius-md);
+      font: inherit; font-size: 0.88rem; outline: none;
+      transition: border-color 0.15s; background: #F8FAFC;
+    }
+    .lms-field input:focus, .lms-field select:focus, .lms-field textarea:focus {
+      border-color: var(--accent-color); background: #fff;
+      box-shadow: 0 0 0 4px rgba(10,102,194,0.1);
+    }
     .lms-field textarea { min-height: 90px; resize: vertical; }
     .lms-field input[type="checkbox"] { width: auto; }
 
+    /* ==========================================
+       10. TOMBOL
+       ========================================== */
     .lms-action {
-      border: 1px solid var(--line); background: #fff; color: var(--ink);
-      padding: 0.55rem 1rem; border-radius: 9px; cursor: pointer; font-weight: 700;
-      font-family: inherit; font-size: 0.85rem; transition: all 0.15s;
+      border: 1px solid var(--line); background: #fff; color: var(--text-main);
+      padding: 0.6rem 1.05rem; border-radius: var(--border-radius-md);
+      cursor: pointer; font-weight: 700; font-family: inherit;
+      font-size: 0.84rem; transition: all 0.15s;
       display: inline-flex; align-items: center; gap: 6px;
     }
-    .lms-action:hover { background: var(--surface); border-color: var(--accent); color: var(--accent); }
-    .lms-action.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .lms-action.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
-    .lms-action.danger { background: #fee2e2; color: var(--danger); border-color: #fecaca; }
+    .lms-action:hover { background: #F8FAFC; border-color: var(--accent-color); color: var(--accent-color); }
+    .lms-action.primary { background: var(--sidebar-bg); color: #fff; border-color: var(--sidebar-bg); }
+    .lms-action.primary:hover { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+    .lms-action.danger { background: #FFF1F2; color: var(--danger); border-color: #fecdd3; }
     .lms-action.danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
-    .lms-action.success { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .lms-action.success { background: #DCFCE7; color: #166534; border-color: #bbf7d0; }
     .lms-action.success:hover { background: var(--success); color: #fff; border-color: var(--success); }
-    .lms-action.sm { padding: 4px 10px; font-size: 0.75rem; }
+    .lms-action.sm { padding: 5px 11px; font-size: 0.75rem; border-radius: 9px; }
     .lms-action:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    .lms-card { border: 1px solid var(--line); border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; background: var(--bg-card); box-shadow: 0 1px 4px rgba(0,0,0,0.02); }
-    .lms-card h4 { margin-bottom: 0.35rem; font-size: 0.95rem; color: var(--accent); }
-    .lms-muted { color: var(--muted); font-size: 0.83rem; }
-    .lms-empty { padding: 1.5rem; text-align: center; color: var(--muted); border: 1px dashed #bfdbfe; background: #eff6ff; border-radius: 10px; }
-    
-    .lms-status { display: inline-block; padding: 2px 8px; border-radius: 99px; background: #dcfce7; color: #166534; font-size: 0.7rem; font-weight: 700; }
-    .lms-status.warn { background: #fef3c7; color: #92400e; }
-    .lms-status.danger { background: #fee2e2; color: #991b1b; }
-    .lms-status.info { background: #dbeafe; color: #1e40af; }
-    .lms-photo { width: 100%; max-width: 160px; border-radius: 8px; border: 1px solid var(--line); margin: 5px 5px 0 0; }
+    /* ==========================================
+       11. CARD LIST (lms-card)
+       ========================================== */
+    .lms-card {
+      border: 1px solid #F1F5F9; border-radius: var(--border-radius-md);
+      padding: 1.1rem 1.15rem; margin-bottom: 0.8rem;
+      background: var(--card-bg);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .lms-card:hover { box-shadow: 0 10px 28px rgba(0,0,0,0.06); }
+    .lms-card h4 { margin-bottom: 0.35rem; font-size: 0.95rem; color: var(--sidebar-bg); }
+    .lms-muted { color: var(--text-muted); font-size: 0.83rem; }
+    .lms-empty {
+      padding: 1.5rem; text-align: center; color: var(--text-muted);
+      border: 1px dashed #cbd5e1; background: #F8FAFC;
+      border-radius: var(--border-radius-md);
+    }
+
+    /* ==========================================
+       12. STATUS & PILL
+       ========================================== */
+    .lms-status {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      background: #DCFCE7; color: #166534;
+      font-size: 0.7rem; font-weight: 700;
+    }
+    .lms-status.warn { background: #FEF3C7; color: #92400e; }
+    .lms-status.danger { background: #FFE4E6; color: #9f1239; }
+    .lms-status.info { background: #DBEAFE; color: #1e40af; }
+    .lms-photo {
+      width: 100%; max-width: 160px; border-radius: var(--border-radius-md);
+      border: 1px solid var(--line); margin: 5px 5px 0 0;
+    }
 
     .lms-toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
-    .lms-toolbar input, .lms-toolbar select { padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; font: inherit; font-size: 0.85rem; background: var(--surface); }
+    .lms-toolbar input, .lms-toolbar select {
+      padding: 9px 13px; border: 1px solid var(--line);
+      border-radius: var(--border-radius-md); font: inherit;
+      font-size: 0.85rem; background: #F8FAFC;
+    }
 
-    .role-pill { padding: 2px 9px; border-radius: 99px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-    .role-pill.siswa { background: #fef3c7; color: #92400e; }
-    .role-pill.guru { background: #dbeafe; color: #1e40af; }
-    .role-pill.admin { background: #fce7f3; color: #9d174d; }
+    .role-pill {
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    }
+    .role-pill.siswa { background: #FEF3C7; color: #92400e; }
+    .role-pill.guru { background: #DBEAFE; color: #1e40af; }
+    .role-pill.admin { background: #FCE7F3; color: #9d174d; }
 
-    /* ===== RESPONSIVE ===== */
+    /* ==========================================
+       13. RESPONSIVE
+       ========================================== */
     @media (max-width: 768px) {
       .sidebar {
-        position: fixed; left: 0; top: 60px; height: calc(100vh - 60px);
+        position: fixed; left: 0; top: 64px;
+        height: calc(100vh - 64px);
         transform: translateX(-100%); width: 260px;
       }
       .sidebar.open { transform: translateX(0); }
       .dashboard-container { padding: 1rem; }
-      .app-header { padding: 0 0.75rem; }
+      .app-header { padding: 0 0.9rem; }
       .user-badge { gap: 0.4rem; }
       .role-tag { display: none; }
       .panel-box { padding: 1rem; }
@@ -221,22 +384,26 @@
     @media (min-width: 769px) {
       .sidebar-overlay { display: none !important; }
     }
-        /* ===== NOTIFIKASI ===== */
+
+    /* ==========================================
+       14. NOTIFIKASI
+       ========================================== */
     .notif-wrap { position: relative; }
     .notif-btn {
-      background: var(--surface); border: 1px solid var(--line);
-      width: 38px; height: 38px; border-radius: 9px; cursor: pointer;
+      background: var(--bg-main); border: 1px solid var(--line);
+      width: 38px; height: 38px; border-radius: 12px; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
-      font-size: 1rem; color: var(--ink); position: relative;
+      font-size: 1rem; color: var(--sidebar-bg); position: relative;
       transition: all 0.15s;
     }
-    .notif-btn:hover { background: var(--hover-sidebar); color: var(--accent); border-color: #bfdbfe; }
+    .notif-btn:hover { background: #E0F2FE; color: var(--accent-color); border-color: #bae6fd; }
     .notif-badge {
       position: absolute; top: -4px; right: -4px;
-      background: var(--danger); color: #fff; font-size: 0.62rem;
-      font-weight: 800; padding: 1px 6px; border-radius: 99px;
-      min-width: 18px; text-align: center; border: 2px solid var(--bg-header);
-      display: none;
+      background: var(--danger); color: #fff;
+      font-size: 0.62rem; font-weight: 800;
+      padding: 1px 6px; border-radius: 999px;
+      min-width: 18px; text-align: center;
+      border: 2px solid var(--bg-header); display: none;
     }
     .notif-badge.show { display: inline-block; }
 
@@ -244,89 +411,77 @@
       position: absolute; top: 48px; right: 0;
       width: 360px; max-width: calc(100vw - 1.5rem);
       background: #fff; border: 1px solid var(--line);
-      border-radius: 14px; box-shadow: 0 10px 30px rgba(15,23,42,0.15);
+      border-radius: var(--border-radius-lg);
+      box-shadow: 0 20px 50px rgba(11,34,56,0.15);
       z-index: 999; display: none; overflow: hidden;
     }
     .notif-panel.show { display: block; }
     .notif-header {
-      padding: 12px 14px; border-bottom: 1px solid var(--line);
+      padding: 14px 16px; border-bottom: 1px solid var(--line);
       display: flex; justify-content: space-between; align-items: center;
-      background: var(--surface);
+      background: #F8FAFC;
     }
-    .notif-header h4 { font-size: 0.95rem; font-weight: 800; color: var(--ink); }
+    .notif-header h4 { font-size: 0.95rem; font-weight: 800; color: var(--text-main); }
     .notif-header-actions { display: flex; gap: 6px; }
     .notif-mini-btn {
       background: none; border: none; cursor: pointer;
-      font-size: 0.75rem; font-weight: 700; color: var(--accent);
-      padding: 2px 6px; border-radius: 5px;
+      font-size: 0.75rem; font-weight: 700; color: var(--accent-color);
+      padding: 3px 7px; border-radius: 6px;
     }
-    .notif-mini-btn:hover { background: var(--hover-sidebar); }
+    .notif-mini-btn:hover { background: #E0F2FE; }
     .notif-list { max-height: 420px; overflow-y: auto; }
     .notif-item {
-      padding: 12px 14px; border-bottom: 1px solid var(--line);
+      padding: 12px 16px; border-bottom: 1px solid var(--line);
       cursor: pointer; display: flex; gap: 10px;
       transition: background 0.15s; position: relative;
     }
-    .notif-item:hover { background: var(--hover-sidebar); }
-    .notif-item.unread { background: #eff6ff; }
-    .notif-item.unread:hover { background: #dbeafe; }
+    .notif-item:hover { background: #F8FAFC; }
+    .notif-item.unread { background: #EFF6FF; }
+    .notif-item.unread:hover { background: #DBEAFE; }
     .notif-icon {
-      width: 34px; height: 34px; border-radius: 9px;
+      width: 36px; height: 36px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0; font-size: 0.85rem;
     }
-    .notif-icon.assignment { background: #fef3c7; color: #92400e; }
-    .notif-icon.material { background: #dbeafe; color: #1e40af; }
-    .notif-icon.grade { background: #dcfce7; color: #166534; }
-    .notif-icon.schedule { background: #e0e7ff; color: #3730a3; }
-    .notif-icon.announcement { background: #fce7f3; color: #9d174d; }
-    .notif-icon.info { background: var(--surface); color: var(--muted); }
+    .notif-icon.assignment { background: #FEF3C7; color: #92400e; }
+    .notif-icon.material { background: #DBEAFE; color: #1e40af; }
+    .notif-icon.grade { background: #DCFCE7; color: #166534; }
+    .notif-icon.schedule { background: #E0E7FF; color: #3730a3; }
+    .notif-icon.announcement { background: #FCE7F3; color: #9d174d; }
+    .notif-icon.info { background: #F1F5F9; color: var(--text-muted); }
     .notif-body { flex: 1; min-width: 0; }
-    .notif-title { font-size: 0.85rem; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
-    .notif-msg { font-size: 0.78rem; color: var(--muted); line-height: 1.35; word-wrap: break-word; }
-    .notif-time { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+    .notif-title { font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+    .notif-msg { font-size: 0.78rem; color: var(--text-muted); line-height: 1.35; word-wrap: break-word; }
+    .notif-time { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
     .notif-dot {
-      width: 8px; height: 8px; background: var(--accent);
+      width: 8px; height: 8px; background: var(--accent-color);
       border-radius: 50%; flex-shrink: 0; margin-top: 6px;
     }
-    .notif-empty { padding: 30px 16px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+    .notif-empty { padding: 30px 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
     .notif-footer {
       padding: 8px 14px; border-top: 1px solid var(--line);
-      background: var(--surface); text-align: center;
+      background: #F8FAFC; text-align: center;
     }
     @media (max-width: 500px) {
       .notif-panel { width: calc(100vw - 1rem); right: -1rem; }
     }
 
-    /* ============================================================ */
-    /* TAMBAHAN BARU — CSS RAPOR & PRINT (Tahap 3B)                 */
-    /* ============================================================ */
+    /* ==========================================
+       15. RAPOR & CHART
+       ========================================== */
     .rapor-chart-wrap {
-      margin-top: 1.25rem;
-      padding: 1rem;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 12px;
+      margin-top: 1.25rem; padding: 1rem;
+      background: #F8FAFC; border: 1px solid var(--line);
+      border-radius: var(--border-radius-md);
     }
-    .rapor-chart-wrap h4 {
-      font-size: 0.9rem;
-      color: var(--ink);
-      margin-bottom: 0.75rem;
-      font-weight: 800;
-    }
-    /* TAMBAHAN BARU: wrapper grafik overview dashboard */
-    .overview-chart-wrap {
-      height: 220px;
-      position: relative;
-    }
+    .rapor-chart-wrap h4 { font-size: 0.9rem; color: var(--text-main); margin-bottom: 0.75rem; font-weight: 800; }
+    .overview-chart-wrap { height: 220px; position: relative; }
     .rapor-header-print {
-      text-align: center;
-      margin-bottom: 1.2rem;
-      border-bottom: 2px solid var(--ink);
-      padding-bottom: 0.8rem;
+      text-align: center; margin-bottom: 1.2rem;
+      border-bottom: 2px solid var(--text-main); padding-bottom: 0.8rem;
     }
     .rapor-header-print h2 { font-size: 1.3rem; }
-    .rapor-header-print p { font-size: 0.85rem; color: var(--muted); }
+    .rapor-header-print p { font-size: 0.85rem; color: var(--text-muted); }
 
     @media print {
       @page { size: A4; margin: 0; }
@@ -343,14 +498,47 @@
       table { font-size: 10pt; }
       th, td { padding: 6px 8px !important; }
     }
+        /* CSS TEMA WARNA */
+    body.theme-green {
+      --bg-main: #E6F4EA; --sidebar-bg: #064E3B; --accent-color: #10B981;
+      --accent-badge: #059669; --card-gradient: linear-gradient(135deg, #10B981, #047857);
+    }
+    body.theme-red {
+      --bg-main: #FFF1F2; --sidebar-bg: #4C0519; --accent-color: #E11D48;
+      --accent-badge: #F43F5E; --card-gradient: linear-gradient(135deg, #F43F5E, #BE123C);
+    }
+    body.theme-purple {
+      --bg-main: #F3E8FF; --sidebar-bg: #2E1065; --accent-color: #8B5CF6;
+      --accent-badge: #A855F7; --card-gradient: linear-gradient(135deg, #A855F7, #6B21A8);
+    }
+
+    /* CSS TOMBOL TEMA */
+    .theme-picker {
+      display: flex; align-items: center; gap: 8px;
+      background: #FFFFFF; padding: 6px 12px;
+      border-radius: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border: 1px solid var(--line); margin-right: 5px;
+    }
+    .theme-picker span {
+      font-size: 0.75rem; color: var(--text-muted);
+      font-weight: 700; margin-right: 2px; text-transform: uppercase;
+    }
+    .theme-btn {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid #FFF; cursor: pointer;
+      box-shadow: 0 0 0 1px #CBD5E1; transition: transform 0.2s;
+    }
+    .theme-btn:hover { transform: scale(1.2); }
+    .btn-blue { background-color: #0A66C2; }
+    .btn-green { background-color: #10B981; }
+    .btn-red { background-color: #E11D48; }
+    .btn-purple { background-color: #8B5CF6; }
   </style>
 </head>
-<body>
+<body class="theme-blue">
 
-  <!-- ===== TOAST ===== -->
   <div id="toast" class="toast"><i class="fas fa-info-circle"></i> <span id="toastMsg">Notifikasi</span></div>
 
-  <!-- ===== LOGIN VIEW ===== -->
   <div id="loginView" class="login-wrapper">
     <div class="login-card">
       <div style="text-align: center; margin-bottom: 2rem;">
@@ -373,12 +561,11 @@
             <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
           </div>
         </div>
-                <button type="submit" class="btn-submit" id="loginSubmitBtn">
+        <button type="submit" class="btn-submit" id="loginSubmitBtn">
           Masuk ke Sistem <i class="fas fa-arrow-right" style="margin-left: 6px;"></i>
         </button>
       </form>
-      
-      <!-- Tombol Pendaftaran Baru -->
+
       <div style="margin-top: 1rem; text-align: center;">
         <span style="font-size: 0.85rem; color: var(--muted);">Belum punya akun?</span>
         <a href="pendaftaran.html" style="display: inline-block; margin-left: 0.5rem; font-size: 0.85rem; font-weight: 700; color: var(--accent); text-decoration: none; padding: 6px 12px; border: 1px dashed var(--accent); border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
@@ -394,17 +581,28 @@
     </div>
   </div>
 
-  <!-- ===== HEADER SISTEM ===== -->
-  <header id="appHeader" class="app-header hidden">
+    <header id="appHeader" class="app-header hidden">
     <div class="brand-title">
       <button class="btn-sidebar-toggle" onclick="toggleSidebar()" title="Menu"><i class="fas fa-bars"></i></button>
       <i class="fas fa-graduation-cap" style="color: #fbbf24;"></i> EduSmart LMS
     </div>
-        <div class="user-badge">
+    
+    <div class="user-badge">
       <div>
         <span id="userNameDisplay" style="font-weight: 700; font-size: 0.9rem;">-</span>
         <span id="userRoleTag" class="role-tag">ROLE</span>
       </div>
+
+      <!-- TOMBOL GANTI TEMA DI SINI -->
+      <div class="theme-picker">
+        <span>Tema:</span>
+        <button class="theme-btn btn-blue" onclick="document.body.className='theme-blue'" title="Biru"></button>
+        <button class="theme-btn btn-green" onclick="document.body.className='theme-green'" title="Hijau"></button>
+        <button class="theme-btn btn-red" onclick="document.body.className='theme-red'" title="Merah"></button>
+        <button class="theme-btn btn-purple" onclick="document.body.className='theme-purple'" title="Ungu"></button>
+      </div>
+      <!-- SAMPAI SINI -->
+
       <div class="notif-wrap">
         <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel(event)" title="Notifikasi">
           <i class="fas fa-bell"></i>
@@ -450,7 +648,6 @@
         <button class="sidebar-item" onclick="adminNav('materials', this)"><i class="fas fa-book-open"></i> Materi</button>
         <button class="sidebar-item" onclick="adminNav('assignments', this)"><i class="fas fa-tasks"></i> Tugas & Pengumpulan</button>
         <div class="sidebar-divider"></div>
-        <!-- TAMBAHAN BARU: menu Rapor -->
         <button class="sidebar-item" onclick="adminNav('rapor', this)"><i class="fas fa-file-lines"></i> Rapor Digital</button>
         <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="adminNav('news', this)"><i class="fas fa-newspaper"></i> Berita</button>
@@ -470,14 +667,12 @@
         <!-- OVERVIEW -->
         <div id="admin-view-overview" class="admin-view">
           <h2 style="margin-bottom: 1.5rem;">Dashboard Administrator</h2>
-          <!-- KPI LAMA — JANGAN DIUBAH -->
           <div class="grid-kpi">
             <div class="kpi-card"><div class="kpi-num" id="statTotalSiswa">0</div><div class="kpi-label">Total Siswa</div></div>
             <div class="kpi-card"><div class="kpi-num" id="statTotalGuru">0</div><div class="kpi-label">Total Guru</div></div>
             <div class="kpi-card"><div class="kpi-num" id="statTotalUser">0</div><div class="kpi-label">Total Pengguna</div></div>
             <div class="kpi-card"><div class="kpi-num" id="statTotalGroup">0</div><div class="kpi-label">Total Grup Belajar</div></div>
           </div>
-          <!-- KPI BARU -->
           <div class="grid-kpi">
             <div class="kpi-card"><div class="kpi-num" id="statPendaftarPending">0</div><div class="kpi-label">Pendaftar Pending</div></div>
             <div class="kpi-card"><div class="kpi-num" id="statTotalClasses">0</div><div class="kpi-label">Total Kelas</div></div>
@@ -488,7 +683,6 @@
             <div class="kpi-card"><div class="kpi-num" id="statTotalReports">0</div><div class="kpi-label">Rapor Dihasilkan</div></div>
             <div class="kpi-card"><div class="kpi-num" id="statAvgGlobalScore">0</div><div class="kpi-label">Rata-rata Nilai Global</div></div>
           </div>
-          <!-- GRAFIK BARU -->
           <div class="panel-box">
             <div class="panel-title"><i class="fas fa-chart-pie" style="color: var(--accent);"></i> Distribusi Pengguna per Role</div>
             <div class="overview-chart-wrap"><canvas id="adminChartUserRoles" height="90"></canvas></div>
@@ -501,38 +695,32 @@
             <div class="panel-title"><i class="fas fa-chart-simple" style="color: var(--accent);"></i> Jumlah Siswa per Kelas (Top 10)</div>
             <div class="overview-chart-wrap"><canvas id="adminChartClassStudents" height="90"></canvas></div>
           </div>
-          <!-- RINGKASAN LAMA — JANGAN DIUBAH -->
           <div class="panel-box"><div class="panel-title">Ringkasan</div><p class="lms-muted">Pilih menu di sidebar kiri untuk mengelola konten LMS.</p></div>
         </div>
 
+        <!-- PENDAFTAR BARU -->
+        <div id="admin-view-pendaftar" class="admin-view hidden">
+          <h2 style="margin-bottom: 1.5rem;">Persetujuan Pendaftaran Siswa</h2>
+          <div class="panel-box">
+            <div class="panel-title">
+              <span><i class="fas fa-user-clock" style="color: var(--accent);"></i> Daftar Calon Siswa</span>
+              <button class="lms-action sm" onclick="loadAdminPendaftar()"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
+            <p class="lms-muted" style="margin-bottom: 1rem;">Data ini berasal dari form pendaftaran mandiri. Klik <b>Setujui</b> untuk mengaktifkan akun siswa agar bisa login ke LMS.</p>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr><th>Nama & Email</th><th>Kelas / NISN</th><th>Tanggal Daftar</th><th>Status</th><th>Aksi</th></tr>
+                </thead>
+                <tbody id="pendaftarTableBody">
+                  <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- USERS -->
-         <!-- PENDAFTAR BARU -->
-<div id="admin-view-pendaftar" class="admin-view hidden">
-  <h2 style="margin-bottom: 1.5rem;">Persetujuan Pendaftaran Siswa</h2>
-  <div class="panel-box">
-    <div class="panel-title">
-      <span><i class="fas fa-user-clock" style="color: var(--accent);"></i> Daftar Calon Siswa</span>
-      <button class="lms-action sm" onclick="loadAdminPendaftar()"><i class="fas fa-sync"></i> Refresh</button>
-    </div>
-    <p class="lms-muted" style="margin-bottom: 1rem;">Data ini berasal dari form pendaftaran mandiri. Klik <b>Setujui</b> untuk mengaktifkan akun siswa agar bisa login ke LMS.</p>
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>Nama & Email</th>
-            <th>Kelas / NISN</th>
-            <th>Tanggal Daftar</th>
-            <th>Status</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="pendaftarTableBody">
-          <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
         <div id="admin-view-users" class="admin-view hidden">
           <h2 style="margin-bottom: 1.5rem;">Manajemen Pengguna</h2>
           <div class="panel-box">
@@ -578,7 +766,7 @@
           </div>
         </div>
 
-        <!-- CLASSES (GRUP) -->
+        <!-- CLASSES -->
         <div id="admin-view-classes" class="admin-view hidden">
           <h2 style="margin-bottom: 1.5rem;">Grup Belajar</h2>
           <div class="panel-box">
@@ -696,13 +884,9 @@
           </div>
         </div>
 
-        <!-- ============================================================ -->
-        <!-- TAMBAHAN BARU: ADMIN — RAPOR DIGITAL (Tahap 3B)              -->
-        <!-- ============================================================ -->
+        <!-- ADMIN — RAPOR DIGITAL -->
         <div id="admin-view-rapor" class="admin-view hidden">
           <h2 style="margin-bottom: 1.5rem;">Rapor Digital</h2>
-
-          <!-- 1. Form CRUD Periode Rapor -->
           <div class="panel-box">
             <div class="panel-title"><span><i class="fas fa-calendar-plus" style="color: var(--accent);"></i> Buat Periode Rapor</span></div>
             <form onsubmit="adminCreateRaporPeriod(event)">
@@ -722,8 +906,6 @@
               <button type="submit" class="lms-action primary"><i class="fas fa-save"></i> Simpan Periode</button>
             </form>
           </div>
-
-          <!-- Tabel Daftar Periode -->
           <div class="panel-box">
             <div class="panel-title"><span><i class="fas fa-list" style="color: var(--accent);"></i> Daftar Periode</span><button class="lms-action sm" onclick="loadAdminRaporPeriods()"><i class="fas fa-sync"></i> Refresh</button></div>
             <div class="table-responsive">
@@ -733,8 +915,6 @@
               </table>
             </div>
           </div>
-
-          <!-- 2. Panel Filter & Generate Rapor -->
           <div class="panel-box">
             <div class="panel-title"><span><i class="fas fa-filter" style="color: var(--accent);"></i> Filter & Generate</span></div>
             <div class="lms-grid">
@@ -747,17 +927,12 @@
               <button class="lms-action primary" onclick="loadAdminRapor()"><i class="fas fa-sync"></i> Tampilkan Rapor</button>
             </div>
           </div>
-
-          <!-- Tabel Rapor Hasil -->
           <div class="panel-box">
             <div class="panel-title"><span><i class="fas fa-table-list" style="color: var(--accent);"></i> Daftar Rapor</span></div>
             <div class="table-responsive">
               <table>
                 <thead>
-                  <tr>
-                    <th>Siswa</th><th>Mapel</th><th>Rata-rata</th><th>Tugas</th>
-                    <th>Kehadiran</th><th>Catatan Guru</th><th>Aksi</th>
-                  </tr>
+                  <tr><th>Siswa</th><th>Mapel</th><th>Rata-rata</th><th>Tugas</th><th>Kehadiran</th><th>Catatan Guru</th><th>Aksi</th></tr>
                 </thead>
                 <tbody id="adminRaporList"><tr><td colspan="7" style="text-align:center;">Pilih filter lalu klik "Tampilkan Rapor".</td></tr></tbody>
               </table>
@@ -950,7 +1125,6 @@
         <button class="sidebar-item" onclick="guruNav('assignments', this)"><i class="fas fa-tasks"></i> Tugas</button>
         <button class="sidebar-item" onclick="guruNav('grading', this)"><i class="fas fa-check-double"></i> Penilaian</button>
         <button class="sidebar-item" onclick="window.open('buat_kuis.html', '_blank')"><i class="fas fa-file-signature"></i> buat Kuis</button>
-        <!-- TAMBAHAN BARU: menu Rapor Guru -->
         <button class="sidebar-item" onclick="guruNav('rapor', this)"><i class="fas fa-file-lines"></i> Rapor Siswa</button>
         <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="guruNav('menus', this)"><i class="fas fa-link"></i> Kelola Menu Siswa</button>
@@ -969,7 +1143,6 @@
             <div class="kpi-card"><div class="kpi-num" id="guruStatStudents">0</div><div class="kpi-label">Total Siswa</div></div>
             <div class="kpi-card"><div class="kpi-num" id="guruStatAssignments">0</div><div class="kpi-label">Tugas Aktif</div></div>
           </div>
-          <!-- KPI BARU GURU -->
           <div class="grid-kpi">
             <div class="kpi-card"><div class="kpi-num" id="guruStatGraded">0</div><div class="kpi-label">Tugas Dinilai</div></div>
             <div class="kpi-card"><div class="kpi-num" id="guruStatMaterials">0</div><div class="kpi-label">Materi Publik</div></div>
@@ -977,7 +1150,6 @@
             <div class="kpi-card"><div class="kpi-num" id="guruStatAvgScore">0</div><div class="kpi-label">Rata-rata Nilai Siswa</div></div>
             <div class="kpi-card"><div class="kpi-num" id="guruStatQuizDone">-</div><div class="kpi-label">Kuis Dikerjakan</div></div>
           </div>
-          <!-- GRAFIK BARU GURU -->
           <div class="panel-box">
             <div class="panel-title"><i class="fas fa-chart-pie" style="color: var(--accent);"></i> Status Pengumpulan Tugas</div>
             <div class="overview-chart-wrap"><canvas id="guruChartSubmissionStatus" height="90"></canvas></div>
@@ -1010,7 +1182,7 @@
           <div class="panel-box">
             <div class="panel-title">Anggota Grup</div>
             <div class="lms-field"><label>Pilih Grup</label><select id="guruMemberGroupSelect" onchange="loadGuruGroupMembers()"><option value="">Pilih grup...</option></select></div>
-                        <form onsubmit="guruAddMember(event)" style="margin-top:.8rem">
+            <form onsubmit="guruAddMember(event)" style="margin-top:.8rem">
               <div class="lms-grid">
                 <div class="lms-field">
                   <label>Pilih Siswa</label>
@@ -1059,7 +1231,8 @@
                 <div class="lms-field"><label>Grup</label><select id="gmatClass" required></select></div>
                 <div class="lms-field"><label>Mapel</label><select id="gmatSubject"></select></div>
                 <div class="lms-field"><label>Judul</label><input id="gmatTitle" required></div>
-                <div class="lms-field"><label>URL File</label><input id="gmatFile" type="url"></div>
+                <div class="lms-field"><label>URL File (Opsional)</label><input id="gmatFile" type="url" placeholder="https://..."></div>
+                <div class="lms-field"><label>Atau Upload File (Maks 5MB)</label><input id="gmatFileUpload" type="file"></div>
                 <div class="lms-field"><label>URL Video</label><input id="gmatVideo" type="url"></div>
               </div>
               <div class="lms-field"><label>Konten</label><textarea id="gmatContent"></textarea></div>
@@ -1085,6 +1258,7 @@
                 <div class="lms-field"><label>Judul</label><input id="gasgTitle" required></div>
                 <div class="lms-field"><label>Tenggat</label><input id="gasgDue" type="datetime-local"></div>
                 <div class="lms-field"><label>URL Lampiran</label><input id="gasgAttachment" type="url"></div>
+                <div class="lms-field"><label>Atau Upload File Soal (Maks 5MB)</label><input id="gasgFileUpload" type="file"></div>
               </div>
               <div class="lms-field"><label>Deskripsi</label><textarea id="gasgDesc"></textarea></div>
               <label class="lms-muted" style="display:block;margin-bottom:.6rem"><input type="checkbox" id="gasgPublished" checked> Terbitkan</label>
@@ -1107,7 +1281,7 @@
           </div>
         </div>
 
-        <!-- TAMBAHAN BARU: GURU — RAPOR SISWA (Tahap 3B) -->
+        <!-- GURU — RAPOR SISWA -->
         <div id="guru-view-rapor" class="guru-view hidden">
           <h2 style="margin-bottom: 1.5rem;">Rapor Siswa</h2>
           <div class="panel-box">
@@ -1123,10 +1297,7 @@
             <div class="table-responsive">
               <table>
                 <thead>
-                  <tr>
-                    <th>Siswa</th><th>Mapel</th><th>Rata-rata</th><th>Tugas</th>
-                    <th>Kehadiran</th><th>Catatan Guru</th><th>Aksi</th>
-                  </tr>
+                  <tr><th>Siswa</th><th>Mapel</th><th>Rata-rata</th><th>Tugas</th><th>Kehadiran</th><th>Catatan Guru</th><th>Aksi</th></tr>
                 </thead>
                 <tbody id="guruRaporList"><tr><td colspan="7" style="text-align:center;">Pilih filter lalu klik "Tampilkan Rapor".</td></tr></tbody>
               </table>
@@ -1134,11 +1305,9 @@
           </div>
         </div>
 
-        <!-- FILES -->
-                <!-- GURU MENUS (KELOLA MENU SISWA) -->
+        <!-- GURU MENUS -->
         <div id="guru-view-menus" class="guru-view hidden">
           <h2 style="margin-bottom: 1.5rem;">Kelola Menu Siswa</h2>
-          
           <div class="panel-box">
             <div class="panel-title"><span><i class="fas fa-plus-circle" style="color: var(--accent);"></i> Tambah Menu Baru</span></div>
             <form onsubmit="guruCreateMenu(event)">
@@ -1151,9 +1320,9 @@
                   <label>Link URL (File / Web)</label>
                   <input id="gMenuUrl" required placeholder="Contoh: kuis.html">
                 </div>
-                                <div class="lms-field">
+                <div class="lms-field">
                   <label>Icon (Pilih Visual)</label>
-                  <select id="gMenuIcon" required style="font-family: 'Onest', sans-serif;">
+                  <select id="gMenuIcon" required style="font-family: 'Plus Jakarta Sans', sans-serif;">
                     <option value="fa-solid fa-link">🔗 Link / URL Umum</option>
                     <option value="fa-solid fa-file-pdf">📄 File Dokumen / PDF</option>
                     <option value="fa-solid fa-video">🎥 Video Pembelajaran</option>
@@ -1169,7 +1338,7 @@
                     <option value="fa-solid fa-clipboard-list">📋 Daftar Hadir / Form</option>
                     <option value="fa-solid fa-folder">📁 Folder / Kumpulan Materi</option>
                   </select>
-                                    <div id="iconPreview" style="margin-top: 8px; font-size: 1.5rem; color: var(--accent); height: 30px;">
+                  <div id="iconPreview" style="margin-top: 8px; font-size: 1.5rem; color: var(--accent); height: 30px;">
                     <i class="fa-solid fa-file-signature"></i>
                   </div>
                 </div>
@@ -1177,12 +1346,13 @@
               <button type="submit" class="lms-action primary"><i class="fas fa-save"></i> Simpan Menu</button>
             </form>
           </div>
-
           <div class="panel-box">
             <div class="panel-title"><span>Daftar Menu yang Saya Buat</span><button class="lms-action sm" onclick="loadGuruMenus()"><i class="fas fa-sync"></i> Refresh</button></div>
             <div id="guruMenuList"><div class="lms-empty">Memuat...</div></div>
           </div>
         </div>
+
+        <!-- FILES -->
         <div id="guru-view-files" class="guru-view hidden">
           <h2 style="margin-bottom: 1.5rem;">File Saya</h2>
           <div class="panel-box">
@@ -1227,7 +1397,6 @@
         <button class="sidebar-item" onclick="siswaNav('assignments', this)"><i class="fas fa-pen-to-square"></i> Tugas Saya</button>
         <button class="sidebar-item" onclick="window.open('kuis.html?siswa_id=' + currentUser.id + '&kelas=' + currentProfile.kelas + '&nama=' + encodeURIComponent(currentProfile.full_name), '_blank')"><i class="fas fa-pen-to-square"></i> Kerjakan Kuis</button>
         <div class="sidebar-divider"></div>
-        <!-- TAMBAHAN BARU: menu Rapor Siswa -->
         <button class="sidebar-item" onclick="siswaNav('rapor', this)"><i class="fas fa-file-lines"></i> Rapor Saya</button>
         <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="siswaNav('teachermenus', this)"><i class="fas fa-external-link-alt"></i> Materi </button>
@@ -1246,7 +1415,6 @@
             <div class="kpi-card"><div class="kpi-num" id="siswaStatAssignments">0</div><div class="kpi-label">Tugas Aktif</div></div>
             <div class="kpi-card"><div class="kpi-num" id="siswaStatSubmitted">0</div><div class="kpi-label">Sudah Dikumpulkan</div></div>
           </div>
-          <!-- KPI BARU SISWA -->
           <div class="grid-kpi">
             <div class="kpi-card"><div class="kpi-num" id="siswaStatPending">0</div><div class="kpi-label">Tugas Belum Dikumpulkan</div></div>
             <div class="kpi-card"><div class="kpi-num" id="siswaStatAvgScore">0</div><div class="kpi-label">Rata-rata Nilai Tugas</div></div>
@@ -1255,7 +1423,6 @@
             <div class="kpi-card"><div class="kpi-num" id="siswaStatAttendance">-</div><div class="kpi-label">Persentase Kehadiran</div></div>
             <div class="kpi-card"><div class="kpi-num" id="siswaStatMaterials">0</div><div class="kpi-label">Materi Tersedia</div></div>
           </div>
-          <!-- GRAFIK BARU SISWA -->
           <div class="panel-box">
             <div class="panel-title"><i class="fas fa-chart-pie" style="color: var(--accent);"></i> Status Tugas</div>
             <div class="overview-chart-wrap"><canvas id="siswaChartAssignmentStatus" height="90"></canvas></div>
@@ -1303,13 +1470,9 @@
           </div>
         </div>
 
-        <!-- ============================================================ -->
-        <!-- TAMBAHAN BARU: SISWA — RAPOR SAYA + GRAFIK + CETAK (Tahap 3B) -->
-        <!-- ============================================================ -->
+        <!-- SISWA — RAPOR SAYA -->
         <div id="siswa-view-rapor" class="siswa-view hidden">
           <h2 style="margin-bottom: 1.5rem;">Rapor Saya</h2>
-
-          <!-- Filter + Cetak (no-print) -->
           <div class="panel-box no-print">
             <div class="panel-title"><span><i class="fas fa-filter" style="color: var(--accent);"></i> Filter Rapor</span></div>
             <div class="lms-grid">
@@ -1320,8 +1483,6 @@
               <button class="lms-action success" onclick="cetakRaporSiswa()"><i class="fas fa-print"></i> 🖨️ Cetak Rapor / PDF</button>
             </div>
           </div>
-
-          <!-- Konten yang akan dicetak -->
           <div id="siswaRaporContent">
             <div class="panel-box">
               <div class="rapor-header-print">
@@ -1329,30 +1490,20 @@
                 <p>EduSmart LMS — Bimbel Cerdas</p>
                 <p id="siswaRaporPeriodeInfo" style="margin-top:4px;font-weight:700;">Periode: -</p>
               </div>
-
               <div class="lms-muted" style="margin-bottom:0.8rem;">
                 <b>Nama Siswa:</b> <span id="siswaRaporNama">-</span> |
                 <b>Kelas:</b> <span id="siswaRaporKelas">-</span>
               </div>
-
               <div class="table-responsive">
                 <table>
                   <thead>
-                    <tr>
-                      <th>Mata Pelajaran</th>
-                      <th>Rata-rata Nilai</th>
-                      <th>Tugas Selesai</th>
-                      <th>Kehadiran</th>
-                      <th>Catatan Guru</th>
-                    </tr>
+                    <tr><th>Mata Pelajaran</th><th>Rata-rata Nilai</th><th>Tugas Selesai</th><th>Kehadiran</th><th>Catatan Guru</th></tr>
                   </thead>
                   <tbody id="siswaRaporTableBody">
                     <tr><td colspan="5" style="text-align:center;">Pilih periode lalu klik "Tampilkan Rapor".</td></tr>
                   </tbody>
                 </table>
               </div>
-
-              <!-- 3. Grafik Chart.js -->
               <div class="rapor-chart-wrap">
                 <h4><i class="fas fa-chart-line" style="color: var(--accent);"></i> Perkembangan Nilai per Tugas</h4>
                 <canvas id="siswaRaporLineChart" height="120"></canvas>
@@ -1365,8 +1516,7 @@
           </div>
         </div>
 
-        <!-- FILES -->
-                <!-- SISWA TEACHER MENUS -->
+        <!-- SISWA TEACHER MENUS -->
         <div id="siswa-view-teachermenus" class="siswa-view hidden">
           <h2 style="margin-bottom: 1.5rem;">Materi & Kuis dari Guru</h2>
           <div class="panel-box">
@@ -1374,6 +1524,8 @@
             <div id="siswaTeacherMenuList"><div class="lms-empty">Memuat...</div></div>
           </div>
         </div>
+
+        <!-- FILES -->
         <div id="siswa-view-files" class="siswa-view hidden">
           <h2 style="margin-bottom: 1.5rem;">File Kelas</h2>
           <div class="panel-box">
@@ -1402,7 +1554,6 @@ let currentProfile = null;
 
 const CLOUD_SETTINGS_KEY = 'kakros_cloudinary_settings';
 
-// Cache global
 const CACHE = {
   subjects: [],
   classes: [],
@@ -1454,9 +1605,21 @@ function fillSelect(id, rows, placeholder, valueKey = 'id', labelFn = null) {
   el.innerHTML = `<option value="">${escapeHtml(placeholder || 'Pilih...')}</option>` + opts;
 }
 
+const CLOUD_DEFAULT = {
+  cloudName: 'popx6mep',
+  uploadPreset: 'dwi.rosi77@guru.smp.belajar.id'
+};
+
 function getCloudinarySettings() {
-  try { return JSON.parse(localStorage.getItem(CLOUD_SETTINGS_KEY) || '{}'); }
-  catch (_) { return {}; }
+  try {
+    const saved = JSON.parse(localStorage.getItem(CLOUD_SETTINGS_KEY) || '{}');
+    return {
+      cloudName: saved.cloudName || CLOUD_DEFAULT.cloudName,
+      uploadPreset: saved.uploadPreset || CLOUD_DEFAULT.uploadPreset
+    };
+  } catch (_) {
+    return CLOUD_DEFAULT;
+  }
 }
 
 function loadCloudinarySettings() {
@@ -1482,7 +1645,7 @@ function cloudinaryReady() {
 
 async function uploadPhotoToCloudinary(file, folder = 'bimbel-kak-ros/lms') {
   const c = getCloudinarySettings();
-  if (!c.cloudName || !c.uploadPreset) throw new Error('Cloudinary belum dikonfigurasi. Minta Admin mengisi di Pengaturan Situs.');
+  if (!c.cloudName || !c.uploadPreset) throw new Error('Cloudinary belum dikonfigurasi.');
   if (!file) throw new Error('File kosong.');
   if (file.size > 10 * 1024 * 1024) throw new Error('Ukuran file maksimal 10 MB.');
   const form = new FormData();
@@ -1495,7 +1658,7 @@ async function uploadPhotoToCloudinary(file, folder = 'bimbel-kak-ros/lms') {
   return result;
 }
 
-// ============ SIDEBAR TOGGLE ============
+// ============ SIDEBAR ============
 function toggleSidebar() {
   const role = currentProfile?.role;
   const sidebar = document.getElementById(role + 'Sidebar');
@@ -1522,7 +1685,8 @@ function closeSidebar() {
 function switchView(rootId, viewId, btn) {
   const root = document.getElementById(rootId);
   if (!root) return;
-  root.querySelectorAll('[id^="' + rootId.replace('Dashboard', '') + '-view-"]').forEach(v => v.classList.add('hidden'));
+  const prefix = rootId.replace('Dashboard', '');
+  root.querySelectorAll('[id^="' + prefix + '-view-"]').forEach(v => v.classList.add('hidden'));
   const target = document.getElementById(viewId);
   if (target) target.classList.remove('hidden');
   root.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
@@ -1545,8 +1709,7 @@ const ADMIN_LOADERS = {
   files: () => loadAdminFiles(),
   settings: () => { loadCloudinarySettings(); loadAdminSettings(); },
   stats: () => loadAdminStats(),
-  pendaftar: () => loadAdminPendaftar(), // <--- CUKUP TAMBAHKAN BARIS INI SAJA
-  // TAMBAHAN BARU: loader rapor admin
+  pendaftar: () => loadAdminPendaftar(),
   rapor: () => { loadAdminRaporPeriods(); loadAdminClasses(); loadAdminRapor(); }
 };
 
@@ -1555,20 +1718,33 @@ function adminNav(view, btn) {
   ADMIN_LOADERS[view]?.();
 }
 
+// ============================================================
+// ✅ GURU NAV — SATU DEKLARASI SAJA (tidak ada override)
+// ============================================================
 function guruNav(view, btn) {
   switchView('guruDashboard', 'guru-view-' + view, btn);
   const map = {
     overview: () => loadGuruOverview(),
-    groups: () => loadGuruGroups(),
+    groups: () => { loadGuruGroups(); loadGuruStudentOptions(); },
     schedules: () => { loadGuruGroupOptions(); loadGuruSchedules(); },
     materials: () => { loadGuruGroupOptions(); loadGuruMaterials(); },
-    assignments: () => { loadGuruGroupOptions(); loadGuruAssignments(); },
+    assignments: () => { 
+      const el = document.getElementById('guruAssignmentList');
+      if (el) el.innerHTML = '<div class="lms-empty">Memuat data tugas...</div>';
+      loadGuruGroupOptions();
+      loadGuruAssignments();
+    },
     grading: () => loadGuruAssignmentOptions(),
     files: () => loadGuruFiles(),
-    // TAMBAHAN BARU: loader rapor guru
+    menus: () => loadGuruMenus(),
     rapor: () => { loadGuruRaporPeriods(); loadGuruGroupOptions(); loadGuruRapor(); }
   };
-  map[view]?.();
+  try {
+    if (map[view]) map[view]();
+  } catch (err) {
+    console.error('Error di guruNav:', err);
+    showToast('⚠️ Terjadi kesalahan saat memuat menu: ' + err.message);
+  }
 }
 
 function siswaNav(view, btn) {
@@ -1580,7 +1756,7 @@ function siswaNav(view, btn) {
     materials: () => loadSiswaMaterials(),
     assignments: () => loadSiswaAssignments(),
     files: () => loadSiswaFiles(),
-    // TAMBAHAN BARU: loader rapor siswa
+    teachermenus: () => loadSiswaTeacherMenus(),
     rapor: () => { loadSiswaRaporPeriods(); loadSiswaRapor(); }
   };
   map[view]?.();
@@ -1631,78 +1807,51 @@ async function loadUserProfile(userId) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  
   const emailInput = document.getElementById('loginEmail');
   const passwordInput = document.getElementById('loginPassword');
   const btn = document.getElementById('loginSubmitBtn');
-  
   if (!emailInput || !passwordInput) return;
-
   const email = emailInput.value.trim();
   const password = passwordInput.value;
-
-  if (!supabaseClient) { 
-    showToast('⚠️ Koneksi ke database belum siap. Mohon tunggu sebentar atau refresh halaman.'); 
-    return; 
+  if (!supabaseClient) {
+    showToast('⚠️ Koneksi ke database belum siap. Mohon tunggu sebentar atau refresh halaman.');
+    return;
   }
-
-  // Ubah tombol jadi loading
   const originalBtnText = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memeriksa Akun...';
-
   try {
-    // Proses Login ke Supabase
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ 
-      email: email, 
-      password: password 
-    });
-
-    // Jika gagal (misal password salah)
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) {
       showToast('❌ Login Gagal: ' + error.message);
       btn.disabled = false;
       btn.innerHTML = originalBtnText;
       return;
     }
-
-    // ==========================================
-    // TAMBAHAN BARU: CEK STATUS PERSETUJUAN
-    // ==========================================
-    // Ambil data profil untuk mengecek is_active
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('is_active, role')
       .eq('id', data.user.id)
       .maybeSingle();
-
     if (profileError || !profile) {
       showToast('⚠️ Profil tidak ditemukan. Hubungi admin.');
-      await supabaseClient.auth.signOut(); // Batalkan login
+      await supabaseClient.auth.signOut();
       btn.disabled = false;
       btn.innerHTML = originalBtnText;
       return;
     }
-
-    // Jika akun siswa belum disetujui (is_active === false)
     if (profile.role === 'siswa' && profile.is_active === false) {
       showToast('⏳ Akun Anda belum disetujui Admin. Silakan tunggu.');
-      await supabaseClient.auth.signOut(); // Batalkan login paksa
+      await supabaseClient.auth.signOut();
       btn.disabled = false;
       btn.innerHTML = originalBtnText;
-      return; // Hentikan proses
+      return;
     }
-    // ==========================================
-
-    // Jika berhasil dan sudah aktif
     currentUser = data.user;
     showToast('✅ Login berhasil! Memuat data...');
-    
-    // Ambil data profil lengkap
     await loadUserProfile(data.user.id);
-
   } catch (err) {
-    console.error("Error Login:", err);
+    console.error('Error Login:', err);
     showToast('❌ Terjadi kesalahan sistem: ' + err.message);
     btn.disabled = false;
     btn.innerHTML = originalBtnText;
@@ -1713,8 +1862,8 @@ async function handleLogout() {
   await supabaseClient.auth.signOut();
   currentUser = null;
   currentProfile = null;
-  NOTIF_CACHE.items = [];           // BARU
-  NOTIF_CACHE.isOpen = false;       // BARU
+  NOTIF_CACHE.items = [];
+  NOTIF_CACHE.isOpen = false;
   showToast('👋 Berhasil keluar');
   showLoginView();
 }
@@ -1724,9 +1873,7 @@ function renderDashboardView() {
   document.getElementById('appHeader').classList.remove('hidden');
   document.getElementById('userNameDisplay').innerText = currentProfile.full_name || currentProfile.email || '-';
   document.getElementById('userRoleTag').innerText = currentProfile.role || '-';
-
   ['adminDashboard', 'guruDashboard', 'siswaDashboard'].forEach(id => document.getElementById(id).classList.add('hidden'));
-
   if (currentProfile.role === 'admin') {
     document.getElementById('adminDashboard').classList.remove('hidden');
     loadAdminOverview();
@@ -1752,8 +1899,6 @@ function showLoginView() {
 // ============================================================
 // ==================== ADMIN MODULES =========================
 // ============================================================
-
-// ---------- OVERVIEW ----------
 async function loadAdminOverview() {
   try {
     const [profRes, clsRes] = await Promise.all([
@@ -1767,18 +1912,11 @@ async function loadAdminOverview() {
     document.getElementById('statTotalSiswa').innerText = profs.filter(p => p.role === 'siswa').length;
     document.getElementById('statTotalGuru').innerText = profs.filter(p => p.role === 'guru').length;
     document.getElementById('statTotalGroup').innerText = clsRes.count || 0;
-  } catch (e) {
-    showToast('Gagal memuat ringkasan: ' + e.message);
-  }
-  // TAMBAHAN BARU: statistik lengkap + grafik
-  try {
-    await loadAdminOverviewStats();
-  } catch (e) {
-    console.warn('Gagal memuat statistik overview admin:', e.message);
-  }
+  } catch (e) { showToast('Gagal memuat ringkasan: ' + e.message); }
+  try { await loadAdminOverviewStats(); }
+  catch (e) { console.warn('Gagal memuat statistik overview admin:', e.message); }
 }
 
-// TAMBAHAN BARU: statistik lengkap admin
 async function loadAdminOverviewStats() {
   const data = {};
   try {
@@ -1793,9 +1931,7 @@ async function loadAdminOverviewStats() {
       supabaseClient.from('assignment_submissions').select('score').eq('status', 'dinilai'),
       supabaseClient.from('class_members').select('class_id, classes:class_id(class_name)')
     ]);
-
     const setKpi = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-
     setKpi('statPendaftarPending', pendRes.count || 0);
     setKpi('statTotalClasses', clsRes.count || 0);
     setKpi('statTotalSubjects', subjRes.count || 0);
@@ -1803,19 +1939,14 @@ async function loadAdminOverviewStats() {
     setKpi('statTotalMaterials', matRes.count || 0);
     setKpi('statTotalGraded', gradedRes.count || 0);
     setKpi('statTotalReports', reportRes.count || 0);
-
     const scores = (subAllRes.data || []).map(s => Number(s.score)).filter(n => Number.isFinite(n));
     const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
     setKpi('statAvgGlobalScore', avg !== null ? avg.toFixed(2) : '0');
-
-    // Kumpulkan data grafik
     data.roles = {
       admin: (await supabaseClient.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'admin')).count || 0,
       guru: (await supabaseClient.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'guru')).count || 0,
       siswa: (await supabaseClient.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'siswa')).count || 0
     };
-
-    // Submission per status (terkirim vs dinilai)
     const [terkirimRes, dinilaiRes] = await Promise.all([
       supabaseClient.from('assignment_submissions').select('id', { count: 'exact', head: true }).eq('status', 'terkirim'),
       supabaseClient.from('assignment_submissions').select('id', { count: 'exact', head: true }).eq('status', 'dinilai')
@@ -1824,17 +1955,12 @@ async function loadAdminOverviewStats() {
       terkirim: terkirimRes.count || 0,
       dinilai: dinilaiRes.count || 0
     };
-
-    // Siswa per kelas (top 10)
     const perClass = {};
     (membersRes.data || []).forEach(m => {
       const name = m.classes?.class_name || 'Tanpa Kelas';
       perClass[name] = (perClass[name] || 0) + 1;
     });
-    data.classStudents = Object.entries(perClass)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
-
+    data.classStudents = Object.entries(perClass).sort((a, b) => b[1] - a[1]).slice(0, 10);
     renderAdminOverviewCharts(data);
   } catch (e) {
     console.warn('loadAdminOverviewStats error:', e.message);
@@ -1842,13 +1968,9 @@ async function loadAdminOverviewStats() {
   }
 }
 
-// TAMBAHAN BARU: render grafik admin
 function renderAdminOverviewCharts(data) {
-  if (typeof Chart === 'undefined') { console.warn('Chart.js belum dimuat'); return; }
-
+  if (typeof Chart === 'undefined') return;
   const destroyIf = (key) => { if (window[key]) { try { window[key].destroy(); } catch (_) {} window[key] = null; } };
-
-  // Doughnut: distribusi role
   destroyIf('__adminChartUserRoles');
   const rolesCanvas = document.getElementById('adminChartUserRoles');
   if (rolesCanvas) {
@@ -1857,76 +1979,33 @@ function renderAdminOverviewCharts(data) {
       type: 'doughnut',
       data: {
         labels: ['Admin', 'Guru', 'Siswa'],
-        datasets: [{
-          data: [roles.admin || 0, roles.guru || 0, roles.siswa || 0],
-          backgroundColor: ['#fce7f3', '#dbeafe', '#fef3c7'],
-          borderColor: ['#9d174d', '#1e40af', '#92400e'],
-          borderWidth: 1
-        }]
+        datasets: [{ data: [roles.admin || 0, roles.guru || 0, roles.siswa || 0], backgroundColor: ['#fce7f3', '#dbeafe', '#fef3c7'], borderColor: ['#9d174d', '#1e40af', '#92400e'], borderWidth: 1 }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } }
-      }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
     });
   }
-
-  // Bar: submission per status
   destroyIf('__adminChartSubmissionStatus');
   const subCanvas = document.getElementById('adminChartSubmissionStatus');
   if (subCanvas) {
     const st = data?.submissionStatus || { terkirim: 0, dinilai: 0 };
     window.__adminChartSubmissionStatus = new Chart(subCanvas, {
       type: 'bar',
-      data: {
-        labels: ['Terkirim', 'Dinilai'],
-        datasets: [{
-          label: 'Jumlah Submission',
-          data: [st.terkirim || 0, st.dinilai || 0],
-          backgroundColor: ['#f59e0b', '#10b981'],
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-      }
+      data: { labels: ['Terkirim', 'Dinilai'], datasets: [{ label: 'Jumlah Submission', data: [st.terkirim || 0, st.dinilai || 0], backgroundColor: ['#f59e0b', '#10b981'], borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
     });
   }
-
-  // Bar horizontal: jumlah siswa per kelas top 10
   destroyIf('__adminChartClassStudents');
   const classCanvas = document.getElementById('adminChartClassStudents');
   if (classCanvas) {
     const rows = data?.classStudents || [];
     window.__adminChartClassStudents = new Chart(classCanvas, {
       type: 'bar',
-      data: {
-        labels: rows.map(r => r[0]),
-        datasets: [{
-          label: 'Jumlah Siswa',
-          data: rows.map(r => r[1]),
-          backgroundColor: 'rgba(37,99,235,0.65)',
-          borderColor: '#1d4ed8',
-          borderWidth: 1,
-          borderRadius: 6
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
-      }
+      data: { labels: rows.map(r => r[0]), datasets: [{ label: 'Jumlah Siswa', data: rows.map(r => r[1]), backgroundColor: 'rgba(37,99,235,0.65)', borderColor: '#1d4ed8', borderWidth: 1, borderRadius: 6 }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
     });
   }
 }
 
-// ---------- USERS ----------
 async function loadAdminUsers() {
   const tbody = document.getElementById('userTableBody');
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Memuat...</td></tr>';
@@ -1935,7 +2014,6 @@ async function loadAdminUsers() {
     if (error) throw error;
     CACHE.profiles = data || [];
     renderUserTable();
-    // juga untuk isi dropdown guru pengampu
     fillSelect('ncTeacher', CACHE.profiles.filter(p => p.role === 'guru'), 'Pilih guru...', 'id', p => p.full_name || p.email);
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`;
@@ -1991,23 +2069,19 @@ async function adminCreateUser(e) {
       email: payload.email,
       password: document.getElementById('nuPassword').value,
       options: { data: {
-  full_name: payload.full_name,
-  role: payload.role,
-  nip_nisn: payload.nip_nisn,
-  kelas: payload.kelas,
-  is_active: true  // BARU: admin buat akun = langsung aktif
-} }
+        full_name: payload.full_name,
+        role: payload.role,
+        nip_nisn: payload.nip_nisn,
+        kelas: payload.kelas,
+        is_active: true
+      } }
     });
     if (error) throw error;
     showToast('✅ Akun berhasil dibuat: ' + payload.email);
     e.target.reset();
     await loadAdminUsers();
-  } catch (err) {
-    showToast('❌ ' + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-save"></i> Buat Akun';
-  }
+  } catch (err) { showToast('❌ ' + err.message); }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Buat Akun'; }
 }
 
 async function adminEditUser(id) {
@@ -2045,7 +2119,6 @@ async function adminDeleteUser(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- CLASSES (GRUP) ----------
 async function loadAdminClasses() {
   const el = document.getElementById('adminClassList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2056,7 +2129,6 @@ async function loadAdminClasses() {
     fillSelect('nschClass', CACHE.allClasses, 'Pilih grup...', 'id', c => c.class_name);
     fillSelect('nmClass', CACHE.allClasses, 'Pilih grup...', 'id', c => c.class_name);
     fillSelect('naClass', CACHE.allClasses, 'Pilih grup...', 'id', c => c.class_name);
-    // TAMBAHAN BARU: isi dropdown filter rapor admin
     fillSelect('raporClassFilter', CACHE.allClasses, 'Pilih kelas...', 'id', c => c.class_name);
     if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada grup.</div>'; return; }
     el.innerHTML = data.map(c => `
@@ -2069,9 +2141,7 @@ async function loadAdminClasses() {
         </div>
       </div>
     `).join('');
-  } catch (e) {
-    el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`;
-  }
+  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
 async function adminCreateClass(e) {
@@ -2121,7 +2191,6 @@ async function adminDeleteClass(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- SUBJECTS ----------
 async function loadAdminSubjects() {
   const el = document.getElementById('adminSubjectList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2143,9 +2212,7 @@ async function loadAdminSubjects() {
         </div>
       </div>
     `).join('');
-  } catch (e) {
-    el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`;
-  }
+  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
 async function adminCreateSubject(e) {
@@ -2191,7 +2258,6 @@ async function adminDeleteSubject(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- SCHEDULES ----------
 async function loadAdminSchedules() {
   const el = document.getElementById('adminScheduleList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2227,7 +2293,6 @@ async function adminCreateSchedule(e) {
     });
     if (error) throw error;
     showToast('✅ Jadwal dibuat.');
-        // NOTIF
     createNotificationsForClass(Number(document.getElementById('nschClass').value), {
       title: '📅 Jadwal Baru',
       message: document.getElementById('nschTitle').value.trim(),
@@ -2250,7 +2315,6 @@ async function adminDeleteSchedule(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- MATERIALS ----------
 async function loadAdminMaterials() {
   const el = document.getElementById('adminMaterialList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2288,7 +2352,6 @@ async function adminCreateMaterial(e) {
     });
     if (error) throw error;
     showToast('✅ Materi dibuat.');
-        // NOTIF: kirim ke siswa jika published
     if (document.getElementById('nmPublished').checked) {
       createNotificationsForClass(Number(document.getElementById('nmClass').value), {
         title: '📚 Materi Baru',
@@ -2322,7 +2385,6 @@ async function adminDeleteMaterial(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- ASSIGNMENTS & SUBMISSIONS ----------
 async function loadAdminAssignments() {
   const el = document.getElementById('adminAssignmentList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2360,7 +2422,6 @@ async function adminCreateAssignment(e) {
     });
     if (error) throw error;
     showToast('✅ Tugas dibuat.');
-        // NOTIF: kirim ke siswa di kelas
     if (document.getElementById('naPublished').checked) {
       createNotificationsForClass(Number(document.getElementById('naClass').value), {
         title: '📝 Tugas Baru',
@@ -2440,27 +2501,19 @@ async function adminGradeSubmission(id) {
   const feedback = document.getElementById('adFeedback-' + id).value.trim();
   if (!Number.isFinite(score) || score < 0 || score > 100) { showToast('⚠️ Nilai harus 0–100.'); return; }
   try {
-        const { data: subData, error } = await supabaseClient.from('assignment_submissions').update({
+    const { data: subData, error } = await supabaseClient.from('assignment_submissions').update({
       score, feedback, status: 'dinilai',
       graded_by: currentUser.id, graded_at: new Date().toISOString(), updated_at: new Date().toISOString()
     }).eq('id', id).select('student_id, assignment_id').single();
     if (error) throw error;
     showToast('✅ Nilai disimpan.');
-    // NOTIF: kirim ke siswa yang dinilai
     if (subData?.student_id) {
-      createNotification(
-        subData.student_id,
-        '✅ Nilai Tugas',
-        `Nilai tugas kamu: ${score}${feedback ? ' — ' + feedback : ''}`,
-        'grade',
-        '#assignments'
-      );
+      createNotification(subData.student_id, '✅ Nilai Tugas', `Nilai tugas kamu: ${score}${feedback ? ' — ' + feedback : ''}`, 'grade', '#assignments');
     }
     await loadAdminSubmissions();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- NEWS ----------
 async function loadAdminNews() {
   const el = document.getElementById('adminNewsList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2493,7 +2546,6 @@ async function adminCreateNews(e) {
     });
     if (error) throw error;
     showToast('✅ Berita dibuat.');
-        // NOTIF: kirim ke SEMUA user
     createNotificationsForAllUsers({
       title: '📢 Pengumuman',
       message: document.getElementById('nwTitle').value.trim() || 'Berita baru diterbitkan',
@@ -2515,7 +2567,6 @@ async function adminDeleteNews(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- BLOCKS ----------
 async function loadAdminBlocks() {
   const el = document.getElementById('adminBlockList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2577,7 +2628,6 @@ async function loadAdminBlockOptions() {
   } catch (e) { /* silent */ }
 }
 
-// ---------- MENUS ----------
 async function loadAdminMenus() {
   const el = document.getElementById('adminMenuList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2644,7 +2694,6 @@ async function adminDeleteMenu(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- VIDEOS ----------
 async function loadAdminVideos() {
   const el = document.getElementById('adminVideoList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2690,7 +2739,6 @@ async function adminDeleteVideo(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- FILES ----------
 async function loadAdminFiles() {
   const el = document.getElementById('adminFileList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2738,7 +2786,6 @@ async function adminDeleteFile(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- SETTINGS ----------
 async function loadAdminSettings() {
   const el = document.getElementById('adminSettingsList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2781,7 +2828,6 @@ async function adminDeleteSetting(key) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- STATS ----------
 async function loadAdminStats() {
   const el = document.getElementById('adminStatsList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -2803,16 +2849,11 @@ async function loadAdminStats() {
   } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
-/* ========== PART 2/4 — SELESAI ========== */
-/* ========== PART 3/4 — JS GURU — MULAI ========== */
+// ============================================================
+// ==================== GURU MODULES ==========================
+// ============================================================
+const GURU_CACHE = { groups: [], subjects: [] };
 
-// Cache khusus guru
-const GURU_CACHE = {
-  groups: [],
-  subjects: []
-};
-
-// ---------- OVERVIEW GURU ----------
 async function loadGuruOverview() {
   try {
     const [grupRes, asgRes] = await Promise.all([
@@ -2823,9 +2864,7 @@ async function loadGuruOverview() {
     if (asgRes.error) throw asgRes.error;
     document.getElementById('guruStatGroups').innerText = grupRes.count || 0;
     document.getElementById('guruStatAssignments').innerText = asgRes.count || 0;
-    // total siswa: hitung dari class_members di grup milik guru
-    const { data: myGroups, error: gErr } = await supabaseClient.from('classes').select('id').eq('teacher_id', currentUser.id);
-    if (gErr) throw gErr;
+    const { data: myGroups } = await supabaseClient.from('classes').select('id').eq('teacher_id', currentUser.id);
     if (myGroups?.length) {
       const ids = myGroups.map(g => g.id);
       const { count } = await supabaseClient.from('class_members').select('id', { count: 'exact', head: true }).in('class_id', ids);
@@ -2833,90 +2872,39 @@ async function loadGuruOverview() {
     } else {
       document.getElementById('guruStatStudents').innerText = 0;
     }
-  } catch (e) {
-    showToast('Gagal memuat ringkasan guru: ' + e.message);
-  }
-  // TAMBAHAN BARU: statistik lengkap + grafik guru
-  try {
-    await loadGuruOverviewStats();
-  } catch (e) {
-    console.warn('Gagal memuat statistik overview guru:', e.message);
-  }
+  } catch (e) { showToast('Gagal memuat ringkasan guru: ' + e.message); }
+  try { await loadGuruOverviewStats(); } catch (e) { console.warn('Stats err:', e.message); }
 }
 
-// TAMBAHAN BARU: statistik lengkap guru
 async function loadGuruOverviewStats() {
   const data = { avgPerClass: [] };
   try {
-    // Ambil grup milik guru
     const { data: myGroups } = await supabaseClient.from('classes').select('id, class_name').eq('teacher_id', currentUser.id);
     const groupIds = (myGroups || []).map(g => g.id);
-
     if (!groupIds.length) {
       ['guruStatGraded', 'guruStatMaterials', 'guruStatSchedules', 'guruStatAvgScore', 'guruStatQuizDone'].forEach(id => {
         const el = document.getElementById(id); if (el) el.innerText = '0';
       });
-      renderGuruOverviewCharts(data);
-      return;
+      renderGuruOverviewCharts(data); return;
     }
-
-    // Ambil assignment IDs milik guru (via class)
     const { data: asgs } = await supabaseClient.from('assignments').select('id, class_id').in('class_id', groupIds);
     const assignmentIds = (asgs || []).map(a => a.id);
-
-    // Kumpulkan data submission di assignment milik guru
     let subs = [];
     if (assignmentIds.length) {
-      const { data: subData } = await supabaseClient.from('assignment_submissions')
-        .select('id, status, score, assignment_id')
-        .in('assignment_id', assignmentIds);
+      const { data: subData } = await supabaseClient.from('assignment_submissions').select('id, status, score, assignment_id').in('assignment_id', assignmentIds);
       subs = subData || [];
     }
-
     const gradedCount = subs.filter(s => s.status === 'dinilai').length;
     const setKpi = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
     setKpi('guruStatGraded', gradedCount);
-
-    // Materi publik di kelas guru
-    const { count: matCount } = await supabaseClient.from('learning_materials')
-      .select('id', { count: 'exact', head: true })
-      .in('class_id', groupIds)
-      .eq('is_published', true);
+    const { count: matCount } = await supabaseClient.from('learning_materials').select('id', { count: 'exact', head: true }).in('class_id', groupIds).eq('is_published', true);
     setKpi('guruStatMaterials', matCount || 0);
-
-    // Jadwal di kelas guru
-    const { count: schCount } = await supabaseClient.from('schedules')
-      .select('id', { count: 'exact', head: true })
-      .in('class_id', groupIds);
+    const { count: schCount } = await supabaseClient.from('schedules').select('id', { count: 'exact', head: true }).in('class_id', groupIds);
     setKpi('guruStatSchedules', schCount || 0);
-
-    // Rata-rata nilai siswa (submission dinilai)
     const scoreVals = subs.filter(s => s.status === 'dinilai' && s.score != null).map(s => Number(s.score)).filter(n => Number.isFinite(n));
     const avg = scoreVals.length ? scoreVals.reduce((a, b) => a + b, 0) / scoreVals.length : null;
     setKpi('guruStatAvgScore', avg !== null ? avg.toFixed(2) : '0');
-
-    // Kuis dikerjakan: hasil_ujian untuk siswa di kelas guru
-    let quizDone = '-';
-    try {
-      // Ambil siswa di kelas guru
-      const { data: members } = await supabaseClient.from('class_members').select('student_id').in('class_id', groupIds);
-      const studentIds = [...new Set((members || []).map(m => m.student_id).filter(Boolean))];
-      if (studentIds.length) {
-        const { count: qCount, error: qErr } = await supabaseClient.from('hasil_ujian')
-          .select('id', { count: 'exact', head: true })
-          .in('siswa_id', studentIds);
-        if (!qErr) quizDone = qCount || 0;
-      }
-    } catch (e) { console.warn('Gagal hitung kuis guru:', e.message); }
-    setKpi('guruStatQuizDone', quizDone);
-
-    // Data grafik: status submission
-    data.submissionStatus = {
-      terkirim: subs.filter(s => s.status !== 'dinilai').length,
-      dinilai: gradedCount
-    };
-
-    // Rata-rata per kelas
+    data.submissionStatus = { terkirim: subs.filter(s => s.status !== 'dinilai').length, dinilai: gradedCount };
     const avgMap = {};
     (asgs || []).forEach(a => {
       const classSubs = subs.filter(s => s.assignment_id === a.id && s.status === 'dinilai' && s.score != null);
@@ -2931,70 +2919,38 @@ async function loadGuruOverviewStats() {
       const rec = avgMap[g.id];
       return { label: g.class_name, value: rec && rec.count ? rec.sum / rec.count : 0 };
     });
-
     renderGuruOverviewCharts(data);
-  } catch (e) {
-    console.warn('loadGuruOverviewStats error:', e.message);
-    renderGuruOverviewCharts(data);
-  }
+  } catch (e) { console.warn('loadGuruOverviewStats error:', e.message); renderGuruOverviewCharts(data); }
 }
 
-// TAMBAHAN BARU: render grafik guru
 function renderGuruOverviewCharts(data) {
   if (typeof Chart === 'undefined') return;
   const destroyIf = (key) => { if (window[key]) { try { window[key].destroy(); } catch (_) {} window[key] = null; } };
-
-  // Doughnut status submission
   destroyIf('__guruChartSubmissionStatus');
   const subCanvas = document.getElementById('guruChartSubmissionStatus');
   if (subCanvas) {
     const st = data?.submissionStatus || { terkirim: 0, dinilai: 0 };
     window.__guruChartSubmissionStatus = new Chart(subCanvas, {
       type: 'doughnut',
-      data: {
-        labels: ['Terkirim', 'Dinilai'],
-        datasets: [{
-          data: [st.terkirim || 0, st.dinilai || 0],
-          backgroundColor: ['#f59e0b', '#10b981'],
-          borderColor: ['#b45309', '#047857'],
-          borderWidth: 1
-        }]
-      },
+      data: { labels: ['Terkirim', 'Dinilai'], datasets: [{ data: [st.terkirim || 0, st.dinilai || 0], backgroundColor: ['#f59e0b', '#10b981'], borderColor: ['#b45309', '#047857'], borderWidth: 1 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
     });
   }
-
-  // Bar rata-rata nilai per kelas
   destroyIf('__guruChartAvgPerClass');
   const avgCanvas = document.getElementById('guruChartAvgPerClass');
   if (avgCanvas) {
     const rows = data?.avgPerClass || [];
     window.__guruChartAvgPerClass = new Chart(avgCanvas, {
       type: 'bar',
-      data: {
-        labels: rows.map(r => r.label),
-        datasets: [{
-          label: 'Rata-rata Nilai',
-          data: rows.map(r => Number(r.value.toFixed(2))),
-          backgroundColor: 'rgba(37,99,235,0.65)',
-          borderColor: '#1d4ed8',
-          borderWidth: 1,
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } }
-      }
+      data: { labels: rows.map(r => r.label), datasets: [{ label: 'Rata-rata Nilai', data: rows.map(r => Number(r.value.toFixed(2))), backgroundColor: 'rgba(37,99,235,0.65)', borderColor: '#1d4ed8', borderWidth: 1, borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } } }
     });
   }
 }
 
-// ---------- GROUPS (GRUP SAYA) ----------
 async function loadGuruGroups() {
   const el = document.getElementById('guruGroupList');
+  if (!el) return;
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
   try {
     const { data, error } = await supabaseClient.from('classes').select('*').eq('teacher_id', currentUser.id).order('created_at', { ascending: false });
@@ -3004,25 +2960,19 @@ async function loadGuruGroups() {
     fillSelect('gschClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
     fillSelect('gmatClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
     fillSelect('gasgClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
-    // TAMBAHAN BARU: isi dropdown filter rapor guru
     fillSelect('guruRaporClassFilter', GURU_CACHE.groups, 'Pilih kelas...', 'id', g => g.class_name);
-    if (!data?.length) {
-      el.innerHTML = '<div class="lms-empty">Anda belum mengampu grup. Buat grup baru di atas.</div>';
-      return;
-    }
+    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada grup.</div>'; return; }
     el.innerHTML = data.map(g => `
       <div class="lms-card">
         <b>${escapeHtml(g.class_name)}</b> <span class="lms-status info">${escapeHtml(g.grade_level || '-')}</span>
-        <div class="lms-muted">Tahun: ${escapeHtml(g.academic_year || '-')} • Dibuat: ${formatDate(g.created_at)}</div>
+        <div class="lms-muted">Tahun: ${escapeHtml(g.academic_year || '-')}</div>
         <div style="margin-top:.5rem">
           <button class="lms-action sm" onclick="guruEditGroup(${g.id})"><i class="fas fa-pen"></i></button>
           <button class="lms-action sm danger" onclick="guruDeleteGroup(${g.id})"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     `).join('');
-  } catch (e) {
-    el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`;
-  }
+  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
 async function guruCreateGroup(e) {
@@ -3035,10 +2985,8 @@ async function guruCreateGroup(e) {
       teacher_id: currentUser.id
     });
     if (error) throw error;
-    showToast('✅ Grup dibuat.');
-    e.target.reset();
-    await loadGuruGroups();
-    await loadGuruOverview();
+    showToast('✅ Grup dibuat.'); e.target.reset();
+    await loadGuruGroups(); await loadGuruOverview();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
@@ -3050,83 +2998,49 @@ async function guruEditGroup(id) {
   const grade_level = prompt('Grade level:', g.grade_level || '');
   const academic_year = prompt('Tahun akademik:', g.academic_year || '');
   try {
-    const { error } = await supabaseClient.from('classes').update({
-      class_name: class_name.trim(),
-      grade_level: (grade_level || '').trim() || null,
-      academic_year: (academic_year || '').trim() || null,
-      updated_at: new Date().toISOString()
-    }).eq('id', id).eq('teacher_id', currentUser.id);
+    const { error } = await supabaseClient.from('classes').update({ class_name: class_name.trim(), grade_level: (grade_level || '').trim() || null, academic_year: (academic_year || '').trim() || null, updated_at: new Date().toISOString() }).eq('id', id).eq('teacher_id', currentUser.id);
     if (error) throw error;
-    showToast('✅ Grup diperbarui.');
-    await loadGuruGroups();
+    showToast('✅ Grup diperbarui.'); await loadGuruGroups();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
 async function guruDeleteGroup(id) {
-  if (!confirm('Hapus grup ini? Pastikan tidak ada jadwal/materi/tugas aktif.')) return;
+  if (!confirm('Hapus grup ini?')) return;
   try {
     const { error } = await supabaseClient.from('classes').delete().eq('id', id).eq('teacher_id', currentUser.id);
     if (error) throw error;
-    showToast('✅ Grup dihapus.');
-    await loadGuruGroups();
-    await loadGuruOverview();
+    showToast('✅ Grup dihapus.'); await loadGuruGroups(); await loadGuruOverview();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- GROUP MEMBERS ----------
-// FUNGSI BARU: Memuat semua siswa ke dalam dropdown (Nama & Kelas)
 async function loadGuruStudentOptions() {
   const sel = document.getElementById('gmStudentEmail');
   if (!sel) return;
   try {
-    const { data, error } = await supabaseClient
-      .from('profiles')
-      .select('id, full_name, email, kelas')
-      .eq('role', 'siswa')
-      .eq('is_active', true)
-      .order('full_name');
-      
+    const { data, error } = await supabaseClient.from('profiles').select('id, full_name, email, kelas').eq('role', 'siswa').eq('is_active', true).order('full_name');
     if (error) throw error;
-    
-    sel.innerHTML = '<option value="">Pilih siswa...</option>' + 
-      (data || []).map(s => {
-        const label = `${s.full_name} ${s.kelas ? '- ' + s.kelas : ''}`;
-        // Value berisi email agar fungsi guruAddMember lama tidak perlu diubah
-        return `<option value="${escapeHtml(s.email)}">${escapeHtml(label)}</option>`;
-      }).join('');
-  } catch (e) {
-    sel.innerHTML = '<option value="">Gagal memuat siswa</option>';
-    console.warn('Gagal load siswa:', e.message);
-  }
+    sel.innerHTML = '<option value="">Pilih siswa...</option>' + (data || []).map(s => `<option value="${escapeHtml(s.email)}">${escapeHtml(s.full_name)} - ${escapeHtml(s.kelas || '')}</option>`).join('');
+  } catch (e) { sel.innerHTML = '<option value="">Gagal memuat siswa</option>'; }
 }
 
-// ---------- GROUP MEMBERS ----------
 async function loadGuruGroupMembers() {
-  loadGuruStudentOptions(); // <--- TAMBAHKAN BARIS INI
+  loadGuruStudentOptions();
   const classId = document.getElementById('guruMemberGroupSelect').value;
   const el = document.getElementById('guruMemberList');
   if (!classId) { el.innerHTML = ''; return; }
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
   try {
-    const { data, error } = await supabaseClient.from('class_members')
-      .select('id, joined_at, student_id, profiles:student_id(full_name, email, nip_nisn, kelas)')
-      .eq('class_id', classId)
-      .order('joined_at', { ascending: false });
+    const { data, error } = await supabaseClient.from('class_members').select('id, joined_at, student_id, profiles:student_id(full_name, email, nip_nisn, kelas)').eq('class_id', classId).order('joined_at', { ascending: false });
     if (error) throw error;
-    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada anggota di grup ini.</div>'; return; }
+    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada anggota.</div>'; return; }
     el.innerHTML = data.map(m => `
       <div class="lms-card">
         <b>${escapeHtml(m.profiles?.full_name || m.profiles?.email || m.student_id)}</b>
-        <div class="lms-muted">${escapeHtml(m.profiles?.email || '')} • NISN: ${escapeHtml(m.profiles?.nip_nisn || '-')} • Kelas: ${escapeHtml(m.profiles?.kelas || '-')}</div>
-        <div class="lms-muted">Bergabung: ${formatDateTime(m.joined_at)}</div>
-        <div style="margin-top:.5rem">
-          <button class="lms-action sm danger" onclick="guruRemoveMember(${m.id})"><i class="fas fa-user-minus"></i> Keluarkan</button>
-        </div>
+        <div class="lms-muted">NISN: ${escapeHtml(m.profiles?.nip_nisn || '-')} • Kelas: ${escapeHtml(m.profiles?.kelas || '-')}</div>
+        <div style="margin-top:.5rem"><button class="lms-action sm danger" onclick="guruRemoveMember(${m.id})"><i class="fas fa-user-minus"></i> Keluarkan</button></div>
       </div>
     `).join('');
-  } catch (e) {
-    el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`;
-  }
+  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
 async function guruAddMember(e) {
@@ -3135,37 +3049,25 @@ async function guruAddMember(e) {
   if (!classId) { showToast('⚠️ Pilih grup dulu.'); return; }
   const email = document.getElementById('gmStudentEmail').value.trim().toLowerCase();
   try {
-        // BARU: pakai RPC karena RLS profiles sekarang membatasi SELECT
-    const { data: profArr, error: pErr } = await supabaseClient
-      .rpc('find_student_by_email', { p_email: email });
+    const { data: profArr, error: pErr } = await supabaseClient.rpc('find_student_by_email', { p_email: email });
     if (pErr) throw pErr;
     const prof = profArr?.[0];
-    if (!prof) throw new Error('Siswa dengan email tersebut tidak ditemukan.');
-    if (prof.role !== 'siswa') throw new Error('Akun bukan siswa (role: ' + prof.role + ').');
-    const { error } = await supabaseClient.from('class_members').insert({
-      class_id: Number(classId),
-      student_id: prof.id
-    });
+    if (!prof) throw new Error('Siswa tidak ditemukan.');
+    const { error } = await supabaseClient.from('class_members').insert({ class_id: Number(classId), student_id: prof.id });
     if (error) throw error;
-    showToast('✅ ' + (prof.full_name || email) + ' ditambahkan ke grup.');
-    e.target.reset();
-    await loadGuruGroupMembers();
-    await loadGuruOverview();
+    showToast('✅ Ditambahkan ke grup.'); e.target.reset(); await loadGuruGroupMembers(); await loadGuruOverview();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
 async function guruRemoveMember(id) {
-  if (!confirm('Keluarkan siswa ini dari grup?')) return;
+  if (!confirm('Keluarkan siswa ini?')) return;
   try {
     const { error } = await supabaseClient.from('class_members').delete().eq('id', id);
     if (error) throw error;
-    showToast('✅ Anggota dikeluarkan.');
-    await loadGuruGroupMembers();
-    await loadGuruOverview();
+    showToast('✅ Dikeluarkan.'); await loadGuruGroupMembers(); await loadGuruOverview();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- OPSI DROPDOWN (dipakai di beberapa form guru) ----------
 async function loadGuruGroupOptions() {
   try {
     if (!GURU_CACHE.groups.length) {
@@ -3176,7 +3078,6 @@ async function loadGuruGroupOptions() {
     fillSelect('gschClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
     fillSelect('gmatClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
     fillSelect('gasgClass', GURU_CACHE.groups, 'Pilih grup...', 'id', g => g.class_name);
-    // TAMBAHAN BARU: isi dropdown filter rapor guru
     fillSelect('guruRaporClassFilter', GURU_CACHE.groups, 'Pilih kelas...', 'id', g => g.class_name);
   } catch (e) { /* silent */ }
   await loadGuruSubjectOptions();
@@ -3195,28 +3096,20 @@ async function loadGuruSubjectOptions() {
   } catch (e) { /* silent */ }
 }
 
-// ---------- SCHEDULES GURU ----------
 async function loadGuruSchedules() {
   const el = document.getElementById('guruScheduleList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
   try {
-    // ambil hanya jadwal di grup milik guru
     const groupIds = GURU_CACHE.groups.map(g => g.id);
     if (!groupIds.length) { el.innerHTML = '<div class="lms-empty">Belum ada grup.</div>'; return; }
-    const { data, error } = await supabaseClient.from('schedules')
-      .select('*, classes(class_name), subjects(subject_name)')
-      .in('class_id', groupIds)
-      .order('schedule_date', { ascending: false });
+    const { data, error } = await supabaseClient.from('schedules').select('*, classes(class_name), subjects(subject_name)').in('class_id', groupIds).order('schedule_date', { ascending: false });
     if (error) throw error;
     if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada jadwal.</div>'; return; }
     el.innerHTML = data.map(s => `
       <div class="lms-card">
         <b>${escapeHtml(s.title)}</b>
-        <div class="lms-muted">${formatDate(s.schedule_date)} • ${escapeHtml(s.start_time || '')}–${escapeHtml(s.end_time || '')} • ${escapeHtml(s.classes?.class_name || '-')} • ${escapeHtml(s.subjects?.subject_name || '-')}</div>
-        <div class="lms-muted">${escapeHtml(s.location || '')}</div>
-        <div style="margin-top:.5rem">
-          <button class="lms-action sm danger" onclick="guruDeleteSchedule(${s.id})"><i class="fas fa-trash"></i></button>
-        </div>
+        <div class="lms-muted">${formatDate(s.schedule_date)} • ${escapeHtml(s.classes?.class_name || '-')}</div>
+        <div style="margin-top:.5rem"><button class="lms-action sm danger" onclick="guruDeleteSchedule(${s.id})"><i class="fas fa-trash"></i></button></div>
       </div>
     `).join('');
   } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
@@ -3237,16 +3130,8 @@ async function guruCreateSchedule(e) {
     });
     if (error) throw error;
     showToast('✅ Jadwal dibuat.');
-        // NOTIF
-    createNotificationsForClass(Number(document.getElementById('gschClass').value), {
-      title: '📅 Jadwal Baru',
-      message: document.getElementById('gschTitle').value.trim(),
-      type: 'schedule',
-      link: '#schedules',
-      excludeUserId: currentUser.id
-    });
-    e.target.reset();
-    await loadGuruSchedules();
+    createNotificationsForClass(Number(document.getElementById('gschClass').value), { title: '📅 Jadwal Baru', message: document.getElementById('gschTitle').value.trim(), type: 'schedule', link: '#schedules', excludeUserId: currentUser.id });
+    e.target.reset(); await loadGuruSchedules();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
@@ -3255,31 +3140,25 @@ async function guruDeleteSchedule(id) {
   try {
     const { error } = await supabaseClient.from('schedules').delete().eq('id', id);
     if (error) throw error;
-    showToast('✅ Jadwal dihapus.');
-    await loadGuruSchedules();
+    showToast('✅ Jadwal dihapus.'); await loadGuruSchedules();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- MATERIALS GURU ----------
 async function loadGuruMaterials() {
   const el = document.getElementById('guruMaterialList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
   try {
     const groupIds = GURU_CACHE.groups.map(g => g.id);
     if (!groupIds.length) { el.innerHTML = '<div class="lms-empty">Belum ada grup.</div>'; return; }
-    const { data, error } = await supabaseClient.from('learning_materials')
-      .select('*, classes(class_name), subjects(subject_name)')
-      .in('class_id', groupIds)
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabaseClient.from('learning_materials').select('*, classes(class_name), subjects(subject_name)').in('class_id', groupIds).order('created_at', { ascending: false });
     if (error) throw error;
     if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada materi.</div>'; return; }
     el.innerHTML = data.map(m => `
       <div class="lms-card">
         <b>${escapeHtml(m.title)}</b> ${m.is_published ? '<span class="lms-status">Publik</span>' : '<span class="lms-status warn">Draft</span>'}
-        <div class="lms-muted">${escapeHtml(m.classes?.class_name || '-')} • ${escapeHtml(m.subjects?.subject_name || '-')}</div>
-        <p style="margin-top:.4rem">${escapeHtml((m.content || '').slice(0, 160))}${(m.content || '').length > 160 ? '...' : ''}</p>
+        <div class="lms-muted">${escapeHtml(m.classes?.class_name || '-')}</div>
         <div style="margin-top:.5rem">
-          <button class="lms-action sm" onclick="guruToggleMaterial(${m.id}, ${!m.is_published})"><i class="fas fa-toggle-${m.is_published ? 'on' : 'off'}"></i> ${m.is_published ? 'Sembunyikan' : 'Publikasikan'}</button>
+          <button class="lms-action sm" onclick="guruToggleMaterial(${m.id}, ${!m.is_published})"><i class="fas fa-toggle-${m.is_published ? 'on' : 'off'}"></i></button>
           <button class="lms-action sm danger" onclick="guruDeleteMaterial(${m.id})"><i class="fas fa-trash"></i></button>
         </div>
       </div>
@@ -3289,117 +3168,161 @@ async function loadGuruMaterials() {
 
 async function guruCreateMaterial(e) {
   e.preventDefault();
+  const btnSubmit = e.target.querySelector('button[type="submit"]');
+  const originalBtn = btnSubmit.innerHTML;
   try {
+    let finalFileUrl = document.getElementById('gmatFile').value.trim() || null;
+    const fileInput = document.getElementById('gmatFileUpload');
+    if (fileInput && fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      if (file.size > 10 * 1024 * 1024) throw new Error('Maksimal 10MB.');
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Upload ke Cloudinary...';
+      const uploaded = await uploadPhotoToCloudinary(file, 'bimbel-kak-ros/materi_guru');
+      finalFileUrl = uploaded.secure_url;
+    }
+    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
     const { error } = await supabaseClient.from('learning_materials').insert({
       class_id: Number(document.getElementById('gmatClass').value),
       subject_id: document.getElementById('gmatSubject').value ? Number(document.getElementById('gmatSubject').value) : null,
       title: document.getElementById('gmatTitle').value.trim(),
       content: document.getElementById('gmatContent').value.trim() || null,
-      file_url: document.getElementById('gmatFile').value.trim() || null,
+      file_url: finalFileUrl,
       video_url: document.getElementById('gmatVideo').value.trim() || null,
       is_published: document.getElementById('gmatPublished').checked,
       created_by: currentUser.id
     });
     if (error) throw error;
-    showToast('✅ Materi dibuat.');
-        // NOTIF
+    showToast('✅ Materi berhasil disimpan!');
     if (document.getElementById('gmatPublished').checked) {
-      createNotificationsForClass(Number(document.getElementById('gmatClass').value), {
-        title: '📚 Materi Baru',
-        message: document.getElementById('gmatTitle').value.trim(),
-        type: 'material',
-        link: '#materials',
-        excludeUserId: currentUser.id
-      });
+      createNotificationsForClass(Number(document.getElementById('gmatClass').value), { title: '📚 Materi Baru', message: document.getElementById('gmatTitle').value.trim(), type: 'material', link: '#materials', excludeUserId: currentUser.id });
     }
-    e.target.reset();
-    await loadGuruMaterials();
-  } catch (e) { showToast('❌ ' + e.message); }
+    e.target.reset(); await loadGuruMaterials();
+  } catch (err) { showToast('❌ ' + err.message); }
+  finally { btnSubmit.disabled = false; btnSubmit.innerHTML = originalBtn; }
 }
 
 async function guruToggleMaterial(id, publish) {
   try {
     const { error } = await supabaseClient.from('learning_materials').update({ is_published: publish, updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) throw error;
-    showToast('✅ Status materi diperbarui.');
-    await loadGuruMaterials();
+    if (error) throw error; showToast('✅ Status diubah.'); await loadGuruMaterials();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
 async function guruDeleteMaterial(id) {
-  if (!confirm('Hapus materi ini?')) return;
+  if (!confirm('Hapus materi?')) return;
   try {
     const { error } = await supabaseClient.from('learning_materials').delete().eq('id', id);
-    if (error) throw error;
-    showToast('✅ Materi dihapus.');
-    await loadGuruMaterials();
+    if (error) throw error; showToast('✅ Materi dihapus.'); await loadGuruMaterials();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- ASSIGNMENTS GURU ----------
+// ============================================================
+// ✅ loadGuruAssignments — versi stabil dengan .map()
+// ============================================================
 async function loadGuruAssignments() {
   const el = document.getElementById('guruAssignmentList');
-  el.innerHTML = '<div class="lms-empty">Memuat...</div>';
+  if (!el) return;
+  el.innerHTML = '<div class="lms-empty">Memuat daftar tugas...</div>';
   try {
-    const groupIds = GURU_CACHE.groups.map(g => g.id);
-    if (!groupIds.length) { el.innerHTML = '<div class="lms-empty">Belum ada grup.</div>'; return; }
+    if (!GURU_CACHE.groups || GURU_CACHE.groups.length === 0) {
+      await loadGuruGroupOptions();
+    }
+    const groupIds = (GURU_CACHE.groups || []).map(g => g.id);
+    if (!groupIds.length) {
+      el.innerHTML = '<div class="lms-empty">Anda belum memiliki Grup Belajar. Silakan buat grup terlebih dahulu di menu "Grup Saya".</div>';
+      return;
+    }
     const { data, error } = await supabaseClient.from('assignments')
       .select('*, classes(class_name), subjects(subject_name)')
       .in('class_id', groupIds)
       .order('created_at', { ascending: false });
     if (error) throw error;
-    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada tugas.</div>'; return; }
-    el.innerHTML = data.map(a => `
-      <div class="lms-card">
-        <b>${escapeHtml(a.title)}</b> ${a.is_published ? '<span class="lms-status">Terbit</span>' : '<span class="lms-status warn">Draft</span>'}
-        <div class="lms-muted">${escapeHtml(a.classes?.class_name || '-')} • ${escapeHtml(a.subjects?.subject_name || '-')} • Tenggat: ${formatDateTime(a.due_at)}</div>
-        <p style="margin-top:.4rem">${escapeHtml((a.description || '').slice(0, 160))}</p>
-        <div style="margin-top:.5rem">
-          <button class="lms-action sm" onclick="guruToggleAssignment(${a.id}, ${!a.is_published})"><i class="fas fa-toggle-${a.is_published ? 'on' : 'off'}"></i> ${a.is_published ? 'Sembunyikan' : 'Terbitkan'}</button>
-          <button class="lms-action sm danger" onclick="guruDeleteAssignment(${a.id})"><i class="fas fa-trash"></i></button>
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div class="lms-empty">Belum ada tugas yang dibuat untuk grup Anda.</div>';
+      return;
+    }
+    el.innerHTML = data.map(a => {
+      const judul = a.title ? escapeHtml(a.title) : '-';
+      const kelas = a.classes && a.classes.class_name ? escapeHtml(a.classes.class_name) : '-';
+      const mapel = a.subjects && a.subjects.subject_name ? escapeHtml(a.subjects.subject_name) : '-';
+      const deskripsi = a.description ? escapeHtml(a.description).substring(0, 160) : '';
+      const tenggat = a.due_at ? formatDateTime(a.due_at) : '-';
+      const statusBadge = a.is_published
+        ? '<span class="lms-status">Terbit</span>'
+        : '<span class="lms-status warn">Draft</span>';
+      const toggleText = a.is_published ? 'Sembunyikan' : 'Terbitkan';
+      const toggleIcon = a.is_published ? 'on' : 'off';
+      const lampiran = a.attachment_url
+        ? `<p><a href="${escapeHtml(a.attachment_url)}" target="_blank" rel="noopener" class="lms-muted"><i class="fas fa-paperclip"></i> Lampiran soal</a></p>`
+        : '';
+      return `
+        <div class="lms-card">
+          <b>${judul}</b> ${statusBadge}
+          <div class="lms-muted">${kelas} • ${mapel} • Tenggat: ${tenggat}</div>
+          <p style="margin-top:.4rem">${deskripsi}</p>
+          ${lampiran}
+          <div style="margin-top:.5rem; display:flex; gap:5px; flex-wrap:wrap;">
+            <button class="lms-action sm primary" onclick="window.open('tugas.html?id=${a.id}&mode=guru', '_blank')" title="Cek jawaban siswa & beri nilai">
+              <i class="fas fa-eye"></i> Cek Jawaban
+            </button>
+            <button class="lms-action sm" onclick="guruToggleAssignment(${a.id}, ${!a.is_published})">
+              <i class="fas fa-toggle-${toggleIcon}"></i> ${toggleText}
+            </button>
+            <button class="lms-action sm danger" onclick="guruDeleteAssignment(${a.id})">
+              <i class="fas fa-trash"></i> Hapus
+            </button>
+          </div>
         </div>
-      </div>
-    `).join('');
-  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Error loadGuruAssignments:', err);
+    el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Gagal memuat tugas: ${escapeHtml(err.message)}</div>`;
+  }
 }
 
 async function guruCreateAssignment(e) {
   e.preventDefault();
+  const btnSubmit = e.target.querySelector('button[type="submit"]');
+  const originalBtn = btnSubmit.innerHTML;
   try {
+    let finalAttachmentUrl = document.getElementById('gasgAttachment').value.trim() || null;
+    const fileInput = document.getElementById('gasgFileUpload');
+    if (fileInput && fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      if (file.size > 5 * 1024 * 1024) throw new Error('Maksimal 5MB.');
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Upload Soal...';
+      const uploaded = await uploadPhotoToCloudinary(file, 'bimbel-kak-ros/tugas_guru');
+      finalAttachmentUrl = uploaded.secure_url;
+    }
+    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Simpan...';
     const due = document.getElementById('gasgDue').value;
     const { error } = await supabaseClient.from('assignments').insert({
       class_id: Number(document.getElementById('gasgClass').value),
       subject_id: document.getElementById('gasgSubject').value ? Number(document.getElementById('gasgSubject').value) : null,
       title: document.getElementById('gasgTitle').value.trim(),
       description: document.getElementById('gasgDesc').value.trim() || null,
-      attachment_url: document.getElementById('gasgAttachment').value.trim() || null,
+      attachment_url: finalAttachmentUrl,
       due_at: due ? new Date(due).toISOString() : null,
       is_published: document.getElementById('gasgPublished').checked,
       created_by: currentUser.id
     });
     if (error) throw error;
     showToast('✅ Tugas dibuat.');
-        // NOTIF: kirim ke siswa di kelas
     if (document.getElementById('gasgPublished').checked) {
-      createNotificationsForClass(Number(document.getElementById('gasgClass').value), {
-        title: '📝 Tugas Baru',
-        message: document.getElementById('gasgTitle').value.trim(),
-        type: 'assignment',
-        link: '#assignments',
-        excludeUserId: currentUser.id
-      });
+      createNotificationsForClass(Number(document.getElementById('gasgClass').value), { title: '📝 Tugas Baru', message: document.getElementById('gasgTitle').value.trim(), type: 'assignment', link: '#assignments', excludeUserId: currentUser.id });
     }
-    e.target.reset();
-    await loadGuruAssignments();
+    e.target.reset(); await loadGuruAssignments();
   } catch (e) { showToast('❌ ' + e.message); }
+  finally { btnSubmit.disabled = false; btnSubmit.innerHTML = originalBtn; }
 }
 
 async function guruToggleAssignment(id, publish) {
   try {
     const { error } = await supabaseClient.from('assignments').update({ is_published: publish, updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) throw error;
-    showToast('✅ Status tugas diperbarui.');
-    await loadGuruAssignments();
+    if (error) throw error; showToast('✅ Status tugas diubah.'); await loadGuruAssignments();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
@@ -3407,21 +3330,14 @@ async function guruDeleteAssignment(id) {
   if (!confirm('Hapus tugas ini?')) return;
   try {
     const { error } = await supabaseClient.from('assignments').delete().eq('id', id);
-    if (error) throw error;
-    showToast('✅ Tugas dihapus.');
-    await loadGuruAssignments();
+    if (error) throw error; showToast('✅ Tugas dihapus.'); await loadGuruAssignments();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- GRADING GURU ----------
 async function loadGuruAssignmentOptions() {
   const sel = document.getElementById('guruGradeSelect');
   if (!sel) return;
   try {
-    const groupIds = (GURU_CACHE.groups || []).map(g => g.id);
-    if (!groupIds.length) {
-      await loadGuruGroupOptions();
-    }
     const ids = (GURU_CACHE.groups || []).map(g => g.id);
     if (!ids.length) { sel.innerHTML = '<option value="">Belum ada grup</option>'; return; }
     const { data, error } = await supabaseClient.from('assignments').select('id, title').in('class_id', ids).order('created_at', { ascending: false });
@@ -3438,17 +3354,16 @@ async function loadGuruSubmissions() {
   try {
     const { data, error } = await supabaseClient.from('assignment_submissions')
       .select('id, student_id, answer_text, submitted_at, status, score, feedback, profiles:student_id(full_name, email), assignment_submission_files(id, cloudinary_url, file_name)')
-      .eq('assignment_id', assignmentId)
-      .order('submitted_at', { ascending: false });
+      .eq('assignment_id', assignmentId).order('submitted_at', { ascending: false });
     if (error) throw error;
-    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada siswa yang mengumpulkan.</div>'; return; }
+    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada pengumpulan.</div>'; return; }
     el.innerHTML = data.map(s => `
       <div class="lms-card">
         <b>${escapeHtml(s.profiles?.full_name || s.profiles?.email || s.student_id)}</b>
         <span class="lms-status ${s.status === 'dinilai' ? '' : 'warn'}">${escapeHtml(s.status || 'terkirim')}</span>
         <div class="lms-muted">Dikirim: ${formatDateTime(s.submitted_at)}</div>
         <p>${escapeHtml(s.answer_text || '-')}</p>
-        <div>${(s.assignment_submission_files || []).map(f => `<a href="${escapeHtml(f.cloudinary_url)}" target="_blank" rel="noopener"><img class="lms-photo" src="${escapeHtml(f.cloudinary_url)}" alt="${escapeHtml(f.file_name || 'foto')}"></a>`).join('')}</div>
+        <div>${(s.assignment_submission_files || []).map(f => `<a href="${escapeHtml(f.cloudinary_url)}" target="_blank" rel="noopener"><img class="lms-photo" src="${escapeHtml(f.cloudinary_url)}" alt="foto"></a>`).join('')}</div>
         <div class="lms-grid" style="margin-top:.6rem">
           <div class="lms-field"><label>Nilai (0–100)</label><input type="number" min="0" max="100" step="0.01" id="grScore-${s.id}" value="${s.score ?? ''}"></div>
           <div class="lms-field"><label>Feedback</label><input id="grFeedback-${s.id}" value="${escapeHtml(s.feedback || '')}"></div>
@@ -3464,52 +3379,29 @@ async function guruGradeSubmission(id) {
   const feedback = document.getElementById('grFeedback-' + id).value.trim();
   if (!Number.isFinite(score) || score < 0 || score > 100) { showToast('⚠️ Nilai harus 0–100.'); return; }
   try {
-        // UBAH BARIS 2837: tambahkan data: subData dan .select().single()
-    const { data: subData, error } = await supabaseClient.from('assignment_submissions').update({
-      score, feedback, status: 'dinilai',
-      graded_by: currentUser.id, graded_at: new Date().toISOString(), updated_at: new Date().toISOString()
-    }).eq('id', id).select('student_id, assignment_id').single();
-
+    const { data: subData, error } = await supabaseClient.from('assignment_submissions').update({ score, feedback, status: 'dinilai', graded_by: currentUser.id, graded_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id).select('student_id, assignment_id').single();
     if (error) throw error;
     showToast('✅ Nilai disimpan.');
-
-    // NOTIF: kirim ke siswa yang dinilai (BLOK BARU)
     if (subData?.student_id) {
-      createNotification(
-        subData.student_id,
-        '✅ Nilai Tugas',
-        `Nilai tugas kamu: ${score}${feedback ? ' — ' + feedback : ''}`,
-        'grade',
-        '#assignments'
-      );
+      createNotification(subData.student_id, '✅ Nilai Tugas', `Nilai tugas kamu: ${score}${feedback ? ' — ' + feedback : ''}`, 'grade', '#assignments');
     }
-
     await loadGuruSubmissions();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ---------- FILES GURU ----------
 async function loadGuruFiles() {
   const el = document.getElementById('guruFileList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
   try {
-    const { data, error } = await supabaseClient.from('cloudinary_files')
-      .select('*')
-      .eq('uploaded_by', currentUser.id)
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const { data, error } = await supabaseClient.from('cloudinary_files').select('*').eq('uploaded_by', currentUser.id).order('created_at', { ascending: false }).limit(100);
     if (error) throw error;
-    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada file yang Anda unggah.</div>'; return; }
+    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada file.</div>'; return; }
     el.innerHTML = data.map(f => `
       <div class="lms-card">
         <b>${escapeHtml(f.original_filename || f.public_id || 'File')}</b>
-        <span class="lms-status ${f.is_public ? '' : 'warn'}">${f.is_public ? 'Public' : 'Private'}</span>
-        <span class="lms-status info">${escapeHtml(f.purpose || f.category || '-')}</span>
-        <div class="lms-muted">${escapeHtml(f.resource_type || '')} • ${f.bytes ? Math.round(f.bytes / 1024) + ' KB' : ''} • ${formatDateTime(f.created_at)}</div>
+        <div class="lms-muted">${escapeHtml(f.purpose || '-')} • ${formatDateTime(f.created_at)}</div>
         <a href="${escapeHtml(f.secure_url)}" target="_blank" rel="noopener" class="lms-muted">Buka file</a>
-        <div style="margin-top:.5rem">
-          <button class="lms-action sm danger" onclick="guruDeleteFile('${f.id}')"><i class="fas fa-trash"></i></button>
-        </div>
+        <div style="margin-top:.5rem"><button class="lms-action sm danger" onclick="guruDeleteFile('${f.id}')"><i class="fas fa-trash"></i></button></div>
       </div>
     `).join('');
   } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
@@ -3518,56 +3410,138 @@ async function loadGuruFiles() {
 async function guruUploadFile() {
   const fileInput = document.getElementById('gfFile');
   const file = fileInput?.files?.[0];
-  if (!file) { showToast('⚠️ Pilih file terlebih dahulu.'); return; }
-  if (!cloudinaryReady()) { showToast('⚠️ Cloudinary belum dikonfigurasi oleh Admin.'); return; }
+  if (!file) { showToast('⚠️ Pilih file.'); return; }
+  if (!cloudinaryReady()) { showToast('⚠️ Cloudinary belum disetel.'); return; }
   try {
     showToast('⏳ Mengunggah...');
     const uploaded = await uploadPhotoToCloudinary(file, 'bimbel-kak-ros/guru-files');
     const { error } = await supabaseClient.from('cloudinary_files').insert({
-      public_id: uploaded.public_id,
-      secure_url: uploaded.secure_url,
-      resource_type: uploaded.resource_type || 'image',
-      format: uploaded.format || null,
-      bytes: uploaded.bytes || file.size,
-      folder: 'bimbel-kak-ros/guru-files',
-      original_filename: file.name,
-      caption: document.getElementById('gfCaption').value.trim() || null,
-      category: document.getElementById('gfCategory').value.trim() || null,
-      purpose: document.getElementById('gfPurpose').value,
-      uploaded_by: currentUser.id,
-      is_public: document.getElementById('gfPublic').checked,
-      created_at: new Date().toISOString()
+      public_id: uploaded.public_id, secure_url: uploaded.secure_url, resource_type: uploaded.resource_type || 'image', format: uploaded.format || null, bytes: uploaded.bytes || file.size, folder: 'bimbel-kak-ros/guru-files', original_filename: file.name, caption: document.getElementById('gfCaption').value.trim() || null, category: document.getElementById('gfCategory').value.trim() || null, purpose: document.getElementById('gfPurpose').value, uploaded_by: currentUser.id, is_public: document.getElementById('gfPublic').checked, created_at: new Date().toISOString()
     });
     if (error) throw error;
-    showToast('✅ File berhasil diunggah.');
-    fileInput.value = '';
-    document.getElementById('gfCaption').value = '';
-    document.getElementById('gfCategory').value = '';
-    await loadGuruFiles();
+    showToast('✅ File diunggah.'); fileInput.value = ''; await loadGuruFiles();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
 async function guruDeleteFile(id) {
-  if (!confirm('Hapus record file ini? (File di Cloudinary tidak otomatis terhapus)')) return;
+  if (!confirm('Hapus file ini?')) return;
   try {
     const { error } = await supabaseClient.from('cloudinary_files').delete().eq('id', id).eq('uploaded_by', currentUser.id);
-    if (error) throw error;
-    showToast('✅ Record file dihapus.');
-    await loadGuruFiles();
+    if (error) throw error; showToast('✅ File dihapus.'); await loadGuruFiles();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-/* ========== PART 3/4 — SELESAI ========== */
-/* ========== PART 4/4 — JS SISWA + PENUTUP — MULAI ========== */
+// ============================================================
+// ✅ KELOLA MENU SISWA (GURU) — LENGKAP
+// ============================================================
+async function guruCreateMenu(e) {
+  e.preventDefault();
+  const label = document.getElementById('gMenuLabel').value.trim();
+  const url = document.getElementById('gMenuUrl').value.trim();
+  const icon = document.getElementById('gMenuIcon').value.trim();
+  try {
+    const { error } = await supabaseClient.from('page_menus').insert({
+      menu_label: label,
+      menu_icon: icon || 'fa-solid fa-link',
+      menu_mode: 'link',
+      external_link: url,
+      is_teacher_folder: true,
+      owner_id: currentUser.id,
+      is_visible: true,
+      show_in_launcher: true
+    });
+    if (error) throw error;
+    showToast('✅ Menu berhasil ditambahkan!');
+    e.target.reset();
+    document.getElementById('gMenuIcon').value = 'fa-solid fa-link';
+    await loadGuruMenus();
+  } catch (err) { showToast('❌ ' + err.message); }
+}
 
-// Cache khusus siswa
-const SISWA_CACHE = {
-  groups: [],
-  mySubmissions: new Map(),
-  assignments: []
-};
+async function loadGuruMenus() {
+  const el = document.getElementById('guruMenuList');
+  if (!el) return;
+  el.innerHTML = '<div class="lms-empty">Memuat...</div>';
+  try {
+    const { data, error } = await supabaseClient.from('page_menus').select('*').eq('owner_id', currentUser.id).order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada menu yang Anda buat.</div>'; return; }
+    el.innerHTML = data.map(m => `
+      <div class="lms-card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <b><i class="${escapeHtml(m.menu_icon)}" style="color:var(--accent); margin-right:8px;"></i> ${escapeHtml(m.menu_label)}</b>
+            <div class="lms-muted" style="margin-top:4px">Link: <a href="${escapeHtml(m.external_link)}" target="_blank">${escapeHtml(m.external_link)}</a></div>
+          </div>
+          <div>
+            <button class="lms-action sm danger" onclick="guruDeleteMenu('${m.id}')"><i class="fas fa-trash"></i> Hapus</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
+}
 
-// ---------- OVERVIEW SISWA ----------
+async function guruDeleteMenu(id) {
+  if (!confirm('Hapus menu ini? Siswa tidak akan bisa melihatnya lagi.')) return;
+  try {
+    const { error } = await supabaseClient.from('page_menus').delete().eq('id', id).eq('owner_id', currentUser.id);
+    if (error) throw error;
+    showToast('✅ Menu dihapus.');
+    await loadGuruMenus();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function loadSiswaTeacherMenus() {
+  const el = document.getElementById('siswaTeacherMenuList');
+  if (!el) return;
+  el.innerHTML = '<div class="lms-empty">Memuat...</div>';
+  try {
+    const { data, error } = await supabaseClient.from('page_menus')
+      .select('*, profiles:owner_id(full_name)')
+      .eq('is_teacher_folder', true)
+      .eq('is_visible', true)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada materi atau kuis dari guru.</div>'; return; }
+    el.innerHTML = data.map(m => `
+      <div class="lms-card" style="transition: transform 0.2s;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap: 12px;">
+            <div style="width: 42px; height: 42px; background: #eff6ff; border-radius: 10px; display:flex; align-items:center; justify-content:center; color: var(--accent);">
+              <i class="${escapeHtml(m.menu_icon || 'fas fa-link')}" style="font-size: 1.2rem;"></i>
+            </div>
+            <div>
+              <b style="font-size: 1.05rem; color: var(--ink);">${escapeHtml(m.menu_label)}</b>
+              <div class="lms-muted" style="margin-top: 2px;">Dari Guru: ${escapeHtml(m.profiles?.full_name || '-')}</div>
+            </div>
+          </div>
+          <div>
+            <a href="${escapeHtml(m.external_link)}" target="_blank" class="lms-action primary" style="text-decoration:none;">
+              <i class="fas fa-external-link-alt"></i> Buka
+            </a>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const iconSelect = document.getElementById('gMenuIcon');
+  if (iconSelect) {
+    iconSelect.addEventListener('change', function() {
+      const preview = document.getElementById('iconPreview');
+      if (preview) preview.innerHTML = `<i class="${this.value}"></i>`;
+    });
+  }
+});
+
+// ============================================================
+// ==================== SISWA MODULES =========================
+// ============================================================
+const SISWA_CACHE = { groups: [], mySubmissions: new Map(), assignments: [] };
+
 async function loadSiswaOverview() {
   try {
     const [membersRes, asgRes, subRes] = await Promise.all([
@@ -3581,63 +3555,37 @@ async function loadSiswaOverview() {
     document.getElementById('siswaStatGroups').innerText = (membersRes.data || []).length;
     document.getElementById('siswaStatAssignments').innerText = asgRes.count || 0;
     document.getElementById('siswaStatSubmitted').innerText = subRes.count || 0;
-  } catch (e) {
-    showToast('Gagal memuat ringkasan siswa: ' + e.message);
-  }
-  // TAMBAHAN BARU: statistik lengkap + grafik siswa
-  try {
-    await loadSiswaOverviewStats();
-  } catch (e) {
-    console.warn('Gagal memuat statistik overview siswa:', e.message);
-  }
+  } catch (e) { showToast('Gagal memuat ringkasan siswa: ' + e.message); }
+  try { await loadSiswaOverviewStats(); } catch (e) { console.warn('Gagal memuat statistik overview siswa:', e.message); }
 }
 
-// TAMBAHAN BARU: statistik lengkap siswa
 async function loadSiswaOverviewStats() {
   const data = { perSubject: [] };
   try {
     const setKpi = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-
-    // Grup siswa
     const { data: members } = await supabaseClient.from('class_members').select('class_id').eq('student_id', currentUser.id);
     const groupIds = [...new Set((members || []).map(m => m.class_id).filter(Boolean))];
-
-    // Tugas published di grup siswa
     let assignments = [];
     if (groupIds.length) {
-      const { data } = await supabaseClient.from('assignments')
-        .select('id, subject_id')
-        .in('class_id', groupIds)
-        .eq('is_published', true);
+      const { data } = await supabaseClient.from('assignments').select('id, subject_id').in('class_id', groupIds).eq('is_published', true);
       assignments = data || [];
     }
     const assignmentIds = assignments.map(a => a.id);
-
-    // Submission siswa
     let submissions = [];
     if (assignmentIds.length) {
-      const { data } = await supabaseClient.from('assignment_submissions')
-        .select('id, assignment_id, status, score')
-        .eq('student_id', currentUser.id)
-        .in('assignment_id', assignmentIds);
+      const { data } = await supabaseClient.from('assignment_submissions').select('id, assignment_id, status, score').eq('student_id', currentUser.id).in('assignment_id', assignmentIds);
       submissions = data || [];
     }
     const submittedSet = new Set(submissions.map(s => s.assignment_id));
     const pendingCount = assignmentIds.filter(id => !submittedSet.has(id)).length;
     setKpi('siswaStatPending', pendingCount);
-
-    // Rata-rata nilai tugas (dinilai)
     const graded = submissions.filter(s => s.status === 'dinilai' && s.score != null).map(s => Number(s.score)).filter(n => Number.isFinite(n));
     const avgScore = graded.length ? graded.reduce((a, b) => a + b, 0) / graded.length : null;
     setKpi('siswaStatAvgScore', avgScore !== null ? avgScore.toFixed(2) : '0');
-
-    // Kuis dikerjakan + rata-rata nilai kuis
     let quizDone = 0;
     let quizAvg = '-';
     try {
-      const { data: quizzes, error: qErr } = await supabaseClient.from('hasil_ujian')
-        .select('nilai')
-        .eq('siswa_id', currentUser.id);
+      const { data: quizzes, error: qErr } = await supabaseClient.from('hasil_ujian').select('nilai').eq('siswa_id', currentUser.id);
       if (!qErr) {
         quizDone = (quizzes || []).length;
         const qVals = (quizzes || []).map(q => Number(q.nilai)).filter(n => Number.isFinite(n));
@@ -3646,41 +3594,27 @@ async function loadSiswaOverviewStats() {
     } catch (e) { console.warn('Gagal hitung kuis siswa:', e.message); }
     setKpi('siswaStatQuizDone', quizDone);
     setKpi('siswaStatQuizAvg', quizAvg);
-
-    // Persentase kehadiran
     let attendance = '-';
     try {
-      const { data: att, error: attErr } = await supabaseClient.from('attendance')
-        .select('status')
-        .eq('student_id', currentUser.id);
+      const { data: att, error: attErr } = await supabaseClient.from('attendance').select('status').eq('student_id', currentUser.id);
       if (!attErr && att?.length) {
         const hadir = att.filter(a => String(a.status || '').toLowerCase() === 'hadir').length;
         attendance = ((hadir / att.length) * 100).toFixed(1) + '%';
       }
     } catch (e) { console.warn('Gagal hitung kehadiran:', e.message); }
     setKpi('siswaStatAttendance', attendance);
-
-    // Total materi published di grup siswa
     let materialCount = 0;
     if (groupIds.length) {
-      const { count } = await supabaseClient.from('learning_materials')
-        .select('id', { count: 'exact', head: true })
-        .in('class_id', groupIds)
-        .eq('is_published', true);
+      const { count } = await supabaseClient.from('learning_materials').select('id', { count: 'exact', head: true }).in('class_id', groupIds).eq('is_published', true);
       materialCount = count || 0;
     }
     setKpi('siswaStatMaterials', materialCount);
-
-    // Data grafik: status tugas
     const gradedAssignmentIds = new Set(submissions.filter(s => s.status === 'dinilai').map(s => s.assignment_id));
-    const submittedNotGraded = submissions.filter(s => s.status !== 'dinilai').length;
     data.assignmentStatus = {
       submitted: submissions.length,
       pending: pendingCount,
       graded: gradedAssignmentIds.size
     };
-
-    // Data grafik: rata-rata nilai per mapel
     if (assignments.length) {
       const { data: subjectRows } = await supabaseClient.from('subjects').select('id, subject_name');
       const subjectMap = new Map((subjectRows || []).map(s => [s.id, s.subject_name]));
@@ -3694,24 +3628,15 @@ async function loadSiswaOverviewStats() {
         mapScores[name].sum += Number(sub.score) || 0;
         mapScores[name].count += 1;
       });
-      data.perSubject = Object.entries(mapScores).map(([label, rec]) => ({
-        label, value: rec.count ? rec.sum / rec.count : 0
-      }));
+      data.perSubject = Object.entries(mapScores).map(([label, rec]) => ({ label, value: rec.count ? rec.sum / rec.count : 0 }));
     }
-
     renderSiswaOverviewCharts(data);
-  } catch (e) {
-    console.warn('loadSiswaOverviewStats error:', e.message);
-    renderSiswaOverviewCharts(data);
-  }
+  } catch (e) { console.warn('loadSiswaOverviewStats error:', e.message); renderSiswaOverviewCharts(data); }
 }
 
-// TAMBAHAN BARU: render grafik siswa
 function renderSiswaOverviewCharts(data) {
   if (typeof Chart === 'undefined') return;
   const destroyIf = (key) => { if (window[key]) { try { window[key].destroy(); } catch (_) {} window[key] = null; } };
-
-  // Doughnut status tugas
   destroyIf('__siswaChartAssignmentStatus');
   const asgCanvas = document.getElementById('siswaChartAssignmentStatus');
   if (asgCanvas) {
@@ -3720,18 +3645,11 @@ function renderSiswaOverviewCharts(data) {
       type: 'doughnut',
       data: {
         labels: ['Sudah Dikumpulkan', 'Belum Dikumpulkan', 'Sudah Dinilai'],
-        datasets: [{
-          data: [st.submitted || 0, st.pending || 0, st.graded || 0],
-          backgroundColor: ['#dbeafe', '#fef3c7', '#dcfce7'],
-          borderColor: ['#1e40af', '#92400e', '#166534'],
-          borderWidth: 1
-        }]
+        datasets: [{ data: [st.submitted || 0, st.pending || 0, st.graded || 0], backgroundColor: ['#dbeafe', '#fef3c7', '#dcfce7'], borderColor: ['#1e40af', '#92400e', '#166534'], borderWidth: 1 }]
       },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
     });
   }
-
-  // Bar rata-rata nilai per mapel
   destroyIf('__siswaChartScorePerSubject');
   const scoreCanvas = document.getElementById('siswaChartScorePerSubject');
   if (scoreCanvas) {
@@ -3740,34 +3658,18 @@ function renderSiswaOverviewCharts(data) {
       type: 'bar',
       data: {
         labels: rows.length ? rows.map(r => r.label) : ['Belum ada data'],
-        datasets: [{
-          label: 'Rata-rata Nilai',
-          data: rows.length ? rows.map(r => Number(r.value.toFixed(2))) : [0],
-          backgroundColor: 'rgba(37,99,235,0.65)',
-          borderColor: '#1d4ed8',
-          borderWidth: 1,
-          borderRadius: 6
-        }]
+        datasets: [{ label: 'Rata-rata Nilai', data: rows.length ? rows.map(r => Number(r.value.toFixed(2))) : [0], backgroundColor: 'rgba(37,99,235,0.65)', borderColor: '#1d4ed8', borderWidth: 1, borderRadius: 6 }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } }
-      }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } } }
     });
   }
 }
 
-// ---------- GROUPS (GRUP SAYA) ----------
 async function loadSiswaGroups() {
   const el = document.getElementById('siswaGroupList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
   try {
-    const { data, error } = await supabaseClient.from('class_members')
-      .select('id, joined_at, class_id, classes:class_id(id, class_name, grade_level, academic_year, teacher_id, profiles:teacher_id(full_name, email))')
-      .eq('student_id', currentUser.id)
-      .order('joined_at', { ascending: false });
+    const { data, error } = await supabaseClient.from('class_members').select('id, joined_at, class_id, classes:class_id(id, class_name, grade_level, academic_year, teacher_id, profiles:teacher_id(full_name, email))').eq('student_id', currentUser.id).order('joined_at', { ascending: false });
     if (error) throw error;
     if (!data?.length) { el.innerHTML = '<div class="lms-empty">Anda belum tergabung di grup manapun.</div>'; return; }
     SISWA_CACHE.groups = data.map(m => m.classes).filter(Boolean);
@@ -3779,12 +3681,9 @@ async function loadSiswaGroups() {
         <div class="lms-muted">Bergabung: ${formatDateTime(m.joined_at)}</div>
       </div>
     `).join('');
-  } catch (e) {
-    el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`;
-  }
+  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
-// Helper: ambil ID grup siswa (cache)
 async function getSiswaGroupIds() {
   if (SISWA_CACHE.groups.length) return SISWA_CACHE.groups.map(g => g.id);
   try {
@@ -3795,17 +3694,13 @@ async function getSiswaGroupIds() {
   } catch (_) { return []; }
 }
 
-// ---------- SCHEDULES SISWA ----------
 async function loadSiswaSchedules() {
   const el = document.getElementById('siswaScheduleList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
   try {
     const ids = await getSiswaGroupIds();
     if (!ids.length) { el.innerHTML = '<div class="lms-empty">Anda belum tergabung di grup manapun.</div>'; return; }
-    const { data, error } = await supabaseClient.from('schedules')
-      .select('*, classes(class_name), subjects(subject_name)')
-      .in('class_id', ids)
-      .order('schedule_date', { ascending: true });
+    const { data, error } = await supabaseClient.from('schedules').select('*, classes(class_name), subjects(subject_name)').in('class_id', ids).order('schedule_date', { ascending: true });
     if (error) throw error;
     if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada jadwal.</div>'; return; }
     el.innerHTML = data.map(s => `
@@ -3813,24 +3708,18 @@ async function loadSiswaSchedules() {
         <b>${escapeHtml(s.title)}</b>
         <div class="lms-muted">${formatDate(s.schedule_date)} • ${escapeHtml(s.start_time || '')}–${escapeHtml(s.end_time || '')} • ${escapeHtml(s.classes?.class_name || '-')} • ${escapeHtml(s.subjects?.subject_name || '-')}</div>
         <div class="lms-muted">${escapeHtml(s.location || '')}</div>
-        <div class="lms-muted">${escapeHtml(s.description || '')}</div>
       </div>
     `).join('');
   } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
-// ---------- MATERIALS SISWA ----------
 async function loadSiswaMaterials() {
   const el = document.getElementById('siswaMaterialList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
   try {
     const ids = await getSiswaGroupIds();
     if (!ids.length) { el.innerHTML = '<div class="lms-empty">Anda belum tergabung di grup manapun.</div>'; return; }
-    const { data, error } = await supabaseClient.from('learning_materials')
-      .select('*, classes(class_name), subjects(subject_name)')
-      .in('class_id', ids)
-      .eq('is_published', true)
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabaseClient.from('learning_materials').select('*, classes(class_name), subjects(subject_name)').in('class_id', ids).eq('is_published', true).order('created_at', { ascending: false });
     if (error) throw error;
     if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada materi yang dipublikasikan.</div>'; return; }
     el.innerHTML = data.map(m => `
@@ -3839,14 +3728,15 @@ async function loadSiswaMaterials() {
         <div class="lms-muted">${escapeHtml(m.classes?.class_name || '-')} • ${escapeHtml(m.subjects?.subject_name || '-')} • ${formatDateTime(m.created_at)}</div>
         ${m.description ? `<p style="margin-top:.4rem">${escapeHtml(m.description)}</p>` : ''}
         ${m.content ? `<p>${escapeHtml(m.content)}</p>` : ''}
-        ${m.file_url ? `<p><a href="${escapeHtml(m.file_url)}" target="_blank" rel="noopener">📎 Buka file materi</a></p>` : ''}
-        ${m.video_url ? `<p><a href="${escapeHtml(m.video_url)}" target="_blank" rel="noopener">▶️ Tonton video</a></p>` : ''}
+        <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+          ${m.file_url ? `<a href="${escapeHtml(m.file_url)}" target="_blank" rel="noopener" class="lms-action primary sm" style="text-decoration:none;"><i class="fas fa-file-download"></i> Buka / Unduh File Materi</a>` : ''}
+          ${m.video_url ? `<a href="${escapeHtml(m.video_url)}" target="_blank" rel="noopener" class="lms-action danger sm" style="text-decoration:none;"><i class="fab fa-youtube"></i> Tonton Video</a>` : ''}
+        </div>
       </div>
     `).join('');
   } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
-// ---------- ASSIGNMENTS SISWA ----------
 async function loadSiswaAssignments() {
   const el = document.getElementById('siswaAssignmentList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
@@ -3854,14 +3744,8 @@ async function loadSiswaAssignments() {
     const ids = await getSiswaGroupIds();
     if (!ids.length) { el.innerHTML = '<div class="lms-empty">Anda belum tergabung di grup manapun.</div>'; return; }
     const [taskRes, mineRes] = await Promise.all([
-      supabaseClient.from('assignments')
-        .select('*, classes(class_name), subjects(subject_name)')
-        .in('class_id', ids)
-        .eq('is_published', true)
-        .order('due_at', { ascending: true }),
-      supabaseClient.from('assignment_submissions')
-        .select('id, assignment_id, status, score, feedback, submitted_at, assignment_submission_files(id, cloudinary_url, file_name)')
-        .eq('student_id', currentUser.id)
+      supabaseClient.from('assignments').select('*, classes(class_name), subjects(subject_name)').in('class_id', ids).eq('is_published', true).order('due_at', { ascending: true }),
+      supabaseClient.from('assignment_submissions').select('id, assignment_id, status, score, feedback, submitted_at, assignment_submission_files(id, cloudinary_url, file_name)').eq('student_id', currentUser.id)
     ]);
     if (taskRes.error) throw taskRes.error;
     if (mineRes.error) throw mineRes.error;
@@ -3874,7 +3758,6 @@ async function loadSiswaAssignments() {
       const s = submissions.get(t.id);
       const dueMs = t.due_at ? new Date(t.due_at).getTime() : null;
       const expired = dueMs && now > dueMs;
-      const score = s?.score != null ? s.score : '-';
       return `
         <div class="lms-card">
           <b>${escapeHtml(t.title)}</b>
@@ -3896,9 +3779,7 @@ async function loadSiswaAssignments() {
         </div>
       `;
     }).join('');
-  } catch (e) {
-    el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`;
-  }
+  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
 async function siswaSubmitAssignment(e, assignmentId, existingSubmissionId, expired) {
@@ -3908,18 +3789,13 @@ async function siswaSubmitAssignment(e, assignmentId, existingSubmissionId, expi
   const form = e.target;
   const answer = form.elements.answer.value.trim();
   const files = Array.from(form.elements.photos.files || []);
-  if (!files.length && !existingSubmissionId && !answer) {
-    showToast('⚠️ Isi jawaban atau pilih minimal 1 foto.');
-    return;
-  }
+  if (!files.length && !existingSubmissionId && !answer) { showToast('⚠️ Isi jawaban atau pilih minimal 1 foto.'); return; }
   const btn = form.querySelector('button[type=submit]');
   btn.disabled = true;
   const original = btn.innerHTML;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengunggah...';
   try {
     let submissionId = existingSubmissionId;
-
-    // 1) Buat / update submission induk
     if (!submissionId) {
       const { data, error } = await supabaseClient.from('assignment_submissions').insert({
         assignment_id: assignmentId,
@@ -3938,8 +3814,6 @@ async function siswaSubmitAssignment(e, assignmentId, existingSubmissionId, expi
       }).eq('id', submissionId).eq('student_id', currentUser.id);
       if (error) throw error;
     }
-
-    // 2) Upload foto ke Cloudinary & insert per file
     for (const file of files) {
       const uploaded = await uploadPhotoToCloudinary(file, 'bimbel-kak-ros/pengumpulan-tugas');
       const { error } = await supabaseClient.from('assignment_submission_files').insert({
@@ -3953,35 +3827,22 @@ async function siswaSubmitAssignment(e, assignmentId, existingSubmissionId, expi
       });
       if (error) throw error;
     }
-
     showToast('✅ Pengumpulan terkirim.');
     form.reset();
     await loadSiswaAssignments();
     await loadSiswaOverview();
-  } catch (err) {
-    showToast('❌ ' + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = original;
-  }
+  } catch (err) { showToast('❌ ' + err.message); }
+  finally { btn.disabled = false; btn.innerHTML = original; }
 }
 
-// ---------- FILES SISWA ----------
 async function loadSiswaFiles() {
   const el = document.getElementById('siswaFileList');
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
   try {
     const ids = await getSiswaGroupIds();
     if (!ids.length) { el.innerHTML = '<div class="lms-empty">Anda belum tergabung di grup manapun.</div>'; return; }
-    // File kelas = cloudinary_files yang is_public + purpose materi/umum, dari guru grup siswa
-    // Ambil guru_id dari grup siswa
     const teachers = Array.from(new Set(SISWA_CACHE.groups.map(g => g.teacher_id).filter(Boolean)));
-    let query = supabaseClient.from('cloudinary_files')
-      .select('*, profiles:uploaded_by(full_name, email)')
-      .eq('is_public', true)
-      .in('purpose', ['materi', 'umum', 'tugas'])
-      .order('created_at', { ascending: false })
-      .limit(100);
+    let query = supabaseClient.from('cloudinary_files').select('*, profiles:uploaded_by(full_name, email)').eq('is_public', true).in('purpose', ['materi', 'umum', 'tugas']).order('created_at', { ascending: false }).limit(100);
     if (teachers.length) query = query.in('uploaded_by', teachers);
     const { data, error } = await query;
     if (error) throw error;
@@ -3998,282 +3859,82 @@ async function loadSiswaFiles() {
   } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
-/* ========== PART 4/4 — SELESAI ========== */
-// ============================================================
-// FITUR: GURU MEMBUAT MENU LINK (Kuis.html dsb)
-// ============================================================
-
-// 1. Update Navigasi Guru
-const _originalGuruNav = guruNav;
-guruNav = function(view, btn) {
-  switchView('guruDashboard', 'guru-view-' + view, btn);
-  const map = {
-    overview: () => loadGuruOverview(),
-    groups: () => { loadGuruGroups(); loadGuruStudentOptions(); }, // <--- UBAH JADI INI
-    schedules: () => { loadGuruGroupOptions(); loadGuruSchedules(); },
-    materials: () => { loadGuruGroupOptions(); loadGuruMaterials(); },
-    assignments: () => { loadGuruGroupOptions(); loadGuruAssignments(); },
-    grading: () => loadGuruAssignmentOptions(),
-    files: () => loadGuruFiles(),
-    menus: () => loadGuruMenus(), // <--- Menu Baru
-    rapor: () => { loadGuruRaporPeriods(); loadGuruGroupOptions(); loadGuruRapor(); } // TAMBAHAN BARU
-  };
-  map[view]?.();
-};
-
-// 2. Update Navigasi Siswa
-const _originalSiswaNav = siswaNav;
-siswaNav = function(view, btn) {
-  switchView('siswaDashboard', 'siswa-view-' + view, btn);
-  const map = {
-    overview: () => loadSiswaOverview(),
-    groups: () => loadSiswaGroups(),
-    schedules: () => loadSiswaSchedules(),
-    materials: () => loadSiswaMaterials(),
-    assignments: () => loadSiswaAssignments(),
-    files: () => loadSiswaFiles(),
-    teachermenus: () => loadSiswaTeacherMenus(), // <--- Menu Baru
-    rapor: () => { loadSiswaRaporPeriods(); loadSiswaRapor(); } // TAMBAHAN BARU
-  };
-  map[view]?.();
-};
-
-// 3. Fungsi Guru: Simpan Menu
-async function guruCreateMenu(e) {
-  e.preventDefault();
-  const label = document.getElementById('gMenuLabel').value.trim();
-  const url = document.getElementById('gMenuUrl').value.trim();
-  const icon = document.getElementById('gMenuIcon').value.trim();
-  
-  try {
-    const { error } = await supabaseClient.from('page_menus').insert({
-      menu_label: label,
-      menu_icon: icon || 'fa-solid fa-link',
-      menu_mode: 'link',
-      external_link: url,
-      is_teacher_folder: true,
-      owner_id: currentUser.id,
-      is_visible: true,
-      show_in_launcher: true
-    });
-    
-    if (error) throw error;
-    showToast('✅ Menu berhasil ditambahkan!');
-    e.target.reset();
-    document.getElementById('gMenuIcon').value = 'fa-solid fa-link';
-    await loadGuruMenus();
-  } catch (err) { showToast('❌ ' + err.message); }
-}
-
-// 4. Fungsi Guru: Tampilkan Daftar Menu
-async function loadGuruMenus() {
-  const el = document.getElementById('guruMenuList');
-  el.innerHTML = '<div class="lms-empty">Memuat...</div>';
-  try {
-    const { data, error } = await supabaseClient.from('page_menus')
-      .select('*')
-      .eq('owner_id', currentUser.id)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada menu yang Anda buat.</div>'; return; }
-
-    el.innerHTML = data.map(m => `
-      <div class="lms-card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <b><i class="${escapeHtml(m.menu_icon)}" style="color:var(--accent); margin-right:8px;"></i> ${escapeHtml(m.menu_label)}</b>
-            <div class="lms-muted" style="margin-top:4px">Link: <a href="${escapeHtml(m.external_link)}" target="_blank">${escapeHtml(m.external_link)}</a></div>
-          </div>
-          <div>
-            <button class="lms-action sm danger" onclick="guruDeleteMenu('${m.id}')"><i class="fas fa-trash"></i> Hapus</button>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
-}
-
-// 5. Fungsi Guru: Hapus Menu
-async function guruDeleteMenu(id) {
-  if (!confirm('Hapus menu ini? Siswa tidak akan bisa melihatnya lagi.')) return;
-  try {
-    const { error } = await supabaseClient.from('page_menus').delete().eq('id', id).eq('owner_id', currentUser.id);
-    if (error) throw error;
-    showToast('✅ Menu dihapus.');
-    await loadGuruMenus();
-  } catch (e) { showToast('❌ ' + e.message); }
-}
-
-// 6. Fungsi Siswa: Tampilkan Menu buatan Guru
-async function loadSiswaTeacherMenus() {
-  const el = document.getElementById('siswaTeacherMenuList');
-  el.innerHTML = '<div class="lms-empty">Memuat...</div>';
-  
-  try {
-    const { data, error } = await supabaseClient.from('page_menus')
-      .select('*, profiles:owner_id(full_name)')
-      .eq('is_teacher_folder', true)
-      .eq('is_visible', true)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada materi atau kuis dari guru.</div>'; return; }
-
-    el.innerHTML = data.map(m => `
-      <div class="lms-card" style="transition: transform 0.2s;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="display:flex; align-items:center; gap: 12px;">
-            <div style="width: 42px; height: 42px; background: #eff6ff; border-radius: 10px; display:flex; align-items:center; justify-content:center; color: var(--accent);">
-              <i class="${escapeHtml(m.menu_icon || 'fas fa-link')}" style="font-size: 1.2rem;"></i>
-            </div>
-            <div>
-              <b style="font-size: 1.05rem; color: var(--ink);">${escapeHtml(m.menu_label)}</b>
-              <div class="lms-muted" style="margin-top: 2px;">Dari Guru: ${escapeHtml(m.profiles?.full_name || '-')}</div>
-            </div>
-          </div>
-          <div>
-            <!-- TARGET BLANK SUDAH DITAMBAHKAN DI SINI -->
-            <a href="${escapeHtml(m.external_link)}" target="_blank" class="lms-action primary" style="text-decoration:none;">
-              <i class="fas fa-external-link-alt"></i> Buka
-            </a>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
-}
-document.getElementById('gMenuIcon')?.addEventListener('change', function() {
-  const preview = document.getElementById('iconPreview');
-  if (preview) {
-    preview.innerHTML = `<i class="${this.value}"></i>`;
-  }
-});
 // ============================================================
 // FITUR PERSETUJUAN PENDAFTAR BARU (ADMIN)
 // ============================================================
-
-// 2. Fungsi Memuat Data Pendaftar dari Database
 async function loadAdminPendaftar() {
   const tbody = document.getElementById('pendaftarTableBody');
   const badge = document.getElementById('badgePendaftar');
-  if (!tbody) return; // Pengaman jika elemen belum ada
-
+  if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>';
-
   try {
-    const { data, error } = await supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('role', 'siswa') // Ambil yang rolenya siswa
-      .order('created_at', { ascending: false });
-
+    const { data, error } = await supabaseClient.from('profiles').select('*').eq('role', 'siswa').order('created_at', { ascending: false });
     if (error) throw error;
-
-    // Hitung yang statusnya pending (is_active = false) untuk badge notifikasi
     const pendingCount = data.filter(d => d.is_active === false).length;
-    if (pendingCount > 0 && badge) {
-      badge.innerText = pendingCount;
-      badge.style.display = 'inline-block';
-    } else if (badge) {
-      badge.style.display = 'none';
-    }
-
+    if (pendingCount > 0 && badge) { badge.innerText = pendingCount; badge.style.display = 'inline-block'; }
+    else if (badge) { badge.style.display = 'none'; }
     if (!data || data.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada pendaftar.</td></tr>';
       return;
     }
-
     tbody.innerHTML = data.map(siswa => {
-      let statusBadge = siswa.is_active 
-        ? '<span class="lms-status">Aktif</span>'
-        : '<span class="lms-status warn">Pending</span>';
-
-      let actionBtn = !siswa.is_active 
+      let statusBadge = siswa.is_active ? '<span class="lms-status">Aktif</span>' : '<span class="lms-status warn">Pending</span>';
+      let actionBtn = !siswa.is_active
         ? `<button class="lms-action sm primary" onclick="setujuiPendaftar('${siswa.id}')"><i class="fas fa-check"></i> Setujui</button>
            <button class="lms-action sm danger" onclick="hapusPendaftar('${siswa.id}')"><i class="fas fa-trash"></i> Tolak</button>`
         : `<span class="lms-muted"><i class="fas fa-check-circle" style="color:var(--success)"></i> Selesai</span>`;
-
-      // Format tanggal
       let tglDaftar = '-';
       if (siswa.created_at) {
         tglDaftar = new Date(siswa.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
       }
-
       return `
         <tr>
-          <td>
-            <strong>${escapeHtml(siswa.full_name || '-')}</strong><br>
-            <span class="lms-muted" style="font-size:0.75rem">${escapeHtml(siswa.email || '-')}</span>
-          </td>
-          <td>
-            Kelas: ${escapeHtml(siswa.kelas || '-')}<br>
-            <span class="lms-muted" style="font-size:0.75rem">NISN: ${escapeHtml(siswa.nip_nisn || '-')}</span>
-          </td>
+          <td><strong>${escapeHtml(siswa.full_name || '-')}</strong><br><span class="lms-muted" style="font-size:0.75rem">${escapeHtml(siswa.email || '-')}</span></td>
+          <td>Kelas: ${escapeHtml(siswa.kelas || '-')}<br><span class="lms-muted" style="font-size:0.75rem">NISN: ${escapeHtml(siswa.nip_nisn || '-')}</span></td>
           <td>${tglDaftar}</td>
           <td>${statusBadge}</td>
           <td>${actionBtn}</td>
         </tr>
       `;
     }).join('');
-
   } catch (err) {
     console.error(err);
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
-// 3. Fungsi Admin Menyetujui Pendaftar
 async function setujuiPendaftar(id) {
   if (!confirm('Setujui pendaftar ini? Akun siswa akan langsung aktif dan bisa login.')) return;
   try {
-    const { error } = await supabaseClient
-      .from('profiles')
-      .update({ is_active: true, updated_at: new Date().toISOString() })
-      .eq('id', id);
-
+    const { error } = await supabaseClient.from('profiles').update({ is_active: true, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) throw error;
     showToast('✅ Pendaftar berhasil disetujui!');
-    loadAdminPendaftar(); // Refresh tabel
-  } catch (err) {
-    showToast('❌ Gagal menyetujui: ' + err.message);
-  }
+    loadAdminPendaftar();
+  } catch (err) { showToast('❌ Gagal menyetujui: ' + err.message); }
 }
 
-// 4. Fungsi Admin Menolak / Hapus Pendaftar
 async function hapusPendaftar(id) {
   if (!confirm('Tolak dan hapus data pendaftar ini? (Akun autentikasi mungkin masih tersisa di Supabase Auth)')) return;
   try {
-    const { error } = await supabaseClient
-      .from('profiles')
-      .delete()
-      .eq('id', id);
-
+    const { error } = await supabaseClient.from('profiles').delete().eq('id', id);
     if (error) throw error;
     showToast('🗑️ Pendaftar berhasil ditolak/dihapus.');
-    loadAdminPendaftar(); // Refresh tabel
-  } catch (err) {
-    showToast('❌ Gagal menghapus: ' + err.message);
-  }
+    loadAdminPendaftar();
+  } catch (err) { showToast('❌ Gagal menghapus: ' + err.message); }
 }
 
-// 5. Cek Notifikasi Badge saat Admin Login
 document.addEventListener('DOMContentLoaded', () => {
-  // Beri jeda 2 detik agar supabaseClient dan currentProfile sudah siap
   setTimeout(() => {
     if (typeof supabaseClient !== 'undefined' && currentProfile && currentProfile.role === 'admin') {
       loadAdminPendaftar().catch((e) => console.log('Info: Gagal memuat badge awal', e));
     }
   }, 2000);
 });
+
 // ============================================================
 // MODUL NOTIFIKASI
 // ============================================================
-const NOTIF_CACHE = {
-  items: [],
-  isOpen: false
-};
-
+const NOTIF_CACHE = { items: [], isOpen: false };
 const NOTIF_ICONS = {
   assignment: 'fa-tasks',
   material: 'fa-book-open',
@@ -4302,7 +3963,6 @@ function toggleNotifPanel(e) {
   if (NOTIF_CACHE.isOpen) loadNotifications();
 }
 
-// Tutup panel saat klik di luar
 document.addEventListener('click', (e) => {
   const panel = document.getElementById('notifPanel');
   const btn = document.getElementById('notifBtn');
@@ -4316,71 +3976,35 @@ document.addEventListener('click', (e) => {
 async function createNotification(userId, title, message, type = 'info', link = null) {
   if (!userId || !title) return null;
   try {
-    const { data, error } = await supabaseClient.from('notifications').insert({
-      user_id: userId,
-      title,
-      message: message || null,
-      type,
-      link,
-      is_read: false
-    }).select('id').single();
+    const { data, error } = await supabaseClient.from('notifications').insert({ user_id: userId, title, message: message || null, type, link, is_read: false }).select('id').single();
     if (error) throw error;
     return data.id;
-  } catch (e) {
-    console.warn('createNotification error:', e.message);
-    return null;
-  }
+  } catch (e) { console.warn('createNotification error:', e.message); return null; }
 }
 
-// Notifikasi ke semua siswa dalam kelas + cegah duplikat
 async function createNotificationsForClass(classId, payload) {
   if (!classId) return;
   const { userIds, excludeUserId } = payload;
   try {
     let ids = userIds;
     if (!ids) {
-      const { data: members, error } = await supabaseClient
-        .from('class_members').select('student_id').eq('class_id', classId);
+      const { data: members, error } = await supabaseClient.from('class_members').select('student_id').eq('class_id', classId);
       if (error) throw error;
       ids = (members || []).map(m => m.student_id);
     }
     if (excludeUserId) ids = ids.filter(id => id !== excludeUserId);
-
-    // Cek duplikat: user + link + title sama dalam 5 menit terakhir
-        // Cek duplikat: user + link + title sama dalam 5 menit terakhir
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const dupQuery = supabaseClient
-      .from('notifications')
-      .select('user_id')
-      .in('user_id', ids)
-      .eq('title', payload.title)
-      .gte('created_at', fiveMinAgo);
-      
-    // Cek NULL vs string dengan benar
-    if (payload.link) {
-      dupQuery.eq('link', payload.link);
-    } else {
-      dupQuery.is('link', null);
-    }
-    
+    const dupQuery = supabaseClient.from('notifications').select('user_id').in('user_id', ids).eq('title', payload.title).gte('created_at', fiveMinAgo);
+    if (payload.link) dupQuery.eq('link', payload.link);
+    else dupQuery.is('link', null);
     const { data: existing } = await dupQuery;
     const dupIds = new Set((existing || []).map(n => n.user_id));
     ids = ids.filter(id => !dupIds.has(id));
-
     if (!ids.length) return;
-    const rows = ids.map(uid => ({
-      user_id: uid,
-      title: payload.title,
-      message: payload.message || null,
-      type: payload.type || 'info',
-      link: payload.link || null,
-      is_read: false
-    }));
+    const rows = ids.map(uid => ({ user_id: uid, title: payload.title, message: payload.message || null, type: payload.type || 'info', link: payload.link || null, is_read: false }));
     const { error } = await supabaseClient.from('notifications').insert(rows);
     if (error) throw error;
-  } catch (e) {
-    console.warn('createNotificationsForClass error:', e.message);
-  }
+  } catch (e) { console.warn('createNotificationsForClass error:', e.message); }
 }
 
 async function createNotificationsForAllUsers(payload) {
@@ -4389,18 +4013,9 @@ async function createNotificationsForAllUsers(payload) {
     if (error) throw error;
     const ids = (users || []).map(u => u.id).filter(id => id !== currentUser.id);
     if (!ids.length) return;
-    const rows = ids.map(uid => ({
-      user_id: uid,
-      title: payload.title,
-      message: payload.message || null,
-      type: payload.type || 'info',
-      link: payload.link || null,
-      is_read: false
-    }));
+    const rows = ids.map(uid => ({ user_id: uid, title: payload.title, message: payload.message || null, type: payload.type || 'info', link: payload.link || null, is_read: false }));
     await supabaseClient.from('notifications').insert(rows);
-  } catch (e) {
-    console.warn('createNotificationsForAllUsers error:', e.message);
-  }
+  } catch (e) { console.warn('createNotificationsForAllUsers error:', e.message); }
 }
 
 async function loadNotifications() {
@@ -4408,12 +4023,7 @@ async function loadNotifications() {
   const listEl = document.getElementById('notifList');
   if (!listEl) return;
   try {
-    const { data, error } = await supabaseClient
-      .from('notifications')
-      .select('*')
-      .eq('user_id', currentUser.id)
-      .order('created_at', { ascending: false })
-      .limit(30);
+    const { data, error } = await supabaseClient.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(30);
     if (error) throw error;
     NOTIF_CACHE.items = data || [];
     renderNotificationPanel();
@@ -4470,7 +4080,6 @@ async function handleNotifClick(id, link) {
   const panel = document.getElementById('notifPanel');
   if (panel) { panel.classList.remove('show'); NOTIF_CACHE.isOpen = false; }
   if (link) {
-    // Link bisa berupa anchor view, mis. "#assignments" atau URL eksternal
     if (link.startsWith('#')) {
       const v = link.substring(1);
       if (currentProfile.role === 'admin' && typeof adminNav === 'function') adminNav(v);
@@ -4525,35 +4134,19 @@ async function deleteAllNotifications() {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// Polling ringan tiap 60 detik (opsional)
-setInterval(() => {
-  if (currentUser) loadNotifications();
-}, 60000);
+setInterval(() => { if (currentUser) loadNotifications(); }, 60000);
 
 // ============================================================
+// MODUL RAPOR DIGITAL
 // ============================================================
-// TAMBAHAN BARU — MODUL RAPOR DIGITAL (TAHAP 3B)
-// ============================================================
-// ============================================================
+const RAPOR_CACHE = { periods: [], adminRapor: [], guruRapor: [], siswaRapor: [] };
 
-const RAPOR_CACHE = {
-  periods: [],
-  adminRapor: [],
-  guruRapor: [],
-  siswaRapor: []
-};
-
-// ---------- HELPER: FORMAT PERSEN ----------
 function formatPercent(val) {
   if (val === null || val === undefined || val === '') return '-';
   const n = Number(val);
   if (!Number.isFinite(n)) return '-';
   return n.toFixed(1).replace('.0', '') + '%';
 }
-
-// ============================================================
-// 1. ADMIN — CRUD PERIODE RAPOR
-// ============================================================
 
 async function loadAdminRaporPeriods() {
   const tbody = document.getElementById('adminRaporPeriodList');
@@ -4563,15 +4156,10 @@ async function loadAdminRaporPeriods() {
     const { data, error } = await supabaseClient.from('report_periods').select('*').order('start_date', { ascending: false });
     if (error) throw error;
     RAPOR_CACHE.periods = data || [];
-
-    // Isi dropdown filter admin & guru
     fillSelect('raporPeriodFilter', data || [], 'Pilih periode...', 'id', p => p.name);
     fillSelect('guruRaporPeriodFilter', data || [], 'Pilih periode...', 'id', p => p.name);
-
-    // Isi dropdown periode siswa (hanya yang publish)
     const published = (data || []).filter(p => p.is_published);
     fillSelect('siswaRaporPeriodFilter', published, 'Pilih periode...', 'id', p => p.name);
-
     if (!data || !data.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada periode rapor.</td></tr>';
       return;
@@ -4591,9 +4179,7 @@ async function loadAdminRaporPeriods() {
         </td>
       </tr>
     `).join('');
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`;
-  }
+  } catch (e) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`; }
 }
 
 async function adminCreateRaporPeriod(e) {
@@ -4621,9 +4207,7 @@ async function adminCreateRaporPeriod(e) {
 
 async function adminTogglePeriod(id, publish) {
   try {
-    const { error } = await supabaseClient.from('report_periods').update({
-      is_published: publish, updated_at: new Date().toISOString()
-    }).eq('id', id);
+    const { error } = await supabaseClient.from('report_periods').update({ is_published: publish, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) throw error;
     showToast(publish ? '✅ Periode di-publish.' : '✅ Periode dijadikan draft.');
     await loadAdminRaporPeriods();
@@ -4640,10 +4224,6 @@ async function adminDeletePeriod(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ============================================================
-// 2. ADMIN — GENERATE RAPOR
-// ============================================================
-
 async function adminGenerateRapor() {
   const periodId = document.getElementById('raporPeriodFilter').value;
   const classId = document.getElementById('raporClassFilter').value;
@@ -4652,98 +4232,55 @@ async function adminGenerateRapor() {
   const orig = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generate...'; }
   try {
-    // Ambil periode
     const { data: period, error: pErr } = await supabaseClient.from('report_periods').select('*').eq('id', periodId).single();
     if (pErr) throw pErr;
     const startDate = period.start_date;
     const endDate = period.end_date + 'T23:59:59';
-
-    // Ambil anggota kelas
-    const { data: members, error: mErr } = await supabaseClient
-      .from('class_members')
-      .select('student_id, profiles:student_id(full_name, email)')
-      .eq('class_id', classId);
+    const { data: members, error: mErr } = await supabaseClient.from('class_members').select('student_id, profiles:student_id(full_name, email)').eq('class_id', classId);
     if (mErr) throw mErr;
     if (!members?.length) { showToast('⚠️ Tidak ada siswa di kelas ini.'); return; }
-
-    // Ambil semua mapel
     const { data: subjects, error: sErr } = await supabaseClient.from('subjects').select('*');
     if (sErr) throw sErr;
-
-    // Ambil tugas published di kelas ini, kelompokkan per subject
-    const { data: assignments, error: aErr } = await supabaseClient
-      .from('assignments')
-      .select('id, subject_id')
-      .eq('class_id', classId)
-      .eq('is_published', true);
+    const { data: assignments, error: aErr } = await supabaseClient.from('assignments').select('id, subject_id').eq('class_id', classId).eq('is_published', true);
     if (aErr) throw aErr;
     const assignmentsBySubject = {};
     (assignments || []).forEach(a => {
       if (!assignmentsBySubject[a.subject_id]) assignmentsBySubject[a.subject_id] = [];
       assignmentsBySubject[a.subject_id].push(a.id);
     });
-
     let processed = 0;
     const totalSiswa = members.length;
     let successCount = 0;
-
     for (const member of members) {
       for (const subj of (subjects || [])) {
         const asgIds = assignmentsBySubject[subj.id] || [];
-        if (!asgIds.length) continue; // skip mapel tanpa tugas
-
-        // Rata-rata nilai tugas (submission dinilai) dalam range periode
-        const { data: subs, error: subErr } = await supabaseClient
-          .from('assignment_submissions')
-          .select('score, status')
-          .eq('student_id', member.student_id)
-          .in('assignment_id', asgIds)
-          .eq('status', 'dinilai')
-          .gte('submitted_at', startDate)
-          .lte('submitted_at', endDate);
+        if (!asgIds.length) continue;
+        const { data: subs, error: subErr } = await supabaseClient.from('assignment_submissions').select('score, status').eq('student_id', member.student_id).in('assignment_id', asgIds).eq('status', 'dinilai').gte('submitted_at', startDate).lte('submitted_at', endDate);
         if (subErr) throw subErr;
-
-        // Rata-rata nilai kuis (hasil_ujian) dalam range
         let quizAvg = null;
         try {
-          const { data: quizzes, error: qErr } = await supabaseClient
-            .from('hasil_ujian')
-            .select('nilai')
-            .eq('siswa_id', member.student_id)
-            .gte('created_at', startDate)
-            .lte('created_at', endDate);
+          const { data: quizzes, error: qErr } = await supabaseClient.from('hasil_ujian').select('nilai').eq('siswa_id', member.student_id).gte('created_at', startDate).lte('created_at', endDate);
           if (!qErr && quizzes?.length) {
             const qSum = quizzes.reduce((acc, q) => acc + (Number(q.nilai) || 0), 0);
             quizAvg = qSum / quizzes.length;
           }
-        } catch (_) { /* abaikan jika tabel/kolom berbeda */ }
-
+        } catch (_) { }
         const scores = (subs || []).map(s => Number(s.score)).filter(n => Number.isFinite(n));
         const taskAvg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length) : null;
         let avgScore = null;
         if (taskAvg !== null && quizAvg !== null) avgScore = (taskAvg + quizAvg) / 2;
         else if (taskAvg !== null) avgScore = taskAvg;
         else if (quizAvg !== null) avgScore = quizAvg;
-
         const assignmentDone = scores.length;
         const assignmentTotal = asgIds.length;
-
-        // Kehadiran
         let attendancePercent = null;
         try {
-          const { data: att, error: attErr } = await supabaseClient
-            .from('attendance')
-            .select('status')
-            .eq('student_id', member.student_id)
-            .gte('date', startDate)
-            .lte('date', period.end_date);
+          const { data: att, error: attErr } = await supabaseClient.from('attendance').select('status').eq('student_id', member.student_id).gte('date', startDate).lte('date', period.end_date);
           if (!attErr && att?.length) {
             const hadir = att.filter(a => String(a.status || '').toLowerCase() === 'hadir').length;
             attendancePercent = (hadir / att.length) * 100;
           }
-        } catch (_) { /* tabel attendance mungkin beda nama kolom tanggal */ }
-
-        // Upsert ke student_reports
+        } catch (_) { }
         const payload = {
           student_id: member.student_id,
           period_id: Number(periodId),
@@ -4754,31 +4291,18 @@ async function adminGenerateRapor() {
           attendance_percent: attendancePercent !== null ? Number(attendancePercent.toFixed(2)) : null,
           updated_at: new Date().toISOString()
         };
-        const { error: upErr } = await supabaseClient
-          .from('student_reports')
-          .upsert(payload, { onConflict: 'student_id,period_id,subject_id' });
-        if (upErr) {
-          console.warn('Upsert rapor gagal untuk', member.student_id, subj.id, upErr.message);
-        } else {
-          successCount++;
-        }
+        const { error: upErr } = await supabaseClient.from('student_reports').upsert(payload, { onConflict: 'student_id,period_id,subject_id' });
+        if (upErr) console.warn('Upsert rapor gagal untuk', member.student_id, subj.id, upErr.message);
+        else successCount++;
       }
       processed++;
       if (btn) btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generate... (${processed}/${totalSiswa})`;
     }
-
     showToast(`✅ Generate selesai. ${successCount} baris rapor tersimpan.`);
     await loadAdminRapor();
-  } catch (e) {
-    showToast('❌ ' + e.message);
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = orig; }
-  }
+  } catch (e) { showToast('❌ ' + e.message); }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = orig; } }
 }
-
-// ============================================================
-// 3. ADMIN — TAMPILKAN DAFTAR RAPOR + EDIT CATATAN GURU
-// ============================================================
 
 async function loadAdminRapor() {
   const tbody = document.getElementById('adminRaporList');
@@ -4787,9 +4311,7 @@ async function loadAdminRapor() {
   const classId = document.getElementById('raporClassFilter')?.value;
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Memuat...</td></tr>';
   try {
-    let query = supabaseClient
-      .from('student_reports')
-      .select('*, profiles:student_id(full_name, email, kelas), subjects:subject_id(subject_name), report_periods:period_id(name, start_date, end_date)');
+    let query = supabaseClient.from('student_reports').select('*, profiles:student_id(full_name, email, kelas), subjects:subject_id(subject_name), report_periods:period_id(name, start_date, end_date)');
     if (periodId) query = query.eq('period_id', periodId);
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
@@ -4811,9 +4333,7 @@ async function loadAdminRapor() {
         </td>
       </tr>
     `).join('');
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`;
-  }
+  } catch (e) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`; }
 }
 
 async function adminEditRaporNote(id) {
@@ -4822,19 +4342,12 @@ async function adminEditRaporNote(id) {
   const note = prompt('Catatan guru untuk rapor ini:', r.teacher_note || '');
   if (note === null) return;
   try {
-    const { error } = await supabaseClient.from('student_reports').update({
-      teacher_note: note.trim() || null,
-      updated_at: new Date().toISOString()
-    }).eq('id', id);
+    const { error } = await supabaseClient.from('student_reports').update({ teacher_note: note.trim() || null, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) throw error;
     showToast('✅ Catatan tersimpan.');
     await loadAdminRapor();
   } catch (e) { showToast('❌ ' + e.message); }
 }
-
-// ============================================================
-// 4. GURU — PERIODE & DAFTAR RAPOR SISWA
-// ============================================================
 
 async function loadGuruRaporPeriods() {
   try {
@@ -4855,21 +4368,14 @@ async function loadGuruRapor() {
   }
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Memuat...</td></tr>';
   try {
-    // Ambil siswa di kelas
-    const { data: members, error: mErr } = await supabaseClient
-      .from('class_members').select('student_id').eq('class_id', classId);
+    const { data: members, error: mErr } = await supabaseClient.from('class_members').select('student_id').eq('class_id', classId);
     if (mErr) throw mErr;
     const studentIds = (members || []).map(m => m.student_id);
     if (!studentIds.length) {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Tidak ada siswa di kelas ini.</td></tr>';
       return;
     }
-    const { data, error } = await supabaseClient
-      .from('student_reports')
-      .select('*, profiles:student_id(full_name, email, kelas), subjects:subject_id(subject_name)')
-      .eq('period_id', periodId)
-      .in('student_id', studentIds)
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabaseClient.from('student_reports').select('*, profiles:student_id(full_name, email, kelas), subjects:subject_id(subject_name)').eq('period_id', periodId).in('student_id', studentIds).order('created_at', { ascending: false });
     if (error) throw error;
     RAPOR_CACHE.guruRapor = data || [];
     if (!data?.length) {
@@ -4889,9 +4395,7 @@ async function loadGuruRapor() {
         </td>
       </tr>
     `).join('');
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`;
-  }
+  } catch (e) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`; }
 }
 
 async function guruEditRaporNote(id) {
@@ -4900,27 +4404,16 @@ async function guruEditRaporNote(id) {
   const note = prompt('Catatan guru untuk rapor ini:', r.teacher_note || '');
   if (note === null) return;
   try {
-    const { error } = await supabaseClient.from('student_reports').update({
-      teacher_note: note.trim() || null,
-      updated_at: new Date().toISOString()
-    }).eq('id', id);
+    const { error } = await supabaseClient.from('student_reports').update({ teacher_note: note.trim() || null, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) throw error;
     showToast('✅ Catatan tersimpan.');
     await loadGuruRapor();
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ============================================================
-// 5. SISWA — PERIODE, DAFTAR RAPOR, GRAFIK, CETAK
-// ============================================================
-
 async function loadSiswaRaporPeriods() {
   try {
-    const { data, error } = await supabaseClient
-      .from('report_periods')
-      .select('*')
-      .eq('is_published', true)
-      .order('start_date', { ascending: false });
+    const { data, error } = await supabaseClient.from('report_periods').select('*').eq('is_published', true).order('start_date', { ascending: false });
     if (error) throw error;
     fillSelect('siswaRaporPeriodFilter', data || [], 'Pilih periode...', 'id', p => p.name);
   } catch (e) { /* silent */ }
@@ -4930,27 +4423,18 @@ async function loadSiswaRapor() {
   const tbody = document.getElementById('siswaRaporTableBody');
   if (!tbody) return;
   const periodId = document.getElementById('siswaRaporPeriodFilter')?.value;
-  const contentEl = document.getElementById('siswaRaporContent');
   if (!periodId) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Pilih periode lalu klik "Tampilkan Rapor".</td></tr>';
     return;
   }
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat...</td></tr>';
-
-  // Set info header cetak
   const periodSelect = document.getElementById('siswaRaporPeriodFilter');
   const periodText = periodSelect?.options[periodSelect.selectedIndex]?.text || '-';
   document.getElementById('siswaRaporPeriodeInfo').innerText = 'Periode: ' + periodText;
   document.getElementById('siswaRaporNama').innerText = currentProfile?.full_name || currentUser?.email || '-';
   document.getElementById('siswaRaporKelas').innerText = currentProfile?.kelas || '-';
-
   try {
-    const { data, error } = await supabaseClient
-      .from('student_reports')
-      .select('*, subjects:subject_id(subject_name)')
-      .eq('student_id', currentUser.id)
-      .eq('period_id', periodId)
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabaseClient.from('student_reports').select('*, subjects:subject_id(subject_name)').eq('student_id', currentUser.id).eq('period_id', periodId).order('created_at', { ascending: false });
     if (error) throw error;
     RAPOR_CACHE.siswaRapor = data || [];
     if (!data?.length) {
@@ -4967,8 +4451,6 @@ async function loadSiswaRapor() {
         <td>${escapeHtml(r.teacher_note || '-')}</td>
       </tr>
     `).join('');
-
-    // Render grafik setelah tabel terisi
     await renderSiswaRaporCharts(data, periodId);
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`;
@@ -4976,22 +4458,12 @@ async function loadSiswaRapor() {
   }
 }
 
-// ---------- GRAFIK SISWA (Chart.js) ----------
 async function renderSiswaRaporCharts(reportRows, periodId) {
-  // Line Chart: perkembangan nilai per tugas
   const lineCanvas = document.getElementById('siswaRaporLineChart');
   const barCanvas = document.getElementById('siswaRaporBarChart');
-
-  // Destroy instance lama
   if (window.__siswaLineChart) { try { window.__siswaLineChart.destroy(); } catch (_) {} window.__siswaLineChart = null; }
   if (window.__siswaBarChart) { try { window.__siswaBarChart.destroy(); } catch (_) {} window.__siswaBarChart = null; }
-
-  if (typeof Chart === 'undefined') {
-    console.warn('Chart.js belum dimuat.');
-    return;
-  }
-
-  // ---- LINE: ambil submission dinilai milik siswa dalam range periode ----
+  if (typeof Chart === 'undefined') return;
   let lineLabels = [];
   let lineData = [];
   try {
@@ -4999,12 +4471,7 @@ async function renderSiswaRaporCharts(reportRows, periodId) {
       const { data: period } = await supabaseClient.from('report_periods').select('start_date,end_date').eq('id', periodId).maybeSingle();
       const startDate = period?.start_date;
       const endDate = period ? period.end_date + 'T23:59:59' : null;
-
-      let q = supabaseClient
-        .from('assignment_submissions')
-        .select('score, submitted_at, assignments:assignment_id(title, due_at)')
-        .eq('student_id', currentUser.id)
-        .eq('status', 'dinilai');
+      let q = supabaseClient.from('assignment_submissions').select('score, submitted_at, assignments:assignment_id(title, due_at)').eq('student_id', currentUser.id).eq('status', 'dinilai');
       if (startDate) q = q.gte('submitted_at', startDate);
       if (endDate) q = q.lte('submitted_at', endDate);
       const { data: subs, error } = await q.order('submitted_at', { ascending: true });
@@ -5018,70 +4485,33 @@ async function renderSiswaRaporCharts(reportRows, periodId) {
       }
     }
   } catch (e) { console.warn('Line chart data error:', e.message); }
-
   if (lineCanvas && lineLabels.length) {
     window.__siswaLineChart = new Chart(lineCanvas, {
       type: 'line',
-      data: {
-        labels: lineLabels,
-        datasets: [{
-          label: 'Nilai Tugas',
-          data: lineData,
-          borderColor: '#2563eb',
-          backgroundColor: 'rgba(37,99,235,0.12)',
-          fill: true,
-          tension: 0.35,
-          pointRadius: 4,
-          pointBackgroundColor: '#2563eb'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } }
-      }
+      data: { labels: lineLabels, datasets: [{ label: 'Nilai Tugas', data: lineData, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.12)', fill: true, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#2563eb' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } } }
     });
   } else if (lineCanvas) {
-    // Tampilkan chart kosong sebagai fallback
     window.__siswaLineChart = new Chart(lineCanvas, {
       type: 'line',
       data: { labels: ['Belum ada data'], datasets: [{ label: 'Nilai Tugas', data: [0], borderColor: '#94a3b8', backgroundColor: 'rgba(148,163,184,0.1)' }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
     });
   }
-
-  // ---- BAR: rata-rata per mapel ----
   const barLabels = (reportRows || []).map(r => r.subjects?.subject_name || 'Mapel');
   const barData = (reportRows || []).map(r => r.avg_score != null ? Number(r.avg_score) : 0);
   if (barCanvas) {
     window.__siswaBarChart = new Chart(barCanvas, {
       type: 'bar',
-      data: {
-        labels: barLabels.length ? barLabels : ['Belum ada data'],
-        datasets: [{
-          label: 'Rata-rata Nilai',
-          data: barData.length ? barData : [0],
-          backgroundColor: 'rgba(37,99,235,0.65)',
-          borderColor: '#1d4ed8',
-          borderWidth: 1,
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } }
-      }
+      data: { labels: barLabels.length ? barLabels : ['Belum ada data'], datasets: [{ label: 'Rata-rata Nilai', data: barData.length ? barData : [0], backgroundColor: 'rgba(37,99,235,0.65)', borderColor: '#1d4ed8', borderWidth: 1, borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } } }
     });
   }
 }
 
-// ---------- CETAK RAPOR ----------
 function cetakRaporSiswa() {
   window.print();
 }
-  </script>
+</script>
 </body>
 </html>
