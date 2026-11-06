@@ -1010,9 +1010,14 @@
           <div class="panel-box">
             <div class="panel-title">Anggota Grup</div>
             <div class="lms-field"><label>Pilih Grup</label><select id="guruMemberGroupSelect" onchange="loadGuruGroupMembers()"><option value="">Pilih grup...</option></select></div>
-            <form onsubmit="guruAddMember(event)" style="margin-top:.8rem">
+                        <form onsubmit="guruAddMember(event)" style="margin-top:.8rem">
               <div class="lms-grid">
-                <div class="lms-field"><label>Email Siswa</label><input id="gmStudentEmail" type="email" required placeholder="siswa@bimbel.com"></div>
+                <div class="lms-field">
+                  <label>Pilih Siswa</label>
+                  <select id="gmStudentEmail" required>
+                    <option value="">Memuat data siswa...</option>
+                  </select>
+                </div>
               </div>
               <button type="submit" class="lms-action primary"><i class="fas fa-user-plus"></i> Tambah Anggota</button>
             </form>
@@ -3069,7 +3074,35 @@ async function guruDeleteGroup(id) {
 }
 
 // ---------- GROUP MEMBERS ----------
+// FUNGSI BARU: Memuat semua siswa ke dalam dropdown (Nama & Kelas)
+async function loadGuruStudentOptions() {
+  const sel = document.getElementById('gmStudentEmail');
+  if (!sel) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, email, kelas')
+      .eq('role', 'siswa')
+      .eq('is_active', true)
+      .order('full_name');
+      
+    if (error) throw error;
+    
+    sel.innerHTML = '<option value="">Pilih siswa...</option>' + 
+      (data || []).map(s => {
+        const label = `${s.full_name} ${s.kelas ? '- ' + s.kelas : ''}`;
+        // Value berisi email agar fungsi guruAddMember lama tidak perlu diubah
+        return `<option value="${escapeHtml(s.email)}">${escapeHtml(label)}</option>`;
+      }).join('');
+  } catch (e) {
+    sel.innerHTML = '<option value="">Gagal memuat siswa</option>';
+    console.warn('Gagal load siswa:', e.message);
+  }
+}
+
+// ---------- GROUP MEMBERS ----------
 async function loadGuruGroupMembers() {
+  loadGuruStudentOptions(); // <--- TAMBAHKAN BARIS INI
   const classId = document.getElementById('guruMemberGroupSelect').value;
   const el = document.getElementById('guruMemberList');
   if (!classId) { el.innerHTML = ''; return; }
@@ -3976,7 +4009,7 @@ guruNav = function(view, btn) {
   switchView('guruDashboard', 'guru-view-' + view, btn);
   const map = {
     overview: () => loadGuruOverview(),
-    groups: () => loadGuruGroups(),
+    groups: () => { loadGuruGroups(); loadGuruStudentOptions(); }, // <--- UBAH JADI INI
     schedules: () => { loadGuruGroupOptions(); loadGuruSchedules(); },
     materials: () => { loadGuruGroupOptions(); loadGuruMaterials(); },
     assignments: () => { loadGuruGroupOptions(); loadGuruAssignments(); },
