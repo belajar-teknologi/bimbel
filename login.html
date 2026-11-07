@@ -624,7 +624,9 @@
           </div>
         </div>
       </div>
-      <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      <button class="btn-logout" onclick="handleLogout()">
+  <i class="fas fa-sign-out-alt"></i> Logout
+</button>
     </div>
   </header>
 
@@ -1859,13 +1861,18 @@ async function handleLogin(e) {
 }
 
 async function handleLogout() {
-  await supabaseClient.auth.signOut();
+  try {
+    await supabaseClient.auth.signOut();
+  } catch (e) {
+    console.warn('SignOut error:', e.message);
+  }
   currentUser = null;
   currentProfile = null;
   NOTIF_CACHE.items = [];
   NOTIF_CACHE.isOpen = false;
   showToast('👋 Berhasil keluar');
-  showLoginView();
+  // Redirect ke halaman utama
+  window.location.href = 'index.html';
 }
 
 function renderDashboardView() {
