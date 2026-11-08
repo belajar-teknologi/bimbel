@@ -2628,13 +2628,14 @@ async function handleLogin(e) {
       btn.innerHTML = originalBtnText;
       return;
     }
-    if (profile.role === 'siswa' && profile.is_active === false) {
-      showToast('⏳ Akun Anda belum disetujui Admin. Silakan tunggu.');
-      await supabaseClient.auth.signOut();
-      btn.disabled = false;
-      btn.innerHTML = originalBtnText;
-      return;
-    }
+    // Ubah pengecekan menjadi !== true (jika bukan true, blokir)
+if (profile.role === 'siswa' && profile.is_active !== true) {
+  showToast('⏳ Akun Anda belum disetujui Admin. Silakan tunggu.');
+  await supabaseClient.auth.signOut();
+  btn.disabled = false;
+  btn.innerHTML = originalBtnText;
+  return;
+}
     currentUser = data.user;
     showToast('✅ Login berhasil! Memuat data...');
     await loadUserProfile(data.user.id);
