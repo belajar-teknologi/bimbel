@@ -1158,11 +1158,57 @@
     outline: 2px solid var(--accent-color);
     outline-offset: 2px;
   }
+  /* ===== PATCH: MODE INTIP ===== */
+  body.impersonating .app-header { top: 0; }
+  body.impersonating .app-shell { margin-top: 52px; }
+  body.impersonating .sidebar { top: 124px; height: calc(100vh - 124px); }
+  @media (max-width: 768px) {
+    body.impersonating .sidebar { top: 116px; height: calc(100vh - 116px); }
+    body.impersonating .sidebar-overlay { inset: 116px 0 0 0; }
+  }
+  #impersonateList .impersonate-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    transition: background .15s;
+    font-size: 0.85rem;
+  }
+  #impersonateList .impersonate-item:hover { background: var(--bg-main-soft); }
+  #impersonateList .impersonate-item:last-child { border-bottom: none; }
+  #impersonateList .impersonate-item .role-pill { font-size: 0.62rem; }
+  /* ===== END PATCH ===== */
 </style>
 </head>
 <body class="theme-blue">
 
   <div id="toast" class="toast"><i class="fas fa-info-circle"></i> <span id="toastMsg">Notifikasi</span></div>
+
+  <!-- ===== PATCH: BANNER MODE INTIP ===== -->
+  <div id="impersonateBanner" class="hidden" style="
+    position:fixed;top:72px;left:0;right:0;z-index:210;
+    background:linear-gradient(90deg,#FEF3C7,#FDE68A);
+    border-bottom:2px solid #F59E0B;
+    padding:10px 20px;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;
+    box-shadow:0 4px 16px rgba(245,158,11,0.25);
+    font-weight:700;color:#92400E;font-size:0.88rem;
+  ">
+    <div>
+      <i class="fas fa-user-secret"></i>
+      Mode Intip aktif sebagai <span id="impersonateBannerName">-</span>
+      <span id="impersonateBannerRole" class="role-tag" style="background:#FDE68A;color:#92400E;margin-left:6px;">-</span>
+    </div>
+    <button onclick="exitImpersonate()" style="
+      background:#92400E;color:#fff;border:none;
+      padding:8px 16px;border-radius:999px;font-weight:800;
+      cursor:pointer;font-size:0.8rem;
+    ">
+      <i class="fas fa-arrow-left"></i> Keluar Mode Intip
+    </button>
+  </div>
+  <!-- ===== END PATCH ===== -->
 
   <div id="loginView" class="login-wrapper">
     <div class="login-card">
@@ -1213,46 +1259,66 @@
     </div>
     
     <div class="user-badge">
-      <div>
-        <span id="userNameDisplay" style="font-weight: 700; font-size: 0.9rem;">-</span>
-        <span id="userRoleTag" class="role-tag">ROLE</span>
-      </div>
+  <div>
+    <span id="userNameDisplay" style="font-weight: 700; font-size: 0.9rem;">-</span>
+    <span id="userRoleTag" class="role-tag">ROLE</span>
+  </div>
 
-      <!-- TOMBOL GANTI TEMA DI SINI -->
-      <div class="theme-picker">
-        <span>Tema:</span>
-        <button class="theme-btn btn-blue" onclick="document.body.className='theme-blue'" title="Biru"></button>
-        <button class="theme-btn btn-green" onclick="document.body.className='theme-green'" title="Hijau"></button>
-        <button class="theme-btn btn-red" onclick="document.body.className='theme-red'" title="Merah"></button>
-        <button class="theme-btn btn-purple" onclick="document.body.className='theme-purple'" title="Ungu"></button>
-      </div>
-      <!-- SAMPAI SINI -->
+  <!-- TOMBOL GANTI TEMA DI SINI -->
+  <div class="theme-picker">
+    <span>Tema:</span>
+    <button class="theme-btn btn-blue" onclick="document.body.className='theme-blue'" title="Biru"></button>
+    <button class="theme-btn btn-green" onclick="document.body.className='theme-green'" title="Hijau"></button>
+    <button class="theme-btn btn-red" onclick="document.body.className='theme-red'" title="Merah"></button>
+    <button class="theme-btn btn-purple" onclick="document.body.className='theme-purple'" title="Ungu"></button>
+  </div>
+  <!-- SAMPAI SINI -->
 
-      <div class="notif-wrap">
-        <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel(event)" title="Notifikasi">
-          <i class="fas fa-bell"></i>
-          <span class="notif-badge" id="notifBadge">0</span>
-        </button>
-        <div class="notif-panel" id="notifPanel">
-          <div class="notif-header">
-            <h4><i class="fas fa-bell" style="color: var(--accent); margin-right: 4px;"></i> Notifikasi</h4>
-            <div class="notif-header-actions">
-              <button class="notif-mini-btn" onclick="markAllNotificationsRead()" title="Tandai semua dibaca">✓ Semua</button>
-              <button class="notif-mini-btn" onclick="deleteAllNotifications()" title="Hapus semua">🗑️</button>
-            </div>
-          </div>
-          <div class="notif-list" id="notifList">
-            <div class="notif-empty">Memuat...</div>
-          </div>
-          <div class="notif-footer">
-            <button class="notif-mini-btn" onclick="loadNotifications()">🔄 Refresh</button>
-          </div>
+  <!-- ===== PATCH: TOMBOL INTIP (khusus admin) ===== -->
+  <div id="impersonateControl" class="hidden" style="position:relative;margin-right:6px;">
+    <button class="lms-action sm" id="impersonateBtn" onclick="toggleImpersonateMenu(event)" title="Intip dashboard guru/siswa">
+      <i class="fas fa-user-secret"></i> Intip
+    </button>
+    <div id="impersonateMenu" class="notif-panel" style="display:none;width:320px;right:0;top:48px;padding:14px;">
+      <div style="font-weight:800;font-size:0.85rem;margin-bottom:8px;color:var(--text-main);">
+        <i class="fas fa-user-secret" style="color:var(--accent);"></i> Intip Dashboard
+      </div>
+      <div class="lms-field" style="margin-bottom:8px;">
+        <label>Cari Guru / Siswa</label>
+        <input id="impersonateSearch" placeholder="Ketik nama / email..." oninput="filterImpersonateList()">
+      </div>
+      <div id="impersonateList" style="max-height:280px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;">
+        <div class="notif-empty">Memuat...</div>
+      </div>
+    </div>
+  </div>
+  <!-- ===== END PATCH ===== -->
+
+  <div class="notif-wrap">
+    <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel(event)" title="Notifikasi">
+      <i class="fas fa-bell"></i>
+      <span class="notif-badge" id="notifBadge">0</span>
+    </button>
+    <div class="notif-panel" id="notifPanel">
+      <div class="notif-header">
+        <h4><i class="fas fa-bell" style="color: var(--accent); margin-right: 4px;"></i> Notifikasi</h4>
+        <div class="notif-header-actions">
+          <button class="notif-mini-btn" onclick="markAllNotificationsRead()" title="Tandai semua dibaca">✓ Semua</button>
+          <button class="notif-mini-btn" onclick="deleteAllNotifications()" title="Hapus semua">🗑️</button>
         </div>
       </div>
-      <button class="btn-logout" onclick="handleLogout()">
-  <i class="fas fa-sign-out-alt"></i> Logout
-</button>
+      <div class="notif-list" id="notifList">
+        <div class="notif-empty">Memuat...</div>
+      </div>
+      <div class="notif-footer">
+        <button class="notif-mini-btn" onclick="loadNotifications()">🔄 Refresh</button>
+      </div>
     </div>
+  </div>
+  <button class="btn-logout" onclick="handleLogout()">
+    <i class="fas fa-sign-out-alt"></i> Logout
+  </button>
+</div>
   </header>
 
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -5391,6 +5457,201 @@ function loadSiswaDailyGoals() {
   }
   loadSiswaDailyStreak();
 }
+
+/* ============================================================
+   PATCH: ADMIN IMPERSONATION — INTIP DASHBOARD GURU/SISWA
+   ============================================================ */
+const IMPERSONATE_KEY = 'edusmart_impersonate_target';
+let IMPERSONATE_TARGET = null;
+let IMPERSONATE_LIST = [];
+
+// Tampilkan tombol Intip hanya untuk admin
+(function ensureImpersonateButton() {
+  const ctrl = document.getElementById('impersonateControl');
+  if (!ctrl) return;
+  const t = setInterval(() => {
+    if (currentProfile) {
+      if (currentProfile.role === 'admin') ctrl.classList.remove('hidden');
+      clearInterval(t);
+    }
+  }, 400);
+})();
+
+// Restore sesi intip saat halaman reload
+(function restoreImpersonateSession() {
+  try {
+    const saved = localStorage.getItem(IMPERSONATE_KEY);
+    if (saved) {
+      const t = JSON.parse(saved);
+      const iv = setInterval(async () => {
+        if (currentProfile && currentProfile.role === 'admin' && currentUser) {
+          clearInterval(iv);
+          await startImpersonate(t, /*silent*/ true);
+        }
+      }, 500);
+    }
+  } catch (e) { console.warn('restoreImpersonate error:', e); }
+})();
+
+function toggleImpersonateMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('impersonateMenu');
+  if (!menu) return;
+  const isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) loadImpersonateList();
+}
+
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('impersonateMenu');
+  const btn = document.getElementById('impersonateBtn');
+  if (!menu || menu.style.display !== 'block') return;
+  if (!menu.contains(e.target) && !btn?.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+
+async function loadImpersonateList() {
+  const el = document.getElementById('impersonateList');
+  if (!el) return;
+  el.innerHTML = '<div class="notif-empty">Memuat...</div>';
+  try {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, email, role, kelas, is_active')
+      .in('role', ['guru', 'siswa'])
+      .order('role', { ascending: true })
+      .order('full_name', { ascending: true });
+    if (error) throw error;
+    IMPERSONATE_LIST = data || [];
+    renderImpersonateList();
+  } catch (e) {
+    el.innerHTML = `<div class="notif-empty" style="color:var(--danger)">Gagal memuat: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function filterImpersonateList() { renderImpersonateList(); }
+
+function renderImpersonateList() {
+  const el = document.getElementById('impersonateList');
+  if (!el) return;
+  const q = (document.getElementById('impersonateSearch')?.value || '').toLowerCase();
+  const rows = IMPERSONATE_LIST.filter(u => {
+    if (!q) return true;
+    return ((u.full_name || '') + ' ' + (u.email || '') + ' ' + (u.kelas || '')).toLowerCase().includes(q);
+  });
+  if (!rows.length) {
+    el.innerHTML = '<div class="notif-empty">Tidak ada guru/siswa.</div>';
+    return;
+  }
+  el.innerHTML = rows.map(u => `
+    <div class="impersonate-item" onclick='startImpersonate(${JSON.stringify({
+      id: u.id,
+      full_name: u.full_name,
+      email: u.email,
+      role: u.role,
+      kelas: u.kelas
+    })})'>
+      <i class="fas ${u.role === 'guru' ? 'fa-chalkboard-user' : 'fa-user-graduate'}"
+         style="color:var(--accent);width:18px;text-align:center;"></i>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          ${escapeHtml(u.full_name || u.email || '-')}
+        </div>
+        <div class="lms-muted" style="font-size:0.72rem;">
+          ${escapeHtml(u.email || '')}${u.kelas ? ' • ' + escapeHtml(u.kelas) : ''}
+        </div>
+      </div>
+      <span class="role-pill ${escapeHtml(u.role)}">${escapeHtml(u.role)}</span>
+    </div>
+  `).join('');
+}
+
+async function startImpersonate(target, silent) {
+  if (!target || !target.id) return;
+  if (!currentProfile || currentProfile.role !== 'admin') {
+    showToast('⚠️ Hanya admin yang bisa memakai mode intip.');
+    return;
+  }
+  IMPERSONATE_TARGET = target;
+  try { localStorage.setItem(IMPERSONATE_KEY, JSON.stringify(target)); } catch (_) {}
+
+  window.__realAdminProfile = window.__realAdminProfile || { ...currentProfile };
+  currentProfile = {
+    ...currentProfile,
+    id: target.id,
+    full_name: target.full_name || target.email || '-',
+    email: target.email,
+    role: target.role,
+    kelas: target.kelas || null
+  };
+
+  window.__realAdminUser = window.__realAdminUser || { ...currentUser };
+  currentUser = { ...currentUser, id: target.id };
+
+  const banner = document.getElementById('impersonateBanner');
+  const nameEl = document.getElementById('impersonateBannerName');
+  const roleEl = document.getElementById('impersonateBannerRole');
+  if (banner) banner.classList.remove('hidden');
+  if (nameEl) nameEl.innerText = target.full_name || target.email || '-';
+  if (roleEl) { roleEl.innerText = target.role; roleEl.className = 'role-pill ' + target.role; }
+  document.body.classList.add('impersonating');
+
+  document.getElementById('impersonateControl')?.classList.add('hidden');
+  const m = document.getElementById('impersonateMenu'); if (m) m.style.display = 'none';
+
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('appHeader').classList.remove('hidden');
+  document.getElementById('userNameDisplay').innerText = (target.full_name || target.email || '-') + ' (intip)';
+  document.getElementById('userRoleTag').innerText = target.role;
+
+  ['adminDashboard', 'guruDashboard', 'siswaDashboard'].forEach(id => document.getElementById(id).classList.add('hidden'));
+
+  if (target.role === 'guru') {
+    document.getElementById('guruDashboard').classList.remove('hidden');
+    await loadGuruOverview();
+  } else if (target.role === 'siswa') {
+    document.getElementById('siswaDashboard').classList.remove('hidden');
+    await loadSiswaOverview();
+  }
+
+  if (!silent) showToast(`👁️ Mode intip aktif sebagai ${target.full_name || target.email}`);
+  loadNotifications();
+}
+
+function exitImpersonate() {
+  if (!window.__realAdminProfile || !window.__realAdminUser) {
+    showToast('⚠️ Sesi admin asli tidak ditemukan, silakan logout.');
+    return;
+  }
+  currentProfile = window.__realAdminProfile;
+  currentUser = window.__realAdminUser;
+  IMPERSONATE_TARGET = null;
+  try { localStorage.removeItem(IMPERSONATE_KEY); } catch (_) {}
+
+  const banner = document.getElementById('impersonateBanner');
+  if (banner) banner.classList.add('hidden');
+  document.body.classList.remove('impersonating');
+
+  const ctrl = document.getElementById('impersonateControl');
+  if (ctrl && currentProfile.role === 'admin') ctrl.classList.remove('hidden');
+
+  showToast('↩️ Kembali ke dashboard admin.');
+  renderDashboardView();
+}
+
+// Override handleLogout: bersihkan juga sesi intip
+const __origHandleLogout = handleLogout;
+handleLogout = async function () {
+  try { localStorage.removeItem(IMPERSONATE_KEY); } catch (_) {}
+  window.__realAdminProfile = null;
+  window.__realAdminUser = null;
+  IMPERSONATE_TARGET = null;
+  return __origHandleLogout.apply(this, arguments);
+};
+/* ============================================================
+   END PATCH
+   ============================================================ */
 </script>
 </body>
 </html>
