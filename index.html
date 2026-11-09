@@ -3585,11 +3585,29 @@ let liquidInitialized = false;
 function loadLiquidImage(url) {
   if (!url) url = DEFAULT_AFTER_IMAGE;
   liquidAfterUrl = url;
-  console.log('🖼️ [LIQUID] Loading:', url);
+  console.log('🖼️ [LIQUID] Mencoba memuat gambar After:', url);
+  
+  // Reset status inisialisasi agar bisa memuat ulang gambar
+  liquidInitialized = false; 
+  
   liquidImageAfter.crossOrigin = 'anonymous';
-  liquidImageAfter.onload = () => { console.log('✅ [LIQUID] Loaded'); initLiquid(); };
-  liquidImageAfter.onerror = () => { console.error('❌ [LIQUID] Failed:', url); };
-  liquidImageAfter.src = url;
+  
+  liquidImageAfter.onload = () => { 
+    console.log('✅ [LIQUID] Gambar After berhasil dimuat:', url); 
+    initLiquid(); 
+  };
+  
+  liquidImageAfter.onerror = () => { 
+    console.error('❌ [LIQUID] Gagal memuat gambar After:', url); 
+    // Jika gagal load, coba pakai gambar default
+    if (url !== DEFAULT_AFTER_IMAGE) {
+      console.log('🔄 Fallback ke gambar default...');
+      loadLiquidImage(DEFAULT_AFTER_IMAGE);
+    }
+  };
+  
+  // Tambahkan timestamp untuk mencegah browser menggunakan cache gambar lama yang rusak
+  liquidImageAfter.src = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
 }
 
 function initLiquid() {
