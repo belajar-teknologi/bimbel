@@ -2563,14 +2563,25 @@ async function loadPublicFiles() {
     if (error) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted);">⚠️ ${error.message}</div>`; return; }
     if (!data || data.length === 0) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted);font-style:italic;">Belum ada foto.</div>`; return; }
 
-    grid.innerHTML = data.map(f => {
+        grid.innerHTML = data.map(f => {
       const date = new Date(f.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+      
+      // Tombol tambahan khusus Admin di halaman depan
+      const adminAction = isAdmin() ? `
+        <button onclick="toggleGalleryVisibility('${f.id}', true)" style="background:#fef3c7;color:#92400e;border:none;padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;margin-top:8px;display:inline-block;">
+          <i class="fas fa-eye-slash"></i> Sembunyikan
+        </button>
+      ` : '';
+
       return `<div class="file-card">
         <div class="file-card__preview"><img src="${f.secure_url}" alt="" loading="lazy"></div>
         <div class="file-card__body">
           <div class="file-card__title">${escapeHtml(f.caption || f.original_filename || 'Tanpa judul')}</div>
           <div class="file-card__meta">${f.purpose || f.category || 'galeri'} • ${date}</div>
-          <div class="file-card__actions"><a href="${f.secure_url}" target="_blank">Buka</a></div>
+          <div class="file-card__actions" style="display:flex; justify-content:space-between; align-items:center;">
+            <a href="${f.secure_url}" target="_blank">Buka</a>
+            ${adminAction}
+          </div>
         </div>
       </div>`;
     }).join('');
@@ -2632,7 +2643,33 @@ async function deleteFile(id) {
   showToast('✅ Foto dihapus');
   loadManageGallery(); loadPublicFiles();
 }
+async function toggleGalleryVisibility(id, currentStatus) {
+  if (!isAdmin()) { 
+    showToast('⚠️ Hanya admin yang bisa mengubah status'); 
+    return; 
+  }
+  
+  const newStatus = !currentStatus;
+  
+  try {
+    // Mengubah status is_public (true menjadi false, atau sebaliknya)
+    const { error } = await supabaseClient
+      .from('cloudinary_files')
+      .update({ is_public: newStatus })
+      .eq('id', id);
 
+    if (error) throw error;
+
+    showToast(newStatus ? '👁️ Foto ditampilkan ke publik' : '🙈 Foto disembunyikan dari publik');
+    
+    // Refresh tampilan di halaman depan dan di dalam modal kelola galeri
+    await loadPublicFiles(); 
+    await loadManageGallery();
+    
+  } catch (err) {
+    showToast('❌ Gagal mengubah status: ' + err.message);
+  }
+}
 // ============================================================
 // MENU
 // ============================================================
