@@ -2559,7 +2559,7 @@ async function updateSiteSetting(key, value) {
 async function loadPublicFiles() {
   const grid = document.getElementById('publicFilesGrid');
   try {
-    const { data, error } = await supabaseClient.from('cloudinary_files').select('*').neq('purpose', 'music').neq('purpose', 'stats_bg').limit(12);
+    const { data, error } = await supabaseClient.from('cloudinary_files').select('*').eq('is_public', true).neq('purpose', 'music').neq('purpose', 'stats_bg').limit(12);
     if (error) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted);">⚠️ ${error.message}</div>`; return; }
     if (!data || data.length === 0) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted);font-style:italic;">Belum ada foto.</div>`; return; }
 
@@ -2589,22 +2589,40 @@ function openManageGallery() {
 async function loadManageGallery() {
   const list = document.getElementById('manageGalleryList');
   list.innerHTML = 'Memuat...';
-  let query = supabaseClient.from('cloudinary_files').select('*').order('created_at', { ascending: false }).limit(50);
+  let query = supabaseClient.from('cloudinary_files').select('*').neq('purpose', 'music').neq('purpose', 'stats_bg').order('created_at', { ascending: false }).limit(50);
+  
+  // Admin bisa melihat semua foto, user biasa hanya melihat fotonya sendiri
   if (!isAdmin()) query = query.eq('uploaded_by', currentUser.id);
+  
   const { data, error } = await query;
   if (error) { list.innerHTML = '⚠️ ' + error.message; return; }
   if (!data || data.length === 0) { list.innerHTML = '<i>Belum ada foto.</i>'; return; }
 
-  list.innerHTML = data.map(f => `
-    <div style="display:flex;gap:12px;padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;align-items:center;">
-      <img src="${f.secure_url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;">
-      <div style="flex:1;font-size:0.85rem;min-width:0;">
-        <strong style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(f.caption || f.original_filename)}</strong>
-        <span style="color:var(--muted);font-size:0.75rem;">${f.purpose || f.category || 'galeri'}</span>
+  list.innerHTML = data.map(f => {
+    // Cek apakah foto publik atau tidak (default true jika null)
+    const isPublic = f.is_public !== false; 
+    
+    // Tombol Toggle (Hanya muncul untuk admin)
+    const toggleBtn = isAdmin() ? `
+      <button onclick="toggleGalleryVisibility('${f.id}', ${isPublic})" style="background:${isPublic ? '#dcfce7' : '#fef3c7'};color:${isPublic ? '#166534' : '#92400e'};border:none;padding:8px 14px;border-radius:9999px;font-weight:600;cursor:pointer;font-size:0.8rem;" title="${isPublic ? 'Sembunyikan dari Publik' : 'Tampilkan ke Publik'}">
+        <i class="fas fa-${isPublic ? 'eye' : 'eye-slash'}"></i> ${isPublic ? 'Tampil' : 'Sembunyi'}
+      </button>
+    ` : '';
+
+    return `
+      <div style="display:flex;gap:12px;padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;align-items:center; ${!isPublic && isAdmin() ? 'opacity: 0.6; background: #f8fafc;' : ''}">
+        <img src="${f.secure_url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;">
+        <div style="flex:1;font-size:0.85rem;min-width:0;">
+          <strong style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(f.caption || f.original_filename)}</strong>
+          <span style="color:var(--muted);font-size:0.75rem;">${f.purpose || f.category || 'galeri'}</span>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          ${toggleBtn}
+          <button onclick="deleteFile('${f.id}')" style="background:#fee2e2;color:#991b1b;border:none;padding:8px 14px;border-radius:9999px;font-weight:600;cursor:pointer;font-size:0.8rem;">Hapus</button>
+        </div>
       </div>
-      <button onclick="deleteFile('${f.id}')" style="background:#fee2e2;color:#991b1b;border:none;padding:8px 14px;border-radius:9999px;font-weight:600;cursor:pointer;font-size:0.8rem;">Hapus</button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 async function deleteFile(id) {
