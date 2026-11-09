@@ -3622,14 +3622,30 @@ function initLiquid() {
     updateCover(); updateBrush();
   }
 
-  function updateCover() {
+    function updateCover() {
     if (!liquidImageAfter.complete || !liquidImageAfter.naturalWidth) return;
     const cW = coverCanvas.width, cH = coverCanvas.height;
     const imgRatio = liquidImageAfter.naturalWidth / liquidImageAfter.naturalHeight;
     const cRatio = cW / cH;
+    
     let rW, rH, oX, oY;
-    if (cRatio > imgRatio) { rW = cW; rH = cW / imgRatio; oX = 0; oY = (cH - rH) / 2; }
-    else { rH = cH; rW = cH * imgRatio; oX = (cW - rW) / 2; oY = 0; }
+    
+    // Logika diubah dari "Cover" menjadi "Contain" agar gambar tidak terpotong (zoom)
+    if (cRatio > imgRatio) { 
+      // Layar lebih lebar dari gambar -> gambar mentok di atas/bawah
+      rH = cH; 
+      rW = cH * imgRatio; 
+      oX = (cW - rW) / 2; 
+      oY = 0; 
+    } else { 
+      // Layar lebih tinggi dari gambar -> gambar mentok di kiri/kanan
+      rW = cW; 
+      rH = cW / imgRatio; 
+      oX = 0; 
+      oY = (cH - rH) / 2; 
+    }
+    
+    // Bersihkan kanvas dan gambar ulang dengan ukuran yang baru
     coverCtx.clearRect(0, 0, cW, cH);
     coverCtx.drawImage(liquidImageAfter, oX, oY, rW, rH);
   }
