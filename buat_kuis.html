@@ -6,6 +6,7 @@
 <title>Buat Kuis - EduSmart LMS</title>
 <script src="https://cdn.tailwindcss.com" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="MASTER_MATERI_TKA.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
@@ -168,6 +169,29 @@ const DEFAULT_SEKOLAH = {
   alamat:     "Jalan Sawahan No 1 Desa Ngantru Kecamatan Ngantang Kabupaten Malang",
   email:      "sdn3ngantru.ngantang@gmail.com"
 };
+
+/* ==== HELPER MASTER MATERI TKA ==== */
+function getMasterMateri() {
+  return (typeof MASTER_MATERI_TKA !== "undefined" && MASTER_MATERI_TKA) ? MASTER_MATERI_TKA : {};
+}
+function getMasterLevel() {
+  return (typeof LEVEL_KOGNITIF_TKA !== "undefined" && LEVEL_KOGNITIF_TKA) ? LEVEL_KOGNITIF_TKA : {};
+}
+function formatTopikKurikulum({ elemen, subElemen, kompetensi, level, proses }) {
+  const parts = [];
+  if (subElemen && kompetensi && kompetensi !== "__SEMUA__") {
+    parts.push(`${subElemen}: ${kompetensi}`);
+  } else if (subElemen) {
+    parts.push(elemen ? `${elemen} — ${subElemen}` : subElemen);
+  } else if (elemen) {
+    parts.push(elemen);
+  }
+  if (level) {
+    const lvlShort = level.split("-")[0].trim();
+    parts.push(proses ? `[${lvlShort} · ${proses}]` : `[${lvlShort}]`);
+  }
+  return parts.join(" ");
+}
 
 let appState = { currentUser: null, db: null, activeView: "paket" };
 let currentConfig = null;
@@ -386,7 +410,6 @@ async function loadJsonBinDB(binId, cred) {
   const c = cred || getJsonBinCredential();
   if (!binId) throw new Error("Bin ID JSONBin belum ada.");
 
-  // API key opsional (untuk Bin Public tidak perlu)
   const h = {};
   if (c?.key) {
     h[c.type === "access" ? "X-Access-Key" : "X-Master-Key"] = c.key;
@@ -421,12 +444,8 @@ async function updateJsonBinDB(db, binId, cred) {
   return true;
 }
 
-/* ==== LINK MATERI ==== */
-/* ==== LINK MATERI — VERSI HYBRID (Supabase prioritas, JSONBin opsional) ==== */
-
-// kmGetLinks: baca dari cache paket (Supabase) dulu, fallback ke JSONBin
+/* ==== LINK MATERI — VERSI HYBRID ==== */
 function kmGetLinks(paketId) {
-  // 1. Coba dari cache paket (__paketCache, diisi saat renderPaketList fetch dari Supabase)
   try {
     const paket = (__paketCache || []).find(p => String(p.id) === String(paketId));
     if (paket && Array.isArray(paket.link_materi) && paket.link_materi.length) {
@@ -434,20 +453,16 @@ function kmGetLinks(paketId) {
     }
   } catch(e) { console.warn("[EduSmart] Gagal baca link dari cache:", e); }
 
-  // 2. Fallback JSONBin (untuk data lama)
   const km = appState.db?.km || [];
   const rec = km.find(r => String(r[1]) === String(paketId));
   return rec ? (Array.isArray(rec[2]) ? rec[2].filter(Boolean) : []) : [];
 }
 
-// kmSetAllLinks: tulis ke Supabase (WAJIB) + JSONBin (OPSIONAL)
 async function kmSetAllLinks(paketId, links) {
   const clean = (links || []).map(u => u ? String(u).trim() : null).filter(Boolean);
 
-  // 1. Wajib: simpan ke Supabase (kolom link_materi, tipe jsonb)
   try {
     await sbUpsert("paket_soal", [{ id: paketId, link_materi: clean }]);
-    // Update cache lokal
     if (__paketCache && __paketCache.length) {
       const p = __paketCache.find(x => String(x.id) === String(paketId));
       if (p) p.link_materi = clean;
@@ -457,7 +472,6 @@ async function kmSetAllLinks(paketId, links) {
     throw err;
   }
 
-  // 2. Opsional: coba simpan ke JSONBin juga (untuk backward compat)
   try {
     const cred = getJsonBinCredential();
     if (cred && appState.db) {
@@ -473,15 +487,12 @@ async function kmSetAllLinks(paketId, links) {
     }
   } catch (err) {
     console.warn("[EduSmart] JSONBin opsional gagal (diabaikan):", err);
-    // Tidak throw — biarkan flow tetap jalan
   }
 
   return clean;
 }
 
-// kmDeleteRecord: hapus dari Supabase (reset ke []) + JSONBin (opsional)
 async function kmDeleteRecord(paketId) {
-  // 1. Supabase: reset ke array kosong
   try {
     await sbUpsert("paket_soal", [{ id: paketId, link_materi: [] }]);
     if (__paketCache && __paketCache.length) {
@@ -492,7 +503,6 @@ async function kmDeleteRecord(paketId) {
     console.warn("[EduSmart] Gagal reset link di Supabase:", err);
   }
 
-  // 2. JSONBin (opsional)
   try {
     if (appState.db?.km) {
       appState.db.km = appState.db.km.filter(r => String(r[1]) !== String(paketId));
@@ -550,11 +560,8 @@ function checkAuth() {
   const user = safeParse(getLS(STORAGE.USER));
   if (!user || user.role !== "guru") return { ok: false, msg: "Anda belum login sebagai guru. Silakan login di Dashboard dulu." };
   appState.currentUser = user;
-    const cfg = getAppConfig();
-  // Bypass pengecekan Bin ID JSONBin karena kita pakai Supabase
-  // if (!cfg?.binId) return { ok: false, msg: "Bin ID JSONBin belum ada. Set di Pengaturan index.html dulu." };
+  const cfg = getAppConfig();
 
-  // ⬇️ JSONBin API Key jadi OPSIONAL (kalau tidak ada, tetap bisa masuk)
   const cred = getJsonBinCredential();
   if (cred) {
     console.log("[EduSmart] JSONBin key ditemukan — fitur legacy aktif");
@@ -649,17 +656,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   try {
     showLoading(true, "Memuat data...");
-    
-    // BYPASS JSONBIN: Buat object db lokal
     const db = { mp: [], sw: [], a: { ns: 'EduSmart LMS' }, km: [] }; 
     appState.db = db;
     if (!appState.db.km) appState.db.km = [];
     setLS(STORAGE.DB, JSON.stringify(db)); 
-    
     showLoading(false);
   } catch (err) {
     showLoading(false);
-    // Fallback (seharusnya tidak pernah masuk ke sini karena bypass)
     const cached = safeParse(getLS(STORAGE.DB));
     if (cached) {
       appState.db = cached;
@@ -686,7 +689,10 @@ let __editPaketId = null;
 let __tempLinks = [];
 let __activeTabPaket = "info";
 let __tempSoalAI = [];
-let __tempSoalAIMeta = { mapel: "", kelas: "", topik: "" };
+let __tempSoalAIMeta = {
+  mapel: "", kelas: "", topik: "",
+  jenjang: "", elemen: "", subElemen: "", kompetensi: "", level: "", proses: ""
+};
 
 /* ---------- LIST PAKET ---------- */
 async function renderPaketList(c) {
@@ -761,7 +767,10 @@ function showBuatPaketModal(editId = null, defaultTab = "info") {
   __tempLinks = editId ? [...kmGetLinks(editId)] : [""];
   if (!__tempLinks.length) __tempLinks = [""];
   __tempSoalAI = [];
-  __tempSoalAIMeta = { mapel: "", kelas: "", topik: "" };
+  __tempSoalAIMeta = {
+    mapel: "", kelas: "", topik: "",
+    jenjang: "", elemen: "", subElemen: "", kompetensi: "", level: "", proses: ""
+  };
 
   let paket = { nama: "", mapel_kode: "", kelas: "", durasi_menit: 30, aktif: true, acak_soal: false, acak_pilihan: false };
   if (editId) {
@@ -785,7 +794,7 @@ function renderPaketModal() {
   <div class="space-y-4 text-xs">
     <div class="border-b pb-3">
       <h3 class="font-bold text-base"><i class="fa-solid fa-layer-group text-indigo-600"></i> ${__editPaketId ? 'Edit' : 'Buat'} Paket Soal</h3>
-      <p class="text-slate-500 mt-1">Isi info paket & opsional generate soal AI sekaligus.</p>
+      <p class="text-slate-500 mt-1">Isi info paket & opsional generate soal AI sesuai daftar materi.</p>
     </div>
 
     <div class="flex gap-1 border-b">
@@ -817,6 +826,7 @@ function renderPaketModal() {
 
 function switchTabPaket(tab) {
   if (__activeTabPaket === "info") savePaketInfoToTemp();
+  else savePaketAIMetaFromDOM();
   __activeTabPaket = tab;
   renderPaketModal();
 }
@@ -846,20 +856,13 @@ function renderPaketInfoTab(mapelAll, kelasList) {
           <label class="block font-semibold mb-1">Nama Paket *</label>
           <input id="pk-nama" value="${esc(paket.nama || '')}" placeholder="Contoh: UH 1 Matematika Bab Pecahan" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
-                <div>
+        <div>
           <label class="block font-semibold mb-1">Mata Pelajaran *</label>
           <input id="pk-mapel" type="text" value="${esc(paket.mapel_kode || '')}" placeholder="Contoh: Matematika" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
         <div>
           <label class="block font-semibold mb-1">Kelas *</label>
-          <input id="pk-kelas" type="text" value="${esc(paket.kelas || '')}" placeholder="Contoh: 12 IPA" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-        </div>
-        <div>
-          <label class="block font-semibold mb-1">Kelas *</label>
-          <select id="pk-kelas" class="w-full px-3 py-2 border rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
-            <option value="">-- Pilih --</option>
-            ${kelasList.map(k => `<option value="${esc(k)}" ${paket.kelas === k ? 'selected' : ''}>Kelas ${esc(k)}</option>`).join("")}
-          </select>
+          <input id="pk-kelas" type="text" value="${esc(paket.kelas || '')}" placeholder="Contoh: 6 / 8A" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
         <div>
           <label class="block font-semibold mb-1">Durasi (menit) *</label>
@@ -914,14 +917,39 @@ function hapusLinkMateri(i) {
   renderLinksList();
 }
 
-/* ---------- TAB 2: GENERATE AI ---------- */
+/* ---------- TAB 2: GENERATE AI + PILIH MATERI KURIKULUM ---------- */
+function savePaketAIMetaFromDOM() {
+  if (!document.getElementById("ai-topik")) return;
+  __tempSoalAIMeta.mapel = document.getElementById("ai-mapel")?.value || __tempSoalAIMeta.mapel;
+  __tempSoalAIMeta.kelas = document.getElementById("ai-kelas")?.value || __tempSoalAIMeta.kelas;
+  __tempSoalAIMeta.topik = document.getElementById("ai-topik")?.value || __tempSoalAIMeta.topik;
+  __tempSoalAIMeta.jenjang = document.getElementById("ai-jenjang")?.value ?? __tempSoalAIMeta.jenjang;
+  __tempSoalAIMeta.elemen = document.getElementById("ai-elemen")?.value ?? __tempSoalAIMeta.elemen;
+  __tempSoalAIMeta.subElemen = document.getElementById("ai-sub-elemen")?.value ?? __tempSoalAIMeta.subElemen;
+  __tempSoalAIMeta.kompetensi = document.getElementById("ai-kompetensi")?.value ?? __tempSoalAIMeta.kompetensi;
+  __tempSoalAIMeta.level = document.getElementById("ai-level")?.value ?? __tempSoalAIMeta.level;
+  __tempSoalAIMeta.proses = document.getElementById("ai-proses")?.value ?? __tempSoalAIMeta.proses;
+}
+
 function renderPaketAITab(mapelAll, kelasList) {
   const el = document.getElementById("paket-tab-content");
   const hasKey = !!getGeminiKey();
   const totalAI = __tempSoalAI.length;
+  const master = getMasterMateri();
+  const levels = getMasterLevel();
 
   if (!__tempSoalAIMeta.mapel && window.__paketTemp?.mapel_kode) __tempSoalAIMeta.mapel = window.__paketTemp.mapel_kode;
   if (!__tempSoalAIMeta.kelas && window.__paketTemp?.kelas) __tempSoalAIMeta.kelas = window.__paketTemp.kelas;
+
+  const jenjangList = Object.keys(master);
+  const elemenList = (__tempSoalAIMeta.jenjang && master[__tempSoalAIMeta.jenjang])
+    ? Object.keys(master[__tempSoalAIMeta.jenjang].elemen || {}) : [];
+  const subElemenList = (__tempSoalAIMeta.jenjang && __tempSoalAIMeta.elemen && master[__tempSoalAIMeta.jenjang]?.elemen?.[__tempSoalAIMeta.elemen])
+    ? Object.keys(master[__tempSoalAIMeta.jenjang].elemen[__tempSoalAIMeta.elemen] || {}) : [];
+  const kompetensiList = (__tempSoalAIMeta.jenjang && __tempSoalAIMeta.elemen && __tempSoalAIMeta.subElemen)
+    ? (master[__tempSoalAIMeta.jenjang]?.elemen?.[__tempSoalAIMeta.elemen]?.[__tempSoalAIMeta.subElemen] || []) : [];
+  const levelList = Object.keys(levels);
+  const prosesList = (__tempSoalAIMeta.level && levels[__tempSoalAIMeta.level]) ? levels[__tempSoalAIMeta.level] : [];
 
   el.innerHTML = `
     <div class="space-y-4">
@@ -937,18 +965,72 @@ function renderPaketAITab(mapelAll, kelasList) {
         </div>
       `}
 
+      <!-- Pilihan Materi Kurikulum (MASTER_MATERI_TKA.js) -->
+      ${jenjangList.length ? `
+        <div class="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2.5">
+          <div class="font-bold text-indigo-900 flex items-center gap-1.5 text-xs">
+            <i class="fa-solid fa-book-open text-indigo-600"></i> Pilih Materi Sesuai Kurikulum (TKA)
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">1. Jenjang</label>
+              <select id="ai-jenjang" onchange="onAIChangeJenjang()" class="w-full px-2.5 py-2 border rounded-xl bg-white text-xs">
+                <option value="">-- Pilih Jenjang --</option>
+                ${jenjangList.map(j => `<option value="${esc(j)}" ${__tempSoalAIMeta.jenjang === j ? 'selected' : ''}>${esc(j)}</option>`).join("")}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">2. Elemen / Materi</label>
+              <select id="ai-elemen" onchange="onAIChangeElemen()" ${elemenList.length ? '' : 'disabled'} class="w-full px-2.5 py-2 border rounded-xl bg-white text-xs disabled:bg-slate-100">
+                <option value="">-- Pilih Elemen --</option>
+                ${elemenList.map(e => `<option value="${esc(e)}" ${__tempSoalAIMeta.elemen === e ? 'selected' : ''}>${esc(e)}</option>`).join("")}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">3. Sub-elemen / Submateri</label>
+              <select id="ai-sub-elemen" onchange="onAIChangeSubElemen()" ${subElemenList.length ? '' : 'disabled'} class="w-full px-2.5 py-2 border rounded-xl bg-white text-xs disabled:bg-slate-100">
+                <option value="">-- Pilih Sub-elemen --</option>
+                ${subElemenList.map(s => `<option value="${esc(s)}" ${__tempSoalAIMeta.subElemen === s ? 'selected' : ''}>${esc(s)}</option>`).join("")}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">4. Rincian Kompetensi / Indikator</label>
+              <select id="ai-kompetensi" onchange="onAIChangeKompetensi()" ${kompetensiList.length ? '' : 'disabled'} class="w-full px-2.5 py-2 border rounded-xl bg-white text-xs disabled:bg-slate-100">
+                <option value="">-- Pilih Kompetensi --</option>
+                ${kompetensiList.length ? `<option value="__SEMUA__" ${__tempSoalAIMeta.kompetensi === '__SEMUA__' ? 'selected' : ''}>★ Semua Kompetensi pada Sub-elemen ini</option>` : ''}
+                ${kompetensiList.map(k => `<option value="${esc(k)}" ${__tempSoalAIMeta.kompetensi === k ? 'selected' : ''}>${esc(k)}</option>`).join("")}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">5. Level Kognitif (Opsional)</label>
+              <select id="ai-level" onchange="onAIChangeLevel()" class="w-full px-2.5 py-2 border rounded-xl bg-white text-xs">
+                <option value="">Campuran (Level 1, 2, dan 3)</option>
+                ${levelList.map(l => `<option value="${esc(l)}" ${__tempSoalAIMeta.level === l ? 'selected' : ''}>${esc(l)}</option>`).join("")}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">6. Proses Berpikir (Opsional)</label>
+              <select id="ai-proses" onchange="onAIChangeProses()" ${prosesList.length ? '' : 'disabled'} class="w-full px-2.5 py-2 border rounded-xl bg-white text-xs disabled:bg-slate-100">
+                <option value="">-- Semua Proses Berpikir --</option>
+                ${prosesList.map(pr => `<option value="${esc(pr)}" ${__tempSoalAIMeta.proses === pr ? 'selected' : ''}>${esc(pr)}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+        </div>
+      ` : ''}
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="sm:col-span-2">
-          <label class="block font-semibold mb-1">Topik / Materi</label>
-          <input id="ai-topik" value="${esc(__tempSoalAIMeta.topik || '')}" placeholder="Contoh: Pecahan senilai, Ekosistem" class="w-full px-3 py-2 border rounded-xl">
+          <label class="block font-semibold mb-1">Topik / Materi (Otomatis dari pilihan di atas atau ketik manual) *</label>
+          <input id="ai-topik" value="${esc(__tempSoalAIMeta.topik || '')}" placeholder="Otomatis terisi saat memilih materi di atas..." class="w-full px-3 py-2 border rounded-xl">
         </div>
-                <div>
-          <label class="block font-semibold mb-1">Mata Pelajaran</label>
+        <div>
+          <label class="block font-semibold mb-1">Mata Pelajaran *</label>
           <input id="ai-mapel" type="text" value="${esc(__tempSoalAIMeta.mapel || '')}" placeholder="Contoh: Matematika" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
         <div>
-          <label class="block font-semibold mb-1">Kelas</label>
-          <input id="ai-kelas" type="text" value="${esc(__tempSoalAIMeta.kelas || '')}" placeholder="Contoh: 12 IPA" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+          <label class="block font-semibold mb-1">Kelas *</label>
+          <input id="ai-kelas" type="text" value="${esc(__tempSoalAIMeta.kelas || '')}" placeholder="Contoh: 6 / 8A" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
       </div>
 
@@ -974,6 +1056,51 @@ function renderPaketAITab(mapelAll, kelasList) {
   if (totalAI > 0) renderHasilAIPreview();
 }
 
+function syncTopikAIUntukKurikulum() {
+  const m = __tempSoalAIMeta;
+  const formatted = formatTopikKurikulum(m);
+  if (formatted) m.topik = formatted;
+  if (m.jenjang && !m.mapel) m.mapel = "Matematika";
+  renderPaketModal();
+}
+function onAIChangeJenjang() {
+  savePaketAIMetaFromDOM();
+  __tempSoalAIMeta.jenjang = document.getElementById("ai-jenjang")?.value || "";
+  __tempSoalAIMeta.elemen = "";
+  __tempSoalAIMeta.subElemen = "";
+  __tempSoalAIMeta.kompetensi = "";
+  syncTopikAIUntukKurikulum();
+}
+function onAIChangeElemen() {
+  savePaketAIMetaFromDOM();
+  __tempSoalAIMeta.elemen = document.getElementById("ai-elemen")?.value || "";
+  __tempSoalAIMeta.subElemen = "";
+  __tempSoalAIMeta.kompetensi = "";
+  syncTopikAIUntukKurikulum();
+}
+function onAIChangeSubElemen() {
+  savePaketAIMetaFromDOM();
+  __tempSoalAIMeta.subElemen = document.getElementById("ai-sub-elemen")?.value || "";
+  __tempSoalAIMeta.kompetensi = "";
+  syncTopikAIUntukKurikulum();
+}
+function onAIChangeKompetensi() {
+  savePaketAIMetaFromDOM();
+  __tempSoalAIMeta.kompetensi = document.getElementById("ai-kompetensi")?.value || "";
+  syncTopikAIUntukKurikulum();
+}
+function onAIChangeLevel() {
+  savePaketAIMetaFromDOM();
+  __tempSoalAIMeta.level = document.getElementById("ai-level")?.value || "";
+  __tempSoalAIMeta.proses = "";
+  syncTopikAIUntukKurikulum();
+}
+function onAIChangeProses() {
+  savePaketAIMetaFromDOM();
+  __tempSoalAIMeta.proses = document.getElementById("ai-proses")?.value || "";
+  syncTopikAIUntukKurikulum();
+}
+
 function renderHasilAIPreview() {
   const out = document.getElementById("ai-out");
   if (!out) return;
@@ -988,8 +1115,9 @@ function renderHasilAIPreview() {
         const j = JENIS_SOAL[s.jenis] || JENIS_SOAL.PG;
         return `<div class="p-3 bg-white border rounded-lg relative">
           <button onclick="hapusSoalAIIndex(${i})" class="absolute top-2 right-2 text-red-400 hover:text-red-600" title="Hapus soal ini"><i class="fa-solid fa-xmark"></i></button>
-          <div class="flex items-center gap-2 mb-1.5">
+          <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
             <span class="text-[9px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">${esc(j.label)}</span>
+            ${s.topik ? `<span class="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">${esc(s.topik)}</span>` : ""}
             <span class="text-[10px] text-slate-400">Soal ${i+1}</span>
           </div>
           <div class="text-xs font-semibold text-slate-800">${esc(s.pertanyaan)}</div>
@@ -1016,13 +1144,8 @@ function hapusSemuaSoalAI() {
 /* ---------- SIMPAN PAKET + SOAL AI ---------- */
 async function simpanPaket() {
   if (__activeTabPaket === "info") savePaketInfoToTemp();
-  else {
-    __tempSoalAIMeta = {
-      mapel: document.getElementById("ai-mapel")?.value || __tempSoalAIMeta.mapel,
-      kelas: document.getElementById("ai-kelas")?.value || __tempSoalAIMeta.kelas,
-      topik: document.getElementById("ai-topik")?.value || __tempSoalAIMeta.topik
-    };
-  }
+  else savePaketAIMetaFromDOM();
+
   const p = window.__paketTemp || {};
   if (!p.nama) { showToast("Nama paket wajib (isi di Tab Info Paket).", "error"); return; }
   if (!p.mapel_kode) { showToast("Mata pelajaran wajib.", "error"); return; }
@@ -1050,7 +1173,6 @@ async function simpanPaket() {
       if (!paketId) throw new Error("Gagal dapat ID paket baru.");
     }
 
-        // Simpan link materi ke Supabase (WAJIB) + JSONBin (opsional, otomatis di dalam fungsi)
     await kmSetAllLinks(paketId, __tempLinks.filter(Boolean));
 
     let insertedSoal = 0;
@@ -1123,7 +1245,7 @@ async function duplikatPaket(id) {
         paket_id: newId, soal_id: it.soal_id, urutan: it.urutan
       })));
     }
-        const links = kmGetLinks(id);
+    const links = kmGetLinks(id);
     if (links.length) {
       await kmSetAllLinks(newId, links);
     }
@@ -1137,7 +1259,7 @@ async function hapusPaket(id) {
   if (!confirm("Hapus paket ini? Soal di bank soal TIDAK dihapus.")) return;
   try {
     showLoading(true, "Menghapus...");
-        await sbDelete("paket_soal", `?id=eq.${id}`);
+    await sbDelete("paket_soal", `?id=eq.${id}`);
     await kmDeleteRecord(id);
     showLoading(false);
     showToast("Paket dihapus.", "success");
@@ -1148,7 +1270,7 @@ async function hapusPaket(id) {
    BAGIAN 3/7 — BANK SOAL (LIST + FORM MANUAL 5 JENIS)
    ========================================================= */
 
-let __filterBankSoal = { mapel: "", kelas: "", jenis: "" };
+let __filterBankSoal = { mapel: "", kelas: "", jenis: "", topik: "" };
 let __editSoalId = null;
 let __tempSoal = null;
 
@@ -1159,11 +1281,13 @@ async function renderBankSoalList(c) {
     const all = await sbFetch("bank_soal", "?order=created_at.desc&limit=500");
     const mapelList = [...new Set(all.map(s => s.mapel_kode).filter(Boolean))].sort();
     const kelasList = [...new Set(all.map(s => s.kelas).filter(Boolean))].sort();
+    const topikList = [...new Set(all.map(s => s.topik).filter(Boolean))].sort();
 
     let filtered = all;
     if (__filterBankSoal.mapel) filtered = filtered.filter(s => s.mapel_kode === __filterBankSoal.mapel);
     if (__filterBankSoal.kelas) filtered = filtered.filter(s => s.kelas === __filterBankSoal.kelas);
     if (__filterBankSoal.jenis) filtered = filtered.filter(s => s.jenis === __filterBankSoal.jenis);
+    if (__filterBankSoal.topik) filtered = filtered.filter(s => s.topik === __filterBankSoal.topik);
 
     c.innerHTML = `
     <div class="space-y-5 fade-in">
@@ -1190,6 +1314,10 @@ async function renderBankSoalList(c) {
         <select onchange="__filterBankSoal.jenis=this.value;renderBankSoalList(document.getElementById('main-view-container'))" class="text-xs px-2 py-1.5 border rounded-lg bg-white">
           <option value="">Semua Jenis</option>
           ${Object.values(JENIS_SOAL).map(j => `<option value="${j.kode}" ${__filterBankSoal.jenis===j.kode?'selected':''}>${j.label}</option>`).join("")}
+        </select>
+        <select onchange="__filterBankSoal.topik=this.value;renderBankSoalList(document.getElementById('main-view-container'))" class="text-xs px-2 py-1.5 border rounded-lg bg-white max-w-[220px]">
+          <option value="">Semua Materi / Topik</option>
+          ${topikList.map(t => `<option value="${esc(t)}" ${__filterBankSoal.topik===t?'selected':''}>${esc(t)}</option>`).join("")}
         </select>
         <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-1 rounded-full ml-auto">${filtered.length} / ${all.length}</span>
       </div>
@@ -1270,7 +1398,7 @@ async function duplikatSoal(id) {
 }
 
 /* =========================================================
-   FORM BUAT/EDIT SOAL — 5 JENIS
+   FORM BUAT/EDIT SOAL — 5 JENIS + PILIHAN MATERI KURIKULUM
    ========================================================= */
 function newTempSoal() {
   return {
@@ -1278,6 +1406,12 @@ function newTempSoal() {
     mapel_kode: "",
     kelas: "",
     topik: "",
+    jenjang: "",
+    elemen: "",
+    subElemen: "",
+    kompetensi: "",
+    level: "",
+    proses: "",
     pertanyaan: "",
     tingkat: "sedang",
     pembahasan: "",
@@ -1302,6 +1436,12 @@ async function showBuatSoalModal(editId = null) {
         mapel_kode: s.mapel_kode || "",
         kelas: s.kelas || "",
         topik: s.topik || "",
+        jenjang: "",
+        elemen: "",
+        subElemen: "",
+        kompetensi: "",
+        level: "",
+        proses: "",
         pertanyaan: s.pertanyaan || "",
         tingkat: s.tingkat || "sedang",
         pembahasan: s.pembahasan || "",
@@ -1320,10 +1460,17 @@ async function showBuatSoalModal(editId = null) {
 }
 
 function renderSoalModal() {
-  const mapelAll = (appState.db?.mp || []).map(m => ({ kode: m[1], nama: m[2] }));
-  const kelasList = [...new Set((appState.db?.sw || []).map(s => s[4]).filter(Boolean))].sort();
   const s = __tempSoal;
   const j = s.jenis;
+  const master = getMasterMateri();
+  const levels = getMasterLevel();
+
+  const jenjangList = Object.keys(master);
+  const elemenList = (s.jenjang && master[s.jenjang]) ? Object.keys(master[s.jenjang].elemen || {}) : [];
+  const subElemenList = (s.jenjang && s.elemen && master[s.jenjang]?.elemen?.[s.elemen]) ? Object.keys(master[s.jenjang].elemen[s.elemen] || {}) : [];
+  const kompetensiList = (s.jenjang && s.elemen && s.subElemen) ? (master[s.jenjang]?.elemen?.[s.elemen]?.[s.subElemen] || []) : [];
+  const levelList = Object.keys(levels);
+  const prosesList = (s.level && levels[s.level]) ? levels[s.level] : [];
 
   const jenisOptions = Object.values(JENIS_SOAL).map(jj => `
     <button type="button" onclick="changeJenis('${jj.kode}')" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${jj.kode === j ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
@@ -1351,18 +1498,71 @@ function renderSoalModal() {
       <div class="flex flex-wrap gap-1.5">${jenisOptions}</div>
     </div>
 
+    <!-- Pilihan Materi Sesuai Kurikulum -->
+    ${jenjangList.length ? `
+      <div class="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2.5">
+        <div class="font-bold text-indigo-900 flex items-center gap-1.5 text-xs">
+          <i class="fa-solid fa-book-open text-indigo-600"></i> Pilih Materi Sesuai Kurikulum (Otomatis Isi Topik)
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 mb-1">1. Jenjang</label>
+            <select id="so-jenjang" onchange="onSoalChangeJenjang()" class="w-full px-2 py-1.5 border rounded-lg bg-white text-xs">
+              <option value="">-- Pilih Jenjang --</option>
+              ${jenjangList.map(jj => `<option value="${esc(jj)}" ${s.jenjang === jj ? 'selected' : ''}>${esc(jj)}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 mb-1">2. Elemen / Materi</label>
+            <select id="so-elemen" onchange="onSoalChangeElemen()" ${elemenList.length ? '' : 'disabled'} class="w-full px-2 py-1.5 border rounded-lg bg-white text-xs disabled:bg-slate-100">
+              <option value="">-- Pilih Elemen --</option>
+              ${elemenList.map(el => `<option value="${esc(el)}" ${s.elemen === el ? 'selected' : ''}>${esc(el)}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 mb-1">3. Sub-elemen</label>
+            <select id="so-sub-elemen" onchange="onSoalChangeSubElemen()" ${subElemenList.length ? '' : 'disabled'} class="w-full px-2 py-1.5 border rounded-lg bg-white text-xs disabled:bg-slate-100">
+              <option value="">-- Pilih Sub-elemen --</option>
+              ${subElemenList.map(sub => `<option value="${esc(sub)}" ${s.subElemen === sub ? 'selected' : ''}>${esc(sub)}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 mb-1">4. Rincian Kompetensi</label>
+            <select id="so-kompetensi" onchange="onSoalChangeKompetensi()" ${kompetensiList.length ? '' : 'disabled'} class="w-full px-2 py-1.5 border rounded-lg bg-white text-xs disabled:bg-slate-100">
+              <option value="">-- Pilih Kompetensi --</option>
+              ${kompetensiList.map(km => `<option value="${esc(km)}" ${s.kompetensi === km ? 'selected' : ''}>${esc(km)}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 mb-1">5. Level Kognitif</label>
+            <select id="so-level" onchange="onSoalChangeLevel()" class="w-full px-2 py-1.5 border rounded-lg bg-white text-xs">
+              <option value="">-- Pilih Level Kognitif --</option>
+              ${levelList.map(lv => `<option value="${esc(lv)}" ${s.level === lv ? 'selected' : ''}>${esc(lv)}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-600 mb-1">6. Proses Berpikir</label>
+            <select id="so-proses" onchange="onSoalChangeProses()" ${prosesList.length ? '' : 'disabled'} class="w-full px-2 py-1.5 border rounded-lg bg-white text-xs disabled:bg-slate-100">
+              <option value="">-- Pilih Proses Berpikir --</option>
+              ${prosesList.map(pr => `<option value="${esc(pr)}" ${s.proses === pr ? 'selected' : ''}>${esc(pr)}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+      </div>
+    ` : ''}
+
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
+      <div>
         <label class="block font-semibold mb-1">Mapel</label>
         <input id="so-mapel" type="text" value="${esc(s.mapel_kode || '')}" placeholder="Contoh: Matematika" class="w-full px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
       </div>
       <div>
         <label class="block font-semibold mb-1">Kelas</label>
-        <input id="so-kelas" type="text" value="${esc(s.kelas || '')}" placeholder="Contoh: 12 IPA" class="w-full px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+        <input id="so-kelas" type="text" value="${esc(s.kelas || '')}" placeholder="Contoh: 6 / 8A" class="w-full px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
       </div>
       <div>
-        <label class="block font-semibold mb-1">Topik</label>
-        <input id="so-topik" value="${esc(s.topik)}" placeholder="Pecahan, dll." class="w-full px-2 py-1.5 border rounded-lg">
+        <label class="block font-semibold mb-1">Topik / Indikator Materi</label>
+        <input id="so-topik" value="${esc(s.topik)}" placeholder="Otomatis terisi / ketik manual..." class="w-full px-2 py-1.5 border rounded-lg">
       </div>
     </div>
 
@@ -1395,6 +1595,50 @@ function renderSoalModal() {
   </div>`;
 
   renderJenisForm();
+}
+
+function syncTopikSoalUntukKurikulum() {
+  const formatted = formatTopikKurikulum(__tempSoal);
+  if (formatted) __tempSoal.topik = formatted;
+  if (__tempSoal.jenjang && !__tempSoal.mapel_kode) __tempSoal.mapel_kode = "Matematika";
+  renderSoalModal();
+}
+function onSoalChangeJenjang() {
+  syncFormKeTemp();
+  __tempSoal.jenjang = document.getElementById("so-jenjang")?.value || "";
+  __tempSoal.elemen = "";
+  __tempSoal.subElemen = "";
+  __tempSoal.kompetensi = "";
+  syncTopikSoalUntukKurikulum();
+}
+function onSoalChangeElemen() {
+  syncFormKeTemp();
+  __tempSoal.elemen = document.getElementById("so-elemen")?.value || "";
+  __tempSoal.subElemen = "";
+  __tempSoal.kompetensi = "";
+  syncTopikSoalUntukKurikulum();
+}
+function onSoalChangeSubElemen() {
+  syncFormKeTemp();
+  __tempSoal.subElemen = document.getElementById("so-sub-elemen")?.value || "";
+  __tempSoal.kompetensi = "";
+  syncTopikSoalUntukKurikulum();
+}
+function onSoalChangeKompetensi() {
+  syncFormKeTemp();
+  __tempSoal.kompetensi = document.getElementById("so-kompetensi")?.value || "";
+  syncTopikSoalUntukKurikulum();
+}
+function onSoalChangeLevel() {
+  syncFormKeTemp();
+  __tempSoal.level = document.getElementById("so-level")?.value || "";
+  __tempSoal.proses = "";
+  syncTopikSoalUntukKurikulum();
+}
+function onSoalChangeProses() {
+  syncFormKeTemp();
+  __tempSoal.proses = document.getElementById("so-proses")?.value || "";
+  syncTopikSoalUntukKurikulum();
 }
 
 function changeJenis(kode) {
@@ -1675,14 +1919,12 @@ async function simpanSoal() {
     showToast("✓ Soal tersimpan.", "success");
     closeModal();
 
-    // Kalau dipanggil dari Kelola Soal → balik ke Kelola Soal
     if (window.__returnToKelolaPaket) {
       const pid = window.__returnToKelolaPaket;
       window.__returnToKelolaPaket = null;
       setTimeout(() => kelolaSoalPaket(pid), 150);
       return;
     }
-    // Kalau dipanggil dari "Buat Soal Baru" di Kelola Soal
     if (window.__paketIdTambahan && newSoalId) {
       try {
         await toggleSoalDiPaket(window.__paketIdTambahan, newSoalId, true);
@@ -1836,8 +2078,9 @@ async function previewPaket(id) {
               const media = s.media && s.media.url ? `<img src="${esc(s.media.url)}" class="max-h-32 rounded-lg border mt-1.5" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : "";
               return `
               <div class="bg-slate-50 border rounded-lg p-3">
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex flex-wrap items-center gap-1.5 mb-1">
                   <span class="text-[9px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">${esc(j.label)}</span>
+                  ${s.topik ? `<span class="text-[9px] font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded">${esc(s.topik)}</span>` : ""}
                   <span class="text-[10px] text-slate-400">Soal ${i+1}</span>
                 </div>
                 <div class="text-xs font-semibold text-slate-800">${esc(s.pertanyaan || "")}</div>
@@ -1862,7 +2105,7 @@ async function previewPaket(id) {
   }
 }
 
-/* ---------- 4C. KELOLA SOAL DALAM PAKET (dengan tombol Edit) ---------- */
+/* ---------- 4C. KELOLA SOAL DALAM PAKET ---------- */
 async function kelolaSoalPaket(paketId) {
   if (!paketId) { showToast("Paket tidak valid.", "error"); return; }
   window.__paketIdSaatIni = paketId;
@@ -1874,6 +2117,7 @@ async function kelolaSoalPaket(paketId) {
     showLoading(false);
 
     const soalInPaketIds = items.map(it => it.soal_id);
+    const topikList = [...new Set(allSoal.map(s => s.topik).filter(Boolean))].sort();
 
     const mb = document.getElementById("modal-body");
     mb.innerHTML = `
@@ -1884,11 +2128,15 @@ async function kelolaSoalPaket(paketId) {
       </div>
 
       <div class="p-2 bg-indigo-50 border border-indigo-100 rounded-lg text-[10px] text-indigo-800">
-        <i class="fa-solid fa-info-circle"></i> Centang soal untuk menambah ke paket. Klik <b>✏️ Edit</b> untuk ubah soal atau tambah gambar (permanen, tersimpan ke bank soal).
+        <i class="fa-solid fa-info-circle"></i> Centang soal sesuai materi untuk menambah ke paket. Klik <b>✏️ Edit</b> untuk ubah soal atau tambah gambar.
       </div>
 
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <input id="kp-search" placeholder="Cari soal..." oninput="filterKelolaSoal()" class="flex-1 px-3 py-2 border rounded-xl text-xs">
+        <input id="kp-search" placeholder="Cari soal / materi..." oninput="filterKelolaSoal()" class="flex-1 px-3 py-2 border rounded-xl text-xs">
+        <select id="kp-topik" onchange="filterKelolaSoal()" class="px-3 py-2 border rounded-xl text-xs bg-white max-w-[200px]">
+          <option value="">Semua Materi</option>
+          ${topikList.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("")}
+        </select>
         <select id="kp-jenis" onchange="filterKelolaSoal()" class="px-3 py-2 border rounded-xl text-xs bg-white">
           <option value="">Semua Jenis</option>
           ${Object.values(JENIS_SOAL).map(j => `<option value="${j.kode}">${j.label}</option>`).join("")}
@@ -1912,6 +2160,7 @@ async function kelolaSoalPaket(paketId) {
           return `
           <div class="flex items-start gap-2 p-2.5 bg-white border rounded-xl hover:bg-slate-50 kp-item"
                data-search="${esc(((s.pertanyaan||"") + " " + (s.mapel_kode||"") + " " + (s.topik||"")).toLowerCase())}"
+               data-topik="${esc(s.topik || '')}"
                data-jenis="${esc(s.jenis || '')}">
             <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleSoalDiPaket('${paketId}', '${s.id}', this.checked)" class="mt-1 accent-indigo-600 w-4 h-4 cursor-pointer">
             <div class="flex-1 min-w-0">
@@ -1919,6 +2168,7 @@ async function kelolaSoalPaket(paketId) {
                 <span class="text-[9px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">${esc(j.label)}</span>
                 ${s.mapel_kode ? `<span class="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">${esc(s.mapel_kode)}</span>` : ""}
                 ${s.kelas ? `<span class="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Kls ${esc(s.kelas)}</span>` : ""}
+                ${s.topik ? `<span class="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${esc(s.topik)}</span>` : ""}
                 ${punyaMedia ? `<span class="text-[9px] font-bold bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded"><i class="fa-solid fa-image"></i> Foto</span>` : ""}
               </div>
               <div class="text-[11px] font-semibold text-slate-700 leading-tight">${esc((s.pertanyaan || "").slice(0, 150))}${(s.pertanyaan || "").length > 150 ? "..." : ""}</div>
@@ -1945,13 +2195,16 @@ async function kelolaSoalPaket(paketId) {
 
 function filterKelolaSoal() {
   const q = (document.getElementById("kp-search")?.value || "").toLowerCase().trim();
+  const topik = document.getElementById("kp-topik")?.value || "";
   const jenis = document.getElementById("kp-jenis")?.value || "";
   document.querySelectorAll(".kp-item").forEach(el => {
     const s = el.dataset.search || "";
+    const t = el.dataset.topik || "";
     const j = el.dataset.jenis || "";
     const matchQ = !q || s.includes(q);
+    const matchT = !topik || t === topik;
     const matchJ = !jenis || j === jenis;
-    el.style.display = (matchQ && matchJ) ? "" : "none";
+    el.style.display = (matchQ && matchT && matchJ) ? "" : "none";
   });
 }
 
@@ -1985,7 +2238,6 @@ function tambahSoalKePaketBaru(paketId) {
   showBuatSoalModal(null);
 }
 
-/* Edit soal dari Kelola → buka form Edit → setelah simpan balik ke Kelola */
 function editSoalDariKelola(soalId, paketId) {
   window.__returnToKelolaPaket = paketId;
   window.__paketIdSaatIni = paketId;
@@ -2009,8 +2261,9 @@ function normalisasiSoalAI(raw) {
   if (!pertanyaan) return null;
 
   const pembahasan = String(raw.pembahasan || raw.explanation || raw.penjelasan || "").trim();
+  const topik = String(raw.topik || "").trim();
   const out = {
-    jenis: jenisRaw, pertanyaan, pembahasan,
+    jenis: jenisRaw, pertanyaan, pembahasan, topik,
     tingkat: "sedang", skor: 1, pilihan: null, jawaban: {}, media: null
   };
 
@@ -2152,23 +2405,22 @@ async function jalankanGenerateAI() {
   const apiKey = getGeminiKey();
   if (!apiKey) { showToast("API Key Gemini belum diset.", "error"); return; }
 
-  const topik = document.getElementById("ai-topik")?.value.trim() || "";
-  const mapel = document.getElementById("ai-mapel")?.value || "";
-  const kelas = document.getElementById("ai-kelas")?.value || "";
+  savePaketAIMetaFromDOM();
+  const topik = __tempSoalAIMeta.topik.trim();
+  const mapel = __tempSoalAIMeta.mapel.trim();
+  const kelas = __tempSoalAIMeta.kelas.trim();
   const numPG = Number(document.getElementById("ai-num-pg")?.value) || 0;
   const numPGK = Number(document.getElementById("ai-num-pgk")?.value) || 0;
   const numJodoh = Number(document.getElementById("ai-num-jodoh")?.value) || 0;
   const numIsian = Number(document.getElementById("ai-num-isian")?.value) || 0;
   const numUraian = Number(document.getElementById("ai-num-uraian")?.value) || 0;
 
-  if (!topik) { showToast("Isi topik materi.", "error"); return; }
-  if (!mapel) { showToast("Pilih mapel.", "error"); return; }
-  if (!kelas) { showToast("Pilih kelas.", "error"); return; }
+  if (!topik) { showToast("Pilih atau isi topik materi.", "error"); return; }
+  if (!mapel) { showToast("Isi mata pelajaran.", "error"); return; }
+  if (!kelas) { showToast("Isi kelas.", "error"); return; }
   const total = numPG + numPGK + numJodoh + numIsian + numUraian;
   if (total === 0) { showToast("Minimal 1 soal.", "error"); return; }
   if (total > 40) { showToast("Maksimal 40 soal per generate.", "error"); return; }
-
-  __tempSoalAIMeta = { mapel, kelas, topik };
 
   const btn = document.getElementById("ai-gen-btn");
   const loader = document.getElementById("ai-loader");
@@ -2179,8 +2431,29 @@ async function jalankanGenerateAI() {
   if (out) out.classList.add("hidden");
   if (loaderText) loaderText.textContent = `Menghubungi Gemini... (${total} soal)`;
 
-  const systemPrompt = "Anda asisten pembuatan soal SD Indonesia. WAJIB balas dengan JSON ARRAY saja. Jangan pakai markdown, jangan pakai penjelasan tambahan.";
+  // Susun konteks kurikulum jika dipilih dari MASTER_MATERI_TKA.js
+  let konteksKurikulum = "";
+  if (__tempSoalAIMeta.jenjang || __tempSoalAIMeta.elemen || __tempSoalAIMeta.subElemen) {
+    const master = getMasterMateri();
+    let rincianKomp = __tempSoalAIMeta.kompetensi;
+    if (rincianKomp === "__SEMUA__" && __tempSoalAIMeta.jenjang && __tempSoalAIMeta.elemen && __tempSoalAIMeta.subElemen) {
+      const listKomp = master[__tempSoalAIMeta.jenjang]?.elemen?.[__tempSoalAIMeta.elemen]?.[__tempSoalAIMeta.subElemen] || [];
+      rincianKomp = listKomp.join("; ");
+    }
+    konteksKurikulum = `
+ACUAN KURIKULUM RESMI (TKA):
+- Jenjang: ${__tempSoalAIMeta.jenjang || "-"}
+- Elemen: ${__tempSoalAIMeta.elemen || "-"}
+- Sub-elemen: ${__tempSoalAIMeta.subElemen || "-"}
+- Rincian Cakupan Kompetensi: ${rincianKomp || topik}
+- Level Kognitif: ${__tempSoalAIMeta.level || "Campuran Level 1 (Pengetahuan & Pemahaman), Level 2 (Aplikasi), dan Level 3 (Penalaran)"}
+- Proses Berpikir: ${__tempSoalAIMeta.proses || "Sesuai level kognitif terkait"}
+Pastikan seluruh soal menguji kompetensi di atas menggunakan konteks keseharian yang relevan bagi siswa.`;
+  }
+
+  const systemPrompt = "Anda asisten pembuatan soal asesmen pendidikan Indonesia sesuai standar kurikulum nasional. WAJIB balas dengan JSON ARRAY saja. Jangan pakai markdown, jangan pakai penjelasan tambahan.";
   const userPrompt = `Buat soal mata pelajaran "${mapel}" kelas "${kelas}" topik "${topik}".
+${konteksKurikulum}
 
 Jumlah soal:
 - PG: ${numPG}
@@ -2267,7 +2540,10 @@ Jawab HANYA array JSON.`;
     }
     if (!Array.isArray(soalArr) || !soalArr.length) throw new Error("AI tidak mengembalikan array.");
 
-    const normalized = soalArr.map(normalisasiSoalAI).filter(Boolean);
+    const normalized = soalArr.map(normalisasiSoalAI).filter(Boolean).map(s => ({
+      ...s,
+      topik: s.topik || topik
+    }));
     const skipped = soalArr.length - normalized.length;
 
     if (!normalized.length) {
@@ -2795,8 +3071,7 @@ function buildExamPaperHTMLForPDF() {
       </ol>
     </div>` : "";
 
-  /* ==== Konfigurasi kepadatan ==== */
-    const DENSITY_CONF = {
+  const DENSITY_CONF = {
     longgar:     { gap: 14, fontQ: "12.5px", lineH: 1.55 },
     normal:      { gap: 10, fontQ: "12px",   lineH: 1.4 },
     padat:       { gap: 6,  fontQ: "11.5px", lineH: 1.25 },
@@ -2832,21 +3107,17 @@ function buildExamPaperHTMLForPDF() {
   measure.innerHTML = measureHTML;
   document.body.appendChild(measure);
 
-    // Hitung tinggi header = SELURUH isi pertama (kop + info + petunjuk)
-  // Kita ukur dari elemen pertama sampai sebelum soal pertama
   const firstQuestion = measure.querySelector('.question-item');
   let headerHeight = 0;
   if (firstQuestion) {
-    // Ambil semua elemen sebelum soal pertama
     const allBefore = [];
     let node = firstQuestion.previousElementSibling;
     while (node) {
       allBefore.unshift(node);
       node = node.previousElementSibling;
     }
-    headerHeight = allBefore.reduce((sum, el) => sum + el.offsetHeight, 0) + 30; // +30 margin
+    headerHeight = allBefore.reduce((sum, el) => sum + el.offsetHeight, 0) + 30;
   } else {
-    // Fallback: hitung manual
     const headerEl = measure.querySelector('.border-b-4');
     const infoEl = measure.querySelector('.grid.grid-cols-2.gap-4');
     const petunjukEl = measure.querySelector('.border.border-slate-300.rounded-xl.p-3.mb-4');
@@ -2882,7 +3153,6 @@ function buildExamPaperHTMLForPDF() {
   if (currentPage.length) pages.push(currentPage);
   if (!pages.length) pages.push([]);
 
-    // Reflow: paksa pindahkan soal ke halaman sebelumnya yang masih lega
   reflowHalaman(pages, headerHeight, SAFE_MARGIN_PX, D);
 
   let finalHTML = '';
@@ -2908,12 +3178,11 @@ function buildExamPaperHTMLForPDF() {
 
   return finalHTML;
 }
-/* ---------- 6D-2. REFLOW OTOMATIS — Pindahkan soal ke halaman sebelumnya yang masih lega ---------- */
+/* ---------- 6D-2. REFLOW OTOMATIS ---------- */
 function reflowHalaman(pagesArr, headerHeight, safeMargin, D) {
   let changed = true;
   let iterasi = 0;
   const MAX_ITER = 100;
-  // Toleransi 15%: paksa masuk selama belum lewat 115% batas
   const TOLERANSI = 1.15;
   while (changed && iterasi < MAX_ITER) {
     changed = false;
@@ -2926,7 +3195,6 @@ function reflowHalaman(pagesArr, headerHeight, safeMargin, D) {
         ? headerHeight + cur.reduce((s, i) => s + i.height, 0)
         : cur.reduce((s, i) => s + i.height, 0);
       const soalBerikut = next[0];
-      // Paksa muat selama masih dalam toleransi 15%
       if (tinggiSekarang + soalBerikut.height <= safeMargin * TOLERANSI) {
         cur.push(soalBerikut);
         next.shift();
@@ -3086,14 +3354,11 @@ html, body { font-family: 'Plus Jakarta Sans', sans-serif; background: #e5e7eb; 
 .solution-text { display:none !important; }
 .print-guru .solution-text { display:block !important; }
 
-/* ==== Density classes (di tab baru ini override) ==== */
-.density-longgar     { }
 .density-longgar     .question-item { margin-bottom: 14px; }
 .density-normal      .question-item { margin-bottom: 10px; }
 .density-padat       .question-item { margin-bottom: 6px; }
 .density-sangatpadat .question-item { margin-bottom: 3px; }
 
-/* ==== Edit mode ==== */
 .edit-mode .question-item { border: 2px solid #fbbf24; border-radius: 8px; padding: 12px; background: #fffbeb; }
 .edit-mode .edit-input { display: block; }
 .edit-mode .view-text { display: none; }
@@ -3278,13 +3543,11 @@ function setDensityNewTab(d) {
   currentDensity = d;
   document.querySelectorAll('.dens-btn').forEach(b => b.classList.toggle('active', b.dataset.dens === d));
 
-  // Terapkan kelas density ke semua sheet yang ada (HTML)
   document.querySelectorAll('.a4-preview-sheet').forEach(sheet => {
     sheet.classList.remove('density-longgar','density-normal','density-padat','density-sangatpadat');
     sheet.classList.add('density-' + d);
   });
 
-  // Update originalPagesHTML dengan density baru
   originalPagesHTML = [];
   document.querySelectorAll('.a4-page-wrapper').forEach(el => {
     const sheet = el.querySelector('.a4-preview-sheet');
@@ -3296,7 +3559,6 @@ function setDensityNewTab(d) {
     });
   });
 
-  // Re-render supaya hasil terlihat
   document.getElementById('loadingOverlay').classList.remove('hidden');
   setTimeout(() => renderAllPages(), 200);
 }
@@ -3440,32 +3702,16 @@ ${html}
    BAGIAN 7/7 — BOOT LOG, SAFETY CHECK, PENUTUP
    ========================================================= */
 
-console.log("[EduSmart] buat_kuis.html v5.0 loaded");
-console.log("════════════════════════════════════════════════════════");
-console.log("  📚 Sidebar       : Paket Soal · Bank Soal");
-console.log("  🎯 Kartu Paket   : 👁 Preview · ✏️ Edit · ✅ Soal · ⏻ Aktif");
-console.log("                     📄 PDF · ⬇ JSON · 🗑 Hapus");
-console.log("  🤖 Generator AI  : Tab Info Paket + Tab Generate AI");
-console.log("  📄 Download PDF  : Modal setting → Tab Baru A4 → Edit → Cetak");
-console.log("  🎚️  Kepadatan     : Longgar / Normal / Padat / Sangat Padat");
-console.log("  ✏️  Edit Soal     : Di Kelola Soal (tombol ✏️ per soal) → tersimpan ke Supabase");
-console.log("  🖼️  Upload Foto   : Di form Edit Soal Bank Soal → media masuk ke bank_soal.media");
-console.log("  🔗 Link Materi   : Muncul sebagai 'SUMBER BELAJAR' di halaman akhir PDF");
-console.log("  🔀 Menjodohkan   : Kolom kanan diacak deterministik per soal");
-console.log("  ⌨️  Shortcut      : Ctrl+S simpan · ESC tutup modal · Alt+1/2 tab");
-console.log("════════════════════════════════════════════════════════");
+console.log("[EduSmart] buat_kuis.html v5.1 (Integrasi MASTER_MATERI_TKA) loaded");
 
-/* ==== Safety check: pastikan fungsi penting terdefinisi ==== */
 setTimeout(() => {
   const cekFungsi = [
-    // Bagian 1-5
     "renderPaketList", "renderBankSoalList", "showBuatPaketModal",
     "showBuatSoalModal", "jalankanGenerateAI", "normalisasiSoalAI",
     "kelolaSoalPaket", "previewPaket", "renderJawabanPreview",
     "exportPaketJSON", "showGeminiModal", "simpanGeminiKey",
     "duplikatPaket", "toggleAktifPaket", "hapusPaket",
     "editSoalDariKelola", "uploadMediaSoal",
-    // Bagian 6 — Download PDF
     "downloadPaketPDF", "renderPDFSettingModal", "syncPDFSettingFromForm",
     "setPDFMode", "setPDFDensity", "buildExamPaperHTMLForPDF",
     "openPDFInNewTab", "printPDFDirect",
