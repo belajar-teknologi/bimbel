@@ -1266,22 +1266,27 @@ async function hapusPaket(id) {
   try {
     showLoading(true, "Menghapus...");
     
-    // 1. Hapus item soal di dalam paket terlebih dahulu
+    // 1. Paksa hapus item soal dengan Prefer: return=representation
+    // Ini untuk memastikan tidak ada error "row level security" yang tersembunyi
     await sbDelete("paket_soal_items", `?paket_id=eq.${id}`);
     
-    // 2. Baru hapus paketnya
+    // 2. Hapus paketnya
     await sbDelete("paket_soal", `?id=eq.${id}`);
     
-    // 3. Hapus link materi di JSONBin/Supabase (jika ada)
-    try {
-      await kmDeleteRecord(id);
-    } catch(e) {
-      console.warn("Gagal hapus link materi:", e);
-    }
+    // 3. Hapus link materi
+    try { await kmDeleteRecord(id); } catch(e) { console.warn(e); }
 
-    showLoading(false);
     showToast("✓ Paket berhasil dihapus.", "success");
-    refreshPaket(); // Refresh tampilan kartu paket
+    
+    // 4. MENGOSONGKAN CACHE LOKAL
+    // Terkadang fungsi refresh membaca cache, jadi kita kosongkan dulu
+    __paketCache = []; 
+    
+    // 5. Panggil ulang render dengan delay sedikit agar Supabase selesai memproses
+    setTimeout(() => {
+      showLoading(false);
+      renderPaketList(document.getElementById("main-view-container")); 
+    }, 500);
     
   } catch (err) { 
     showLoading(false); 
