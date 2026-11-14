@@ -326,9 +326,18 @@ async function sbDelete(table, query = "") {
   const sb = getSupabaseConfig();
   if (!sb) throw new Error("Supabase belum dikonfigurasi.");
   const res = await fetch(`${sb.url}/rest/v1/${table}${query}`, {
-    method: "DELETE", headers: sbHeaders()
+    method: "DELETE",
+    headers: sbHeaders({ "Prefer": "return=representation" })
   });
-  if (!res.ok) { const t = await res.text(); throw new Error(`Delete ${table} gagal: ${t.slice(0,200)}`); }
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Delete ${table} gagal: ${t.slice(0,200)}`);
+  }
+  const rows = await res.json().catch(() => []);
+  // Kalau 0 rows terhapus → biasanya RLS blokir
+  if (Array.isArray(rows) && rows.length === 0) {
+    throw new Error(`Tidak ada baris terhapus di "${table}". Cek RLS policy DELETE di Supabase.`);
+  }
   return true;
 }
 
@@ -1258,13 +1267,24 @@ async function duplikatPaket(id) {
 async function hapusPaket(id) {
   if (!confirm("Hapus paket ini? Soal di bank soal TIDAK dihapus.")) return;
   try {
-    showLoading(true, "Menghapus...");
-    await sbDelete("paket_soal", `?id=eq.${id}`);
-    await kmDeleteRecord(id);
+    showLoading(true, "Menghapus paket...");
+
+    // 1. Hapus dulu semua item (child) agar FK tidak menghalangi
+    await sbDelete("paket_soal_items", `?paket_id=eq.${encodeURIComponent(id)}`);
+
+    // 2. Baru hapus paketnya
+    await sbDelete("paket_soal", `?id=eq.${encodeURIComponent(id)}`);
+
+    // 3. Bersihkan link materi (opsional, best-effort)
+    try { await kmDeleteRecord(id); } catch(e) { console.warn("kmDeleteRecord:", e); }
+
     showLoading(false);
-    showToast("Paket dihapus.", "success");
+    showToast("✓ Paket dihapus.", "success");
     refreshPaket();
-  } catch (err) { showLoading(false); showToast("Gagal: " + err.message, "error"); }
+  } catch (err) {
+    showLoading(false);
+    showToast("Gagal hapus: " + err.message, "error", 6000);
+  }
 }
 /* =========================================================
    BAGIAN 3/7 — BANK SOAL (LIST + FORM MANUAL 5 JENIS)
