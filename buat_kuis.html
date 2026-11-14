@@ -325,18 +325,15 @@ async function sbUpsert(table, rows) {
 async function sbDelete(table, query = "") {
   const sb = getSupabaseConfig();
   if (!sb) throw new Error("Supabase belum dikonfigurasi.");
+  
   const res = await fetch(`${sb.url}/rest/v1/${table}${query}`, {
-    method: "DELETE",
-    headers: sbHeaders({ "Prefer": "return=representation" })
+    method: "DELETE", 
+    headers: sbHeaders() // Menghapus "Prefer: return=representation" agar tidak error saat kosong
   });
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Delete ${table} gagal: ${t.slice(0,200)}`);
-  }
-  const rows = await res.json().catch(() => []);
-  // Kalau 0 rows terhapus → biasanya RLS blokir
-  if (Array.isArray(rows) && rows.length === 0) {
-    throw new Error(`Tidak ada baris terhapus di "${table}". Cek RLS policy DELETE di Supabase.`);
+  
+  if (!res.ok) { 
+    const t = await res.text(); 
+    throw new Error(`Delete ${table} gagal: ${t.slice(0,200)}`); 
   }
   return true;
 }
@@ -1267,23 +1264,28 @@ async function duplikatPaket(id) {
 async function hapusPaket(id) {
   if (!confirm("Hapus paket ini? Soal di bank soal TIDAK dihapus.")) return;
   try {
-    showLoading(true, "Menghapus paket...");
-
-    // 1. Hapus dulu semua item (child) agar FK tidak menghalangi
-    await sbDelete("paket_soal_items", `?paket_id=eq.${encodeURIComponent(id)}`);
-
+    showLoading(true, "Menghapus...");
+    
+    // 1. Hapus item soal di dalam paket terlebih dahulu
+    await sbDelete("paket_soal_items", `?paket_id=eq.${id}`);
+    
     // 2. Baru hapus paketnya
-    await sbDelete("paket_soal", `?id=eq.${encodeURIComponent(id)}`);
-
-    // 3. Bersihkan link materi (opsional, best-effort)
-    try { await kmDeleteRecord(id); } catch(e) { console.warn("kmDeleteRecord:", e); }
+    await sbDelete("paket_soal", `?id=eq.${id}`);
+    
+    // 3. Hapus link materi di JSONBin/Supabase (jika ada)
+    try {
+      await kmDeleteRecord(id);
+    } catch(e) {
+      console.warn("Gagal hapus link materi:", e);
+    }
 
     showLoading(false);
-    showToast("✓ Paket dihapus.", "success");
-    refreshPaket();
-  } catch (err) {
-    showLoading(false);
-    showToast("Gagal hapus: " + err.message, "error", 6000);
+    showToast("✓ Paket berhasil dihapus.", "success");
+    refreshPaket(); // Refresh tampilan kartu paket
+    
+  } catch (err) { 
+    showLoading(false); 
+    showToast("Gagal: " + err.message, "error"); 
   }
 }
 /* =========================================================
