@@ -1509,8 +1509,6 @@
             <div class="panel-title"><span><i class="fas fa-calendar-days" style="color: var(--accent);"></i> Buat Jadwal</span></div>
             <form onsubmit="adminCreateSchedule(event)">
               <div class="lms-grid">
-                <div class="lms-field"><label>Grup</label><select id="nschClass" required></select></div>
-                <div class="lms-field"><label>Mapel</label><select id="nschSubject"></select></div>
                 <div class="lms-field"><label>Judul</label><input id="nschTitle" required></div>
                 <div class="lms-field"><label>Tanggal</label><input id="nschDate" type="date" required></div>
                 <div class="lms-field"><label>Mulai</label><input id="nschStart" type="time" required></div>
@@ -1951,11 +1949,21 @@
             <div class="panel-title"><span><i class="fas fa-book-medical" style="color: var(--accent);"></i> Tambah Materi</span></div>
             <form onsubmit="guruCreateMaterial(event)">
               <div class="lms-grid">
-                <div class="lms-field"><label>Grup</label><select id="gmatClass" required></select></div>
+                <div class="lms-field"><label>Grup</label><select id="gmatClass"></select></div>
                 <div class="lms-field"><label>Mapel</label><select id="gmatSubject"></select></div>
                 <div class="lms-field"><label>Judul</label><input id="gmatTitle" required></div>
                 <div class="lms-field"><label>URL File (Opsional)</label><input id="gmatFile" type="url" placeholder="https://..."></div>
-                <div class="lms-field"><label>Atau Upload File (Maks 5MB)</label><input id="gmatFileUpload" type="file"></div>
+                <div class="lms-field">
+  <label>Upload File Materi</label>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <button type="button" class="lms-action primary sm" onclick="document.getElementById('gmatFileUpload').click()">
+      <i class="fas fa-upload"></i> Pilih File / Upload
+    </button>
+    <span id="fileUploadName" class="lms-muted" style="font-size:0.85rem;">Belum ada file dipilih</span>
+  </div>
+  <!-- Input asli disembunyikan -->
+  <input id="gmatFileUpload" type="file" style="display:none;" onchange="document.getElementById('fileUploadName').innerText = this.files[0] ? this.files[0].name : 'Belum ada file dipilih'">
+</div>
                 <div class="lms-field"><label>URL Video</label><input id="gmatVideo" type="url"></div>
               </div>
               <div class="lms-field"><label>Konten</label><textarea id="gmatContent"></textarea></div>
@@ -1994,15 +2002,102 @@
           </div>
         </div>
 
-        <!-- GRADING -->
-        <div id="guru-view-grading" class="guru-view hidden">
-          <h2 style="margin-bottom: 1.5rem;">Penilaian</h2>
-          <div class="panel-box">
-            <div class="panel-title">Pilih Tugas</div>
-            <div class="lms-field"><label>Tugas</label><select id="guruGradeSelect" onchange="loadGuruSubmissions()"><option value="">Pilih tugas...</option></select></div>
-            <div id="guruSubmissionList" style="margin-top:1rem"></div>
-          </div>
+        <!-- GRADING / PENILAIAN (NEW) -->
+<div id="guru-view-grading" class="guru-view hidden">
+  <h2 style="margin-bottom: 1.5rem;">Kolom Penilaian</h2>
+
+  <!-- FORM BUAT PENILAIAN BARU -->
+  <div class="panel-box">
+    <div class="panel-title">
+      <span><i class="fas fa-plus-circle" style="color: var(--accent);"></i> Buat Kolom Penilaian Baru</span>
+    </div>
+    <form onsubmit="guruCreatePenilaian(event)">
+            <div class="lms-grid">
+        <div class="lms-field">
+          <label>Nama Penilaian</label>
+          <input id="npNama" required placeholder="Contoh: Ulangan Harian Bab 3">
         </div>
+        <!-- Dropdown Kelas DIHAPUS -->
+        <div class="lms-field">
+          <label>Tipe Sumber Nilai</label>
+          <select id="npTipe" onchange="guruOnTipePenilaianChange()">
+            <option value="manual">Manual (input guru)</option>
+            <option value="otomatis_ujian">Otomatis dari Hasil Ujian</option>
+          </select>
+        </div>
+        <div class="lms-field" id="npPaketWrap" style="display:none;">
+          <label>Pilih Paket Ujian</label>
+          <select id="npPaketUjian">
+            <option value="">Pilih paket ujian...</option>
+          </select>
+          <small class="lms-muted" style="font-size:0.72rem;">Nilai akan otomatis diambil dari tabel hasil_ujian sesuai paket ini.</small>
+        </div>
+        <div class="lms-field">
+          <label>Tanggal</label>
+          <input id="npTanggal" type="date">
+        </div>
+        <div class="lms-field">
+          <label>Bobot (%)</label>
+          <input id="npBobot" type="number" value="100" min="0" max="100">
+        </div>
+      </div>
+      <div class="lms-field">
+        <label>Deskripsi (opsional)</label>
+        <input id="npDeskripsi">
+      </div>
+      <button type="submit" class="lms-action primary">
+        <i class="fas fa-save"></i> Simpan Penilaian
+      </button>
+    </form>
+  </div>
+
+  <!-- DAFTAR PENILAIAN -->
+  <div class="panel-box">
+    <div class="panel-title">
+      <span><i class="fas fa-list-check" style="color: var(--accent);"></i> Daftar Penilaian Saya</span>
+      <button class="lms-action sm" onclick="loadGuruPenilaianList()">
+        <i class="fas fa-sync"></i> Refresh
+      </button>
+    </div>
+    <div id="guruPenilaianList">
+      <div class="lms-empty">Memuat...</div>
+    </div>
+  </div>
+
+  <!-- DETAIL NILAI SISWA -->
+  <div id="guruPenilaianDetailBox" class="panel-box hidden">
+    <div class="panel-title">
+      <span>
+        <i class="fas fa-table-list" style="color: var(--accent);"></i>
+        Nilai Siswa — <span id="guruPenilaianDetailTitle">-</span>
+      </span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="lms-action sm success" id="guruPenilaianSyncBtn" onclick="guruSyncNilaiDariUjian()">
+          <i class="fas fa-rotate"></i> Tarik Nilai Ujian
+        </button>
+        <button class="lms-action sm primary" onclick="guruSaveAllNilaiPenilaian()">
+          <i class="fas fa-save"></i> Simpan Semua
+        </button>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Siswa</th>
+            <th>Sumber</th>
+            <th>Nilai</th>
+            <th>Catatan</th>
+            <th>Update</th>
+          </tr>
+        </thead>
+        <tbody id="guruPenilaianNilaiTable">
+          <tr><td colspan="5" style="text-align:center;">Pilih penilaian untuk melihat siswa.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
         <!-- GURU - MONITOR KUIS -->
         <div id="guru-view-monitor" class="guru-view hidden">
@@ -2032,12 +2127,11 @@
           <div class="panel-box">
             <div class="panel-title"><span><i class="fas fa-filter" style="color: var(--accent);"></i> Filter Rapor</span></div>
             <div class="lms-grid">
-              <div class="lms-field"><label>Periode Rapor</label><select id="guruRaporPeriodFilter"><option value="">Pilih periode...</option></select></div>
               <div class="lms-field"><label>Kelas Saya</label><select id="guruRaporClassFilter"><option value="">Pilih kelas...</option></select></div>
             </div>
             <button class="lms-action primary" onclick="loadGuruRapor()"><i class="fas fa-sync"></i> Tampilkan Rapor</button>
           </div>
-          <div class="panel-box">
+                    <div class="panel-box">
             <div class="panel-title"><span><i class="fas fa-table-list" style="color: var(--accent);"></i> Daftar Rapor Siswa</span></div>
             <div class="table-responsive">
               <table>
@@ -2047,6 +2141,23 @@
                 <tbody id="guruRaporList"><tr><td colspan="7" style="text-align:center;">Pilih filter lalu klik "Tampilkan Rapor".</td></tr></tbody>
               </table>
             </div>
+
+            <!-- ====== INI DIA TAMBAHANNYA (TABEL REKAP PENILAIAN) ====== -->
+            <div class="panel-title" style="margin-top: 2rem;">
+              <span><i class="fas fa-clipboard-list" style="color: var(--accent);"></i> Rekap Nilai Penilaian Guru</span>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead id="guruRekapPenilaianThead">
+                  <tr><th>Nama Siswa</th></tr>
+                </thead>
+                <tbody id="guruRekapPenilaianTbody">
+                  <tr><td style="text-align:center;">Klik "Tampilkan Rapor" untuk memuat.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- ========================================================= -->
+
           </div>
         </div>
 
@@ -2261,8 +2372,13 @@
           <div class="panel-box no-print">
             <div class="panel-title"><span><i class="fas fa-filter" style="color: var(--accent);"></i> Filter Rapor</span></div>
             <div class="lms-grid">
-              <div class="lms-field"><label>Periode Rapor</label><select id="siswaRaporPeriodFilter"><option value="">Pilih periode...</option></select></div>
-            </div>
+  <div class="lms-field">
+    <label>Grup / Kelas Saya</label>
+    <select id="siswaRaporGroupFilter" onchange="loadSiswaRaporByGroup()">
+      <option value="">Pilih grup...</option>
+    </select>
+  </div>
+</div>
             <div class="lms-toolbar" style="margin-top: 0.5rem;">
               <button class="lms-action primary" onclick="loadSiswaRapor()"><i class="fas fa-sync"></i> Tampilkan Rapor</button>
               <button class="lms-action success" onclick="cetakRaporSiswa()"><i class="fas fa-print"></i> 🖨️ Cetak Rapor / PDF</button>
@@ -2593,7 +2709,9 @@ function siswaNav(view, btn) {
     assignments: () => loadSiswaAssignments(),
     files: () => loadSiswaFiles(),
     teachermenus: () => loadSiswaTeacherMenus(),
-    rapor: () => { loadSiswaRaporPeriods(); loadSiswaRapor(); },
+    // --- BAGIAN YANG DIUBAH ---
+    rapor: () => populateSiswaRaporGroups(), 
+    // ---------------------------
     dailygoals: () => loadSiswaDailyGoals()
   };
   map[view]?.();
@@ -3822,50 +3940,66 @@ async function loadGuruOverview() {
 }
 
 async function loadGuruOverviewStats() {
-  const data = { avgPerClass: [] };
+  const elQuizDone = document.getElementById('guruStatQuizDone');
+  const elMateri = document.getElementById('guruStatMaterials');
+  const elJadwal = document.getElementById('guruStatSchedules');
+
   try {
-    const { data: myGroups } = await supabaseClient.from('classes').select('id, class_name').eq('teacher_id', currentUser.id);
-    const groupIds = (myGroups || []).map(g => g.id);
-    if (!groupIds.length) {
-      ['guruStatGraded', 'guruStatMaterials', 'guruStatSchedules', 'guruStatAvgScore', 'guruStatQuizDone'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.innerText = '0';
-      });
-      renderGuruOverviewCharts(data); return;
+    // 1. Ambil ID semua kelas yang diampu guru ini
+    const { data: myClasses } = await supabaseClient
+      .from('classes')
+      .select('id')
+      .eq('teacher_id', currentUser.id);
+      
+    const classIds = (myClasses || []).map(c => c.id);
+    
+    // Jika tidak ada kelas, set semua ke 0
+    if (classIds.length === 0) {
+      if (elQuizDone) elQuizDone.innerText = '0';
+      if (elMateri) elMateri.innerText = '0';
+      if (elJadwal) elJadwal.innerText = '0';
+      return;
     }
-    const { data: asgs } = await supabaseClient.from('assignments').select('id, class_id').in('class_id', groupIds);
-    const assignmentIds = (asgs || []).map(a => a.id);
-    let subs = [];
-    if (assignmentIds.length) {
-      const { data: subData } = await supabaseClient.from('assignment_submissions').select('id, status, score, assignment_id').in('assignment_id', assignmentIds);
-      subs = subData || [];
+
+    // --- HITUNG MATERI PUBLIK ---
+    const { count: countMateri } = await supabaseClient
+      .from('learning_materials')
+      .select('*', { count: 'exact', head: true })
+      .in('class_id', classIds)
+      .eq('published', true); // Pastikan kolom published ada di tabel materi
+      
+    if (elMateri) elMateri.innerText = countMateri || 0;
+
+    // --- HITUNG TOTAL JADWAL ---
+    const { count: countJadwal } = await supabaseClient
+      .from('schedules')
+      .select('*', { count: 'exact', head: true })
+      .in('class_id', classIds);
+      
+    if (elJadwal) elJadwal.innerText = countJadwal || 0;
+
+    // --- HITUNG KUIS DIKERJAKAN ---
+    const { data: members } = await supabaseClient
+      .from('class_members')
+      .select('student_id')
+      .in('class_id', classIds);
+      
+    const studentIds = [...new Set((members || []).map(m => m.student_id))];
+    
+    let quizDone = 0;
+    if (studentIds.length > 0) {
+      const { count: countKuis } = await supabaseClient
+        .from('hasil_ujian')
+        .select('*', { count: 'exact', head: true })
+        .in('siswa_id', studentIds);
+      quizDone = countKuis || 0;
     }
-    const gradedCount = subs.filter(s => s.status === 'dinilai').length;
-    const setKpi = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-    setKpi('guruStatGraded', gradedCount);
-    const { count: matCount } = await supabaseClient.from('learning_materials').select('id', { count: 'exact', head: true }).in('class_id', groupIds).eq('is_published', true);
-    setKpi('guruStatMaterials', matCount || 0);
-    const { count: schCount } = await supabaseClient.from('schedules').select('id', { count: 'exact', head: true }).in('class_id', groupIds);
-    setKpi('guruStatSchedules', schCount || 0);
-    const scoreVals = subs.filter(s => s.status === 'dinilai' && s.score != null).map(s => Number(s.score)).filter(n => Number.isFinite(n));
-    const avg = scoreVals.length ? scoreVals.reduce((a, b) => a + b, 0) / scoreVals.length : null;
-    setKpi('guruStatAvgScore', avg !== null ? avg.toFixed(2) : '0');
-    data.submissionStatus = { terkirim: subs.filter(s => s.status !== 'dinilai').length, dinilai: gradedCount };
-    const avgMap = {};
-    (asgs || []).forEach(a => {
-      const classSubs = subs.filter(s => s.assignment_id === a.id && s.status === 'dinilai' && s.score != null);
-      const vals = classSubs.map(s => Number(s.score)).filter(n => Number.isFinite(n));
-      if (vals.length) {
-        if (!avgMap[a.class_id]) avgMap[a.class_id] = { sum: 0, count: 0 };
-        avgMap[a.class_id].sum += vals.reduce((x, y) => x + y, 0);
-        avgMap[a.class_id].count += vals.length;
-      }
-    });
-    data.avgPerClass = (myGroups || []).map(g => {
-      const rec = avgMap[g.id];
-      return { label: g.class_name, value: rec && rec.count ? rec.sum / rec.count : 0 };
-    });
-    renderGuruOverviewCharts(data);
-  } catch (e) { console.warn('loadGuruOverviewStats error:', e.message); renderGuruOverviewCharts(data); }
+    
+    if (elQuizDone) elQuizDone.innerText = quizDone;
+
+  } catch (err) {
+    console.warn('Gagal memuat stats:', err.message);
+  }
 }
 
 function renderGuruOverviewCharts(data) {
@@ -4105,80 +4239,91 @@ async function guruDeleteSchedule(id) {
 }
 
 async function loadGuruMaterials() {
-  const el = document.getElementById('guruMaterialList');
-  el.innerHTML = '<div class="lms-empty">Memuat...</div>';
+  // 1. SEMBUNYIKAN KOTAK GRUP & MAPEL SECARA OTOMATIS
+  const elGrup = document.getElementById('gmatClass');
+  const elMapel = document.getElementById('gmatSubject');
+  if (elGrup && elGrup.parentElement) elGrup.parentElement.style.display = 'none';
+  if (elMapel && elMapel.parentElement) elMapel.parentElement.style.display = 'none';
+
+  // 2. TAMPILKAN DAFTAR MATERI
+  const listBox = document.getElementById('guruMaterialList');
+  if (!listBox) return;
+
+  listBox.innerHTML = '<div class="lms-empty">Memuat daftar materi...</div>';
+
   try {
-    const groupIds = GURU_CACHE.groups.map(g => g.id);
-    if (!groupIds.length) { el.innerHTML = '<div class="lms-empty">Belum ada grup.</div>'; return; }
-    const { data, error } = await supabaseClient.from('learning_materials').select('*, classes(class_name), subjects(subject_name)').in('class_id', groupIds).order('created_at', { ascending: false });
+    // Ambil semua materi dari database (tanpa filter grup)
+    const { data: materi, error } = await supabaseClient
+      .from('learning_materials')
+      .select('*')
+      .order('created_at', { ascending: false });
+
     if (error) throw error;
-    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada materi.</div>'; return; }
-    el.innerHTML = data.map(m => `
-      <div class="lms-card">
-        <b>${escapeHtml(m.title)}</b> ${m.is_published ? '<span class="lms-status">Publik</span>' : '<span class="lms-status warn">Draft</span>'}
-        <div class="lms-muted">${escapeHtml(m.classes?.class_name || '-')}</div>
-        <div style="margin-top:.5rem">
-          <button class="lms-action sm" onclick="guruToggleMaterial(${m.id}, ${!m.is_published})"><i class="fas fa-toggle-${m.is_published ? 'on' : 'off'}"></i></button>
-          <button class="lms-action sm danger" onclick="guruDeleteMaterial(${m.id})"><i class="fas fa-trash"></i></button>
+
+    if (!materi || materi.length === 0) {
+      listBox.innerHTML = '<div class="lms-empty">Belum ada materi yang diupload.</div>';
+      return;
+    }
+
+    // Render daftar materi ke layar
+    listBox.innerHTML = materi.map(m => {
+      // Cek nama properti yang dipakai (title/judul)
+      const judul = m.title || m.judul || 'Materi Tanpa Judul';
+      const isPublished = m.published ? '<span class="lms-status">Published</span>' : '<span class="lms-status warn">Draft</span>';
+      
+      return `
+        <div class="lms-card" style="margin-bottom:0.8rem; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h4 style="margin-bottom:4px;">${escapeHtml(judul)}</h4>
+            <div class="lms-muted" style="font-size:0.8rem;">
+              ${isPublished}
+            </div>
+          </div>
+          <div>
+            <button class="lms-action sm danger" onclick="guruDeleteMaterial(${m.id})"><i class="fas fa-trash"></i></button>
+          </div>
         </div>
-      </div>
-    `).join('');
-  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error(err);
+    listBox.innerHTML = `<div class="lms-empty">Gagal memuat: ${err.message}</div>`;
+  }
 }
 
 async function guruCreateMaterial(e) {
   e.preventDefault();
-  const btnSubmit = e.target.querySelector('button[type="submit"]');
-  const originalBtn = btnSubmit.innerHTML;
-  try {
-    let finalFileUrl = document.getElementById('gmatFile').value.trim() || null;
-    const fileInput = document.getElementById('gmatFileUpload');
-    if (fileInput && fileInput.files.length > 0) {
-      const file = fileInput.files[0];
-      if (file.size > 10 * 1024 * 1024) throw new Error('Maksimal 10MB.');
-      btnSubmit.disabled = true;
-      btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Upload ke Cloudinary...';
-      const uploaded = await uploadPhotoToCloudinary(file, 'bimbel-kak-ros/materi_guru');
-      finalFileUrl = uploaded.secure_url;
-      try {
-        await supabaseClient.from('cloudinary_files').insert({
-          public_id: uploaded.public_id,
-          secure_url: uploaded.secure_url,
-          resource_type: uploaded.resource_type || 'image',
-          format: uploaded.format || null,
-          bytes: uploaded.bytes || file.size,
-          folder: 'bimbel-kak-ros/materi_guru',
-          original_filename: file.name,
-          caption: document.getElementById('gmatTitle').value.trim() || null,
-          category: 'materi',
-          purpose: 'materi',
-          uploaded_by: currentUser.id,
-          is_public: true,
-          created_at: new Date().toISOString()
-        });
-      } catch (recErr) {
-        console.warn('Gagal mencatat file ke cloudinary_files:', recErr.message);
-      }
-    }
-    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-    const { error } = await supabaseClient.from('learning_materials').insert({
-      class_id: Number(document.getElementById('gmatClass').value),
-      subject_id: document.getElementById('gmatSubject').value ? Number(document.getElementById('gmatSubject').value) : null,
-      title: document.getElementById('gmatTitle').value.trim(),
-      content: document.getElementById('gmatContent').value.trim() || null,
-      file_url: finalFileUrl,
-      video_url: document.getElementById('gmatVideo').value.trim() || null,
-      is_published: document.getElementById('gmatPublished').checked,
-      created_by: currentUser.id
-    });
-    if (error) throw error;
-    showToast('✅ Materi berhasil disimpan!');
-    if (document.getElementById('gmatPublished').checked) {
-      createNotificationsForClass(Number(document.getElementById('gmatClass').value), { title: '📚 Materi Baru', message: document.getElementById('gmatTitle').value.trim(), type: 'material', link: '#materials', excludeUserId: currentUser.id });
-    }
-    e.target.reset(); await loadGuruMaterials();
-  } catch (err) { showToast('❌ ' + err.message); }
-  finally { btnSubmit.disabled = false; btnSubmit.innerHTML = originalBtn; }
+  
+  const title = document.getElementById('gmatTitle').value.trim();
+  const content = document.getElementById('gmatContent').value.trim();
+  const file_url = document.getElementById('gmatFile').value.trim() || null;
+  const video_url = document.getElementById('gmatVideo').value.trim() || null;
+  const published = document.getElementById('gmatPublished').checked;
+
+  if (!title) { alert("Judul kosong!"); return; }
+
+  // Coba simpan
+  const { data, error } = await supabaseClient
+    .from('learning_materials')
+    .insert({
+      title: title,
+      content: content,
+      file_url: file_url,
+      video_url: video_url,
+      published: published,
+      created_by: currentUser.id 
+    })
+    .select();
+
+  if (error) {
+    // Tampilkan Error jika gagal
+    alert("DATABASE ERROR:\n" + error.message);
+  } else {
+    // Jika berhasil
+    alert("SUKSES! Materi berhasil disimpan.");
+    window.location.reload();
+  }
 }
 
 async function guruToggleMaterial(id, publish) {
@@ -5343,43 +5488,83 @@ async function loadGuruRaporPeriods() {
 
 async function loadGuruRapor() {
   const tbody = document.getElementById('guruRaporList');
-  if (!tbody) return;
-  const periodId = document.getElementById('guruRaporPeriodFilter')?.value;
-  const classId = document.getElementById('guruRaporClassFilter')?.value;
-  if (!periodId || !classId) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Pilih periode dan kelas lalu klik "Tampilkan Rapor".</td></tr>';
-    return;
+  
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Memuat...</td></tr>';
   }
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Memuat...</td></tr>';
+
+  // --- BAGIAN REKAP NILAI PENILAIAN BARU ---
+  const thead = document.getElementById('guruRekapPenilaianThead');
+  const tbodyRekap = document.getElementById('guruRekapPenilaianTbody');
+  if (!thead || !tbodyRekap) return;
+
+  thead.innerHTML = '<tr><th>Nama Siswa</th><th>Memuat...</th></tr>';
+  tbodyRekap.innerHTML = '<tr><td colspan="2" style="text-align:center;">Memuat data...</td></tr>';
+
   try {
-    const { data: members, error: mErr } = await supabaseClient.from('class_members').select('student_id').eq('class_id', classId);
-    if (mErr) throw mErr;
-    const studentIds = (members || []).map(m => m.student_id);
-    if (!studentIds.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Tidak ada siswa di kelas ini.</td></tr>';
+    // 1. Ambil daftar penilaian buatan guru
+    const { data: penilaians } = await supabaseClient
+      .from('penilaian')
+      .select('id, nama_penilaian')
+      .eq('guru_id', currentUser.id);
+
+    if (!penilaians || penilaians.length === 0) {
+      thead.innerHTML = '<tr><th>Nama Siswa</th></tr>';
+      tbodyRekap.innerHTML = '<tr><td style="text-align:center;">Belum ada penilaian dibuat.</td></tr>';
       return;
     }
-    const { data, error } = await supabaseClient.from('student_reports').select('*, profiles:student_id(full_name, email, kelas), subjects:subject_id(subject_name)').eq('period_id', periodId).in('student_id', studentIds).order('created_at', { ascending: false });
-    if (error) throw error;
-    RAPOR_CACHE.guruRapor = data || [];
-    if (!data?.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Belum ada rapor. Minta admin generate dulu.</td></tr>';
+
+    // 2. Ambil daftar siswa guru
+    const studentIds = await getSemuaSiswaGuru();
+    if (studentIds.length === 0) {
+      thead.innerHTML = '<tr><th>Nama Siswa</th></tr>';
+      tbodyRekap.innerHTML = '<tr><td style="text-align:center;">Belum ada siswa di kelas Anda.</td></tr>';
       return;
     }
-    tbody.innerHTML = data.map(r => `
-      <tr>
-        <td><strong>${escapeHtml(r.profiles?.full_name || r.student_id)}</strong></td>
-        <td>${escapeHtml(r.subjects?.subject_name || '-')}</td>
-        <td>${r.avg_score != null ? Number(r.avg_score).toFixed(2) : '-'}</td>
-        <td>${r.assignment_done ?? 0}/${r.assignment_total ?? 0}</td>
-        <td>${formatPercent(r.attendance_percent)}</td>
-        <td><span class="lms-muted">${escapeHtml(r.teacher_note || '-')}</span></td>
-        <td>
-          <button class="lms-action sm" onclick="guruEditRaporNote(${r.id})"><i class="fas fa-pen"></i> Catatan</button>
-        </td>
-      </tr>
-    `).join('');
-  } catch (e) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`; }
+
+    const { data: profiles } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', studentIds)
+      .order('full_name', { ascending: true });
+
+    // 3. Ambil nilai dari semua penilaian
+    const penilaianIds = penilaians.map(p => p.id);
+    const { data: nilais } = await supabaseClient
+      .from('nilai_penilaian')
+      .select('*')
+      .in('penilaian_id', penilaianIds);
+
+    const nilaiMap = {};
+    (nilais || []).forEach(n => {
+      if (!nilaiMap[n.siswa_id]) nilaiMap[n.siswa_id] = {};
+      nilaiMap[n.siswa_id][n.penilaian_id] = n.nilai;
+    });
+
+    // 4. Render Header (Nama Siswa + Judul Penilaian)
+    let htmlHead = '<tr><th>Nama Siswa</th>';
+    penilaians.forEach(p => {
+      htmlHead += `<th>${escapeHtml(p.nama_penilaian)}</th>`;
+    });
+    htmlHead += '</tr>';
+    thead.innerHTML = htmlHead;
+
+    // 5. Render Body (Nama Siswa + Nilai)
+    let htmlBody = '';
+    (profiles || []).forEach(siswa => {
+      htmlBody += `<tr><td><b>${escapeHtml(siswa.full_name)}</b></td>`;
+      penilaians.forEach(p => {
+        const nilai = nilaiMap[siswa.id]?.[p.id] ?? '-';
+        htmlBody += `<td>${nilai}</td>`;
+      });
+      htmlBody += '</tr>';
+    });
+    tbodyRekap.innerHTML = htmlBody;
+
+  } catch (err) {
+    console.error(err);
+    tbodyRekap.innerHTML = `<tr><td colspan="2" style="color:red;text-align:center;">Error: ${err.message}</td></tr>`;
+  }
 }
 
 async function guruEditRaporNote(id) {
@@ -5402,43 +5587,134 @@ async function loadSiswaRaporPeriods() {
     fillSelect('siswaRaporPeriodFilter', data || [], 'Pilih periode...', 'id', p => p.name);
   } catch (e) { /* silent */ }
 }
-
-async function loadSiswaRapor() {
-  const tbody = document.getElementById('siswaRaporTableBody');
-  if (!tbody) return;
-  const periodId = document.getElementById('siswaRaporPeriodFilter')?.value;
-  if (!periodId) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Pilih periode lalu klik "Tampilkan Rapor".</td></tr>';
-    return;
-  }
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat...</td></tr>';
-  const periodSelect = document.getElementById('siswaRaporPeriodFilter');
-  const periodText = periodSelect?.options[periodSelect.selectedIndex]?.text || '-';
-  document.getElementById('siswaRaporPeriodeInfo').innerText = 'Periode: ' + periodText;
-  document.getElementById('siswaRaporNama').innerText = currentProfile?.full_name || currentUser?.email || '-';
-  document.getElementById('siswaRaporKelas').innerText = currentProfile?.kelas || '-';
+// Isi dropdown grup siswa (panggil saat siswaNav('rapor'))
+async function populateSiswaRaporGroups() {
+  const sel = document.getElementById('siswaRaporGroupFilter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Memuat...</option>';
   try {
-    const { data, error } = await supabaseClient.from('student_reports').select('*, subjects:subject_id(subject_name)').eq('student_id', currentUser.id).eq('period_id', periodId).order('created_at', { ascending: false });
+    // Ambil grup yang diikuti siswa ini
+    const { data, error } = await supabaseClient
+      .from('class_members')
+      .select('class_id, classes(id, name)')
+      .eq('student_id', currentUser.id);
+
     if (error) throw error;
-    RAPOR_CACHE.siswaRapor = data || [];
-    if (!data?.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada data rapor untuk periode ini.</td></tr>';
-      renderSiswaRaporCharts([]);
+
+    if (!data || data.length === 0) {
+      sel.innerHTML = '<option value="">Belum ada grup</option>';
       return;
     }
-    tbody.innerHTML = data.map(r => `
-      <tr>
-        <td><strong>${escapeHtml(r.subjects?.subject_name || '-')}</strong></td>
-        <td>${r.avg_score != null ? Number(r.avg_score).toFixed(2) : '-'}</td>
-        <td>${r.assignment_done ?? 0}/${r.assignment_total ?? 0}</td>
-        <td>${formatPercent(r.attendance_percent)}</td>
-        <td>${escapeHtml(r.teacher_note || '-')}</td>
-      </tr>
-    `).join('');
-    await renderSiswaRaporCharts(data, periodId);
+
+    sel.innerHTML = '<option value="">Pilih grup...</option>' +
+      data.map(r => `<option value="${r.classes.id}">${r.classes.name}</option>`).join('');
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger)">Error: ${escapeHtml(e.message)}</td></tr>`;
-    renderSiswaRaporCharts([]);
+    console.error(e);
+    sel.innerHTML = '<option value="">Gagal memuat grup</option>';
+  }
+}
+
+// Load rapor berdasarkan grup terpilih
+async function loadSiswaRaporByGroup() {
+  const classId = document.getElementById('siswaRaporGroupFilter').value;
+  const tbody = document.getElementById('siswaRaporTableBody');
+  const info = document.getElementById('siswaRaporPeriodeInfo');
+
+  if (!classId) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Pilih grup dulu.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat rapor...</td></tr>';
+
+  // Ambil nama grup untuk header
+  const { data: cls } = await supabaseClient
+    .from('classes').select('name').eq('id', classId).single();
+
+  if (info) info.textContent = `Kelas: ${cls?.name || '-'}`;
+
+  // Ambil rapor siswa di grup tsb (tanpa filter periode — ambil semua periode terbaru)
+  const { data: records, error } = await supabaseClient
+    .from('rapor_records')
+    .select(`
+      id, average_score, assignments_completed, attendance_percent, teacher_note,
+      period_id, rapor_periods(name, type, start_date, end_date),
+      subjects(name)
+    `)
+    .eq('student_id', currentUser.id)
+    .eq('class_id', classId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger);">Gagal: ${error.message}</td></tr>`;
+    return;
+  }
+
+  if (!records || records.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada rapor untuk grup ini.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = records.map(r => `
+    <tr>
+      <td>${r.subjects?.name || '-'}</td>
+      <td><b>${r.average_score ?? '-'}</b></td>
+      <td>${r.assignments_completed ?? '-'}</td>
+      <td>${r.attendance_percent != null ? r.attendance_percent + '%' : '-'}</td>
+      <td>${r.teacher_note || '-'}</td>
+    </tr>
+  `).join('');
+
+  // Kalau ada chart, update juga (opsional)
+  renderSiswaRaporCharts(records);
+}
+
+async function loadSiswaRapor() {
+  const tbody = document.getElementById('siswaRekapPenilaianTbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Memuat nilai...</td></tr>';
+
+  try {
+    // Ambil nilai penilaian khusus untuk siswa ini
+    const { data, error } = await supabaseClient
+      .from('nilai_penilaian')
+      .select(`
+        nilai,
+        catatan,
+        penilaian ( nama_penilaian, tanggal )
+      `)
+      .eq('siswa_id', currentUser.id);
+
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada nilai yang masuk.</td></tr>';
+      return;
+    }
+
+    // Render tabel
+    tbody.innerHTML = data.map(d => {
+      // Menentukan warna badge (Hijau jika >= 70, Kuning jika di bawah 70)
+      const statusClass = (d.nilai !== null && d.nilai >= 70) ? '' : 'warn';
+      const nilaiTampil = d.nilai !== null ? d.nilai : '-';
+      
+      return `
+        <tr>
+          <td>
+            <b>${escapeHtml(d.penilaian?.nama_penilaian || 'Penilaian')}</b>
+            <div class="lms-muted" style="font-size:0.75rem;">${d.penilaian?.tanggal || '-'}</div>
+          </td>
+          <td><span class="lms-status ${statusClass}">${nilaiTampil}</span></td>
+          <td>${escapeHtml(d.catatan || '-')}</td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="3" style="color:red;text-align:center;">Error: ${err.message}</td></tr>`;
   }
 }
 
@@ -5780,6 +6056,672 @@ handleLogout = async function () {
 /* ============================================================
    END PATCH
    ============================================================ */
+/* ============================================================
+   FITUR PENILAIAN GURU (kolom penilaian custom)
+   ============================================================ */
+
+let currentPenilaian = null;
+let guruPenilaianCache = [];
+
+async function guruInitPenilaianView() {
+  await Promise.all([
+    guruLoadKelasOptionsPenilaian(),
+    guruLoadPaketUjianOptions(),
+    loadGuruPenilaianList()
+  ]);
+}
+
+async function guruLoadKelasOptionsPenilaian() {
+  const sel = document.getElementById('npKelas');
+  if (!sel) return;
+  
+  sel.innerHTML = '<option value="">Memuat data...</option>';
+
+  const { data: groups, error } = await supabaseClient
+    .from('classes')
+    .select('id, class_name')
+    .eq('teacher_id', currentUser.id);
+
+  if (error) {
+    console.error("Error load kelas:", error);
+    sel.innerHTML = `<option value="">Gagal: ${error.message}</option>`;
+    return;
+  }
+
+  if (!groups || groups.length === 0) {
+    sel.innerHTML = '<option value="">(Tidak ada kelas untuk guru ini)</option>';
+    return;
+  }
+
+  sel.innerHTML = '<option value="">Pilih kelas...</option>' +
+    groups.map(g => `<option value="${g.id}">${escapeHtml(g.class_name)}</option>`).join('');
+}
+
+async function guruLoadPaketUjianOptions() {
+  const sel = document.getElementById('npPaketUjian');
+  if (!sel) return;
+  
+  sel.innerHTML = '<option value="">Memuat data...</option>';
+
+  try {
+    // 1. Ambil daftar paket soal
+    const { data: pakets, error: errPaket } = await supabaseClient
+      .from('paket_soal')
+      .select('*')
+      .order('id', { ascending: false });
+      
+    if (errPaket) throw errPaket;
+
+    // 2. Ambil daftar ID paket yang SUDAH ADA hasil ujiannya
+    const { data: hasil, error: errHasil } = await supabaseClient
+      .from('hasil_ujian')
+      .select('paket_id');
+      
+    if (errHasil) throw errHasil;
+
+    // Buat daftar unik ID paket yang sudah dikerjakan
+    const paketDikerjakan = [...new Set((hasil || []).map(h => h.paket_id))];
+
+    // 3. Filter: Hanya tampilkan paket yang ada di 'paketDikerjakan'
+    const paketAktif = (pakets || []).filter(p => paketDikerjakan.includes(p.id));
+
+    if (paketAktif.length === 0) {
+      sel.innerHTML = '<option value="">Belum ada paket yang dikerjakan siswa</option>';
+      return;
+    }
+
+    // 4. Tampilkan ke dropdown
+    sel.innerHTML = '<option value="">Pilih paket ujian...</option>' +
+      paketAktif.map(p => {
+        // Cek nama kolom (nama/judul/title), jika kosong pakai ID
+        const namaPaket = p.nama || p.judul || p.title || `Paket ID: ${p.id}`;
+        return `<option value="${p.id}">${escapeHtml(namaPaket)}</option>`;
+      }).join('');
+
+  } catch (err) {
+    console.error("Error load paket:", err);
+    sel.innerHTML = `<option value="">Gagal: ${err.message}</option>`;
+  }
+}
+
+function guruOnTipePenilaianChange() {
+  const tipe = document.getElementById('npTipe').value;
+  const wrap = document.getElementById('npPaketWrap');
+  if (wrap) wrap.style.display = tipe === 'otomatis_ujian' ? 'block' : 'none';
+}
+
+async function guruCreatePenilaian(e) {
+  e.preventDefault();
+  
+  const nama = document.getElementById('npNama').value.trim();
+  const tipe = document.getElementById('npTipe').value;
+  const paket_ujian_id = document.getElementById('npPaketUjian').value || null;
+  const tanggal = document.getElementById('npTanggal').value || null;
+  const bobot = parseFloat(document.getElementById('npBobot').value) || 100;
+  const deskripsi = document.getElementById('npDeskripsi').value.trim() || null;
+
+  if (!nama) { showToast('Nama penilaian wajib diisi'); return; }
+  if (tipe === 'otomatis_ujian' && !paket_ujian_id) {
+    showToast('Pilih paket ujian untuk tipe otomatis');
+    return;
+  }
+
+  const payload = {
+    nama_penilaian: nama,
+    guru_id: currentUser.id,
+    tipe,
+    paket_ujian_id: tipe === 'otomatis_ujian' ? parseInt(paket_ujian_id) : null,
+    bobot,
+    tanggal,
+    deskripsi
+  };
+
+  const { data, error } = await supabaseClient.from('penilaian').insert(payload).select().single();
+  
+  if (error) { 
+    showToast('Gagal: ' + error.message); 
+    return; 
+  }
+
+  showToast('Penilaian berhasil dibuat');
+
+  // Jika tipe otomatis, tarik nilai dari ujian
+  if (tipe === 'otomatis_ujian') {
+    await guruSeedNilaiFromPaketGlobal(data.id, parseInt(paket_ujian_id));
+  } else {
+    await guruSeedNilaiSiswaGlobal(data.id);
+  }
+
+  // Kosongkan form
+  document.getElementById('npNama').value = '';
+  document.getElementById('npDeskripsi').value = '';
+  
+  // Refresh daftar penilaian (tanpa reload halaman)
+  await loadGuruPenilaianList();
+}
+
+async function guruSeedNilaiSiswaKelas(penilaian_id, kelas_id) {
+  const { data: members, error } = await supabase
+    .from('class_members')
+    .select('student_id')
+    .eq('class_id', kelas_id);
+  if (error) { console.error(error); return; }
+  if (!members || members.length === 0) return;
+
+  const rows = members.map(m => ({
+    penilaian_id,
+    siswa_id: m.student_id,
+    nilai: null,
+    sumber: 'manual'
+  }));
+
+  const { error: upErr } = await supabase
+    .from('nilai_penilaian')
+    .upsert(rows, { onConflict: 'penilaian_id,siswa_id' });
+  if (upErr) console.error(upErr);
+}
+// Mengambil semua siswa dari semua kelas guru ini
+async function getSemuaSiswaGuru() {
+  // 1. Cari kelas apa saja yang diampu guru ini
+  const { data: myClasses } = await supabaseClient
+    .from('classes')
+    .select('id')
+    .eq('teacher_id', currentUser.id);
+    
+  if (!myClasses || myClasses.length === 0) return [];
+  const classIds = myClasses.map(c => c.id);
+
+  // 2. Ambil semua siswa dari kelas tersebut
+  const { data: members } = await supabaseClient
+    .from('class_members')
+    .select('student_id')
+    .in('class_id', classIds);
+    
+  if (!members) return [];
+  
+  // Hilangkan duplikat (kalau ada siswa yang ikut 2 kelas)
+  const uniqueStudents = [...new Set(members.map(m => m.student_id))];
+  return uniqueStudents;
+}
+
+async function guruSeedNilaiSiswaGlobal(penilaian_id) {
+  const studentIds = await getSemuaSiswaGuru();
+  if (studentIds.length === 0) return;
+
+  const rows = studentIds.map(id => ({
+    penilaian_id,
+    siswa_id: id,
+    nilai: null,
+    sumber: 'manual'
+  }));
+
+  await supabaseClient.from('nilai_penilaian').upsert(rows, { onConflict: 'penilaian_id,siswa_id' });
+}
+
+async function guruSeedNilaiFromPaketGlobal(penilaian_id, paket_id) {
+  await guruSeedNilaiSiswaGlobal(penilaian_id);
+
+  const { data: hasil } = await supabaseClient
+    .from('hasil_ujian')
+    .select('id, siswa_id, nilai, created_at')
+    .eq('paket_id', paket_id)
+    .order('created_at', { ascending: false });
+
+  const latest = {};
+  (hasil || []).forEach(h => { if (!latest[h.siswa_id]) latest[h.siswa_id] = h; });
+
+  for (const [siswa_id, h] of Object.entries(latest)) {
+    await supabaseClient.from('nilai_penilaian').upsert({
+      penilaian_id,
+      siswa_id,
+      nilai: h.nilai,
+      sumber: 'ujian',
+      hasil_ujian_id: h.id,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'penilaian_id,siswa_id' });
+  }
+}
+
+async function guruSeedNilaiFromPaket(penilaian_id, paket_id, kelas_id) {
+  await guruSeedNilaiSiswaKelas(penilaian_id, kelas_id);
+
+  const { data: hasil, error } = await supabase
+    .from('hasil_ujian')
+    .select('id, siswa_id, nilai, created_at')
+    .eq('paket_id', paket_id)
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+
+  const latest = {};
+  (hasil || []).forEach(h => {
+    if (!latest[h.siswa_id]) latest[h.siswa_id] = h;
+  });
+
+  for (const [siswa_id, h] of Object.entries(latest)) {
+    const { error: upErr } = await supabase
+      .from('nilai_penilaian')
+      .upsert({
+        penilaian_id,
+        siswa_id,
+        nilai: h.nilai,
+        sumber: 'ujian',
+        hasil_ujian_id: h.id,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'penilaian_id,siswa_id' });
+    if (upErr) console.error(upErr);
+  }
+}
+
+async function loadGuruPenilaianList() {
+  const box = document.getElementById('guruPenilaianList');
+  if (!box) return;
+  
+  box.innerHTML = '<div class="lms-empty">Memuat...</div>';
+
+  // Ambil data tanpa join kompleks agar tidak error
+  const { data, error } = await supabaseClient
+    .from('penilaian')
+    .select('*')
+    .eq('guru_id', currentUser.id)
+    .order('created_at', { ascending: false });
+    
+  if (error) {
+    console.error("Error load penilaian:", error);
+    box.innerHTML = `<div class="lms-empty">Gagal memuat: ${error.message}</div>`;
+    return;
+  }
+  
+  guruPenilaianCache = data || [];
+  
+  if (guruPenilaianCache.length === 0) {
+    box.innerHTML = '<div class="lms-empty">Belum ada penilaian. Buat yang pertama di atas.</div>';
+    return;
+  }
+
+  // Render kartu
+  box.innerHTML = guruPenilaianCache.map(p => `
+    <div class="lms-card" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px;">
+        <h4 style="margin-bottom:4px;">
+          <i class="fas fa-clipboard-check" style="color:var(--accent-color);margin-right:6px;"></i>
+          ${escapeHtml(p.nama_penilaian)}
+        </h4>
+        <div class="lms-muted" style="font-size:0.82rem;">
+          ${p.tipe === 'otomatis_ujian'
+            ? `· <span class="lms-status info" style="font-size:0.68rem;">Otomatis Ujian</span>`
+            : `· <span class="lms-status" style="font-size:0.68rem;">Manual</span>`}
+          · Bobot: ${p.bobot ?? 100}%
+          ${p.tanggal ? '· ' + p.tanggal : ''}
+        </div>
+        ${p.deskripsi ? `<div class="lms-muted" style="font-size:0.8rem;margin-top:4px;">${escapeHtml(p.deskripsi)}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="lms-action sm primary" onclick="guruOpenPenilaianDetail(${p.id})">
+          <i class="fas fa-pen"></i> Isi Nilai
+        </button>
+        <button class="lms-action sm danger" onclick="guruDeletePenilaian(${p.id})">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function guruOpenPenilaianDetail(penilaian_id) {
+  const p = guruPenilaianCache.find(x => x.id === penilaian_id);
+  if (!p) return;
+  currentPenilaian = p;
+  const box = document.getElementById('guruPenilaianDetailBox');
+  const title = document.getElementById('guruPenilaianDetailTitle');
+  box.classList.remove('hidden');
+  title.textContent = p.nama_penilaian;
+
+  const syncBtn = document.getElementById('guruPenilaianSyncBtn');
+  if (syncBtn) syncBtn.style.display = p.tipe === 'otomatis_ujian' ? 'inline-flex' : 'none';
+
+  await guruLoadNilaiPenilaian(penilaian_id);
+}
+
+async function guruLoadNilaiPenilaian(penilaian_id) {
+  const tbody = document.getElementById('guruPenilaianNilaiTable');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat...</td></tr>';
+
+  // 1. Ambil semua ID siswa dari semua kelas guru ini
+  const studentIds = await getSemuaSiswaGuru();
+
+  if (studentIds.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada siswa di kelas Anda.</td></tr>';
+    return;
+  }
+
+  // 2. Ambil profil siswa DAN URUTKAN BERDASARKAN NAMA (A-Z)
+  const { data: profiles, error: pErr } = await supabaseClient
+    .from('profiles')
+    .select('id, full_name, email')
+    .in('id', studentIds)
+    .order('full_name', { ascending: true }); // <--- Ini kunci urutan abjadnya
+
+  if (pErr) {
+    tbody.innerHTML = `<tr><td colspan="5">Gagal ambil profil: ${escapeHtml(pErr.message)}</td></tr>`;
+    return;
+  }
+
+  const profileMap = {};
+  (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+  // 3. Ambil nilai yang sudah diinput
+  const { data: nilais } = await supabaseClient
+    .from('nilai_penilaian')
+    .select('*')
+    .eq('penilaian_id', penilaian_id);
+
+  const nilaiMap = {};
+  (nilais || []).forEach(n => { nilaiMap[n.siswa_id] = n; });
+
+  // 4. Render ke tabel
+  tbody.innerHTML = (profiles || []).map(siswa => {
+    const id = siswa.id;
+    const n = nilaiMap[id] || {};
+    const sumberTag = n.sumber === 'ujian'
+      ? '<span class="lms-status info" style="font-size:0.68rem;"><i class="fas fa-robot"></i> Ujian</span>'
+      : '<span class="lms-status" style="font-size:0.68rem;"><i class="fas fa-user"></i> Manual</span>';
+      
+    return `
+      <tr data-siswa-id="${id}">
+        <td>
+          <b>${escapeHtml(siswa.full_name || '-')}</b>
+          <div class="lms-muted" style="font-size:0.75rem;">${escapeHtml(siswa.email || '')}</div>
+        </td>
+        <td>${sumberTag}</td>
+        <td>
+          <input type="number" step="0.01" min="0" max="100"
+                 class="guru-nilai-input"
+                 data-siswa-id="${id}"
+                 value="${n.nilai ?? ''}"
+                 style="width:90px;padding:8px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg-main-soft);font:inherit;">
+        </td>
+        <td>
+          <input type="text"
+                 class="guru-catatan-input"
+                 data-siswa-id="${id}"
+                 value="${escapeHtml(n.catatan || '')}"
+                 placeholder="Catatan..."
+                 style="width:100%;min-width:150px;padding:8px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg-main-soft);font:inherit;">
+        </td>
+        <td class="lms-muted" style="font-size:0.75rem;">
+          ${n.updated_at ? new Date(n.updated_at).toLocaleString('id-ID') : '-'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function guruSaveAllNilaiPenilaian() {
+  if (!currentPenilaian) { showToast('Pilih penilaian dulu'); return; }
+
+  const nilaiInputs = document.querySelectorAll('.guru-nilai-input');
+  const catatanInputs = document.querySelectorAll('.guru-catatan-input');
+  const rows = [];
+
+  nilaiInputs.forEach(inp => {
+    const siswa_id = inp.getAttribute('data-siswa-id');
+    const nilaiRaw = inp.value.trim();
+    const catatanInp = Array.from(catatanInputs).find(c => c.getAttribute('data-siswa-id') === siswa_id);
+    const catatan = catatanInp ? catatanInp.value.trim() : null;
+    rows.push({
+      penilaian_id: currentPenilaian.id,
+      siswa_id,
+      nilai: nilaiRaw === '' ? null : parseFloat(nilaiRaw),
+      catatan: catatan || null,
+      sumber: 'manual',
+      updated_at: new Date().toISOString()
+    });
+  });
+
+  if (rows.length === 0) { showToast('Tidak ada data'); return; }
+
+  const { error } = await supabase
+    .from('nilai_penilaian')
+    .upsert(rows, { onConflict: 'penilaian_id,siswa_id' });
+  if (error) { showToast('Gagal simpan: ' + error.message); return; }
+  showToast('Nilai berhasil disimpan');
+  await guruLoadNilaiPenilaian(currentPenilaian.id);
+}
+
+async function guruSyncNilaiDariUjian() {
+  if (!currentPenilaian) { showToast('Pilih penilaian dulu'); return; }
+  if (currentPenilaian.tipe !== 'otomatis_ujian' || !currentPenilaian.paket_ujian_id) {
+    showToast('Penilaian ini bukan tipe otomatis ujian');
+    return;
+  }
+  await guruSeedNilaiFromPaket(
+    currentPenilaian.id,
+    currentPenilaian.paket_ujian_id,
+    currentPenilaian.kelas_id
+  );
+  showToast('Nilai berhasil ditarik dari hasil ujian');
+  await guruLoadNilaiPenilaian(currentPenilaian.id);
+}
+
+async function guruDeletePenilaian(id) {
+  if (!confirm('Hapus penilaian ini beserta semua nilainya?')) return;
+  
+  try {
+    // 1. Hapus data nilai siswanya dulu
+    const { error: errNilai } = await supabaseClient
+      .from('nilai_penilaian')
+      .delete()
+      .eq('penilaian_id', id);
+      
+    if (errNilai) throw new Error("Gagal hapus nilai: " + errNilai.message);
+
+    // 2. Hapus data penilaiannya
+    const { error: errPenilaian } = await supabaseClient
+      .from('penilaian')
+      .delete()
+      .eq('id', id);
+      
+    if (errPenilaian) throw new Error("Gagal hapus penilaian: " + errPenilaian.message);
+
+    showToast('Penilaian berhasil dihapus');
+    
+    // Sembunyikan tabel detail jika yang dihapus sedang dibuka
+    const detailBox = document.getElementById('guruPenilaianDetailBox');
+    if (detailBox) detailBox.classList.add('hidden');
+    
+    // Refresh daftar
+    await loadGuruPenilaianList();
+
+  } catch (err) {
+    console.error(err);
+    showToast(err.message);
+  }
+}
+
+if (typeof escapeHtml !== 'function') {
+  window.escapeHtml = function(s) {
+    return String(s ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  };
+}
+/* ============================================================
+   AUTO-INIT: panggil guruInitPenilaianView() saat menu Penilaian diklik
+   ============================================================ */
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('#guruSidebar .sidebar-item');
+  if (btn && /penilaian/i.test(btn.textContent)) {
+    setTimeout(() => {
+      if (typeof guruInitPenilaianView === 'function') guruInitPenilaianView();
+    }, 120);
+  }
+});
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('#guruSidebar .sidebar-item');
+  if (btn && /materi/i.test(btn.textContent)) {
+    setTimeout(() => {
+      if (typeof loadGuruMaterials === 'function') loadGuruMaterials();
+    }, 150);
+  }
+});
+// ==========================================
+// FUNGSI PEMBERSIH GRAFIK DASHBOARD GURU
+// ==========================================
+function perbaikiTampilanGrafikGuru() {
+  // 1. Hapus semua canvas yang error/kosong
+  const canvasSubmission = document.getElementById('guruChartSubmissionStatus');
+  const canvasAvgClass = document.getElementById('guruChartAvgPerClass');
+
+  if (canvasSubmission) {
+    // Hancurkan grafik lama yang bikin tampilan rusak
+    if (window.chartSubmissionGuru) window.chartSubmissionGuru.destroy();
+    
+    // Buat grafik pengganti yang aman (data 0)
+    window.chartSubmissionGuru = new Chart(canvasSubmission, {
+      type: 'doughnut',
+      data: {
+        labels: ['Belum ada data'],
+        datasets: [{
+          data: [1],
+          backgroundColor: ['#E2E8F0'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  if (canvasAvgClass) {
+    if (window.chartAvgClassGuru) window.chartAvgClassGuru.destroy();
+    
+    window.chartAvgClassGuru = new Chart(canvasAvgClass, {
+      type: 'bar',
+      data: {
+        labels: ['Belum ada data'],
+        datasets: [{
+          label: 'Nilai',
+          data: [0],
+          backgroundColor: '#E2E8F0',
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 100 } }
+      }
+    });
+  }
+}
+
+// Panggil fungsi ini setiap kali halaman selesai dimuat atau menu dashboard diklik
+setTimeout(() => {
+  if (document.getElementById('guru-view-overview') && !document.getElementById('guru-view-overview').classList.contains('hidden')) {
+    perbaikiTampilanGrafikGuru();
+  }
+}, 1000); // Tunggu 1 detik agar grafik bawaan sistem Anda selesai dimuat
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('#guruSidebar .sidebar-item');
+  if (btn && /dashboard/i.test(btn.textContent)) {
+    setTimeout(() => {
+      perbaikiTampilanGrafikGuru();
+    }, 500);
+  }
+});
+// ============================================================
+// FUNGSI PENIMPA GRAFIK DASHBOARD GURU (Versi Paksa Jalan)
+// ============================================================
+async function timpaGrafikGuru() {
+  const canvasAvg = document.getElementById('guruChartAvgPerClass');
+  if (!canvasAvg) return;
+
+  try {
+    // 1. Ambil daftar grup milik guru
+    const { data: myClasses } = await supabaseClient
+      .from('classes')
+      .select('id, class_name')
+      .eq('teacher_id', currentUser.id);
+
+    if (!myClasses || myClasses.length === 0) return;
+
+    const classNames = [];
+    const avgScores = [];
+
+    // 2. Looping setiap kelas untuk mencari nilai rata-ratanya masing-masing
+    for (const kelas of myClasses) {
+      classNames.push(kelas.class_name);
+
+      // Cari siswa di kelas ini
+      const { data: members } = await supabaseClient
+        .from('class_members')
+        .select('student_id')
+        .eq('class_id', kelas.id);
+        
+      const studentIds = (members || []).map(m => m.student_id);
+
+      let rataRataKelas = 0;
+
+      if (studentIds.length > 0) {
+        // Ambil nilai dari siswa-siswa di kelas ini
+        const { data: nilais } = await supabaseClient
+          .from('nilai_penilaian')
+          .select('nilai')
+          .in('siswa_id', studentIds);
+
+        const valid = (nilais || []).filter(n => n.nilai !== null).map(n => n.nilai);
+        
+        if (valid.length > 0) {
+          const total = valid.reduce((a, b) => a + b, 0);
+          rataRataKelas = total / valid.length;
+        }
+      }
+
+      avgScores.push(rataRataKelas.toFixed(1));
+    }
+
+    // 3. Gambar ulang grafik
+    if (window.chartAvgClassGuru) window.chartAvgClassGuru.destroy();
+    
+    window.chartAvgClassGuru = new Chart(canvasAvg, {
+      type: 'bar',
+      data: {
+        labels: classNames,
+        datasets: [{
+          label: 'Rata-rata Nilai',
+          data: avgScores,
+          backgroundColor: '#0084FF',
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 100 } }
+      }
+    });
+
+  } catch (err) {
+    console.log("Gagal timpa grafik:", err);
+  }
+}
+
+// Panggil fungsi ini otomatis saat halaman selesai dimuat
+window.addEventListener('load', () => {
+  // Tunggu sebentar agar grafik lama selesai dimuat
+  setTimeout(timpaGrafikGuru, 1500);
+});
+
+// Panggil juga saat menu dashboard diklik
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('#guruSidebar .sidebar-item');
+  if (btn && /dashboard/i.test(btn.textContent)) {
+    setTimeout(timpaGrafikGuru, 800);
+  }
+});
 </script>
 </body>
 </html>
