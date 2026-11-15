@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor Nilai Siswa - EduSmart LMS</title>
+<script src="https://cdn.tailwindcss.com" defer></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  .fade-in { animation: fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: translateY(0);} }
+  
+  /* Badge status warna */
+  .badge-tuntas { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+  .badge-remidi { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+<!-- Toast Notification -->
+<div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] items-center justify-center hidden">
+  <div class="bg-white rounded-2xl shadow-xl px-5 py-4 flex items-center gap-3">
+    <i class="fa-solid fa-spinner fa-spin text-indigo-600"></i>
+    <span class="text-sm font-semibold text-slate-700">Memuat data...</span>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="bg-indigo-700 text-white sticky top-0 z-30 shadow-md">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="bg-white text-indigo-700 rounded-full flex items-center justify-center w-10 h-10 shadow-lg">
+          <i class="fa-solid fa-chart-simple text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">Monitor Nilai Siswa</h1>
+          <p class="text-xs text-indigo-200">EduSmart LMS · KKM 75</p>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="loadData()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 px-3 rounded-lg transition" title="Refresh Data">
+        <i class="fa-solid fa-rotate"></i> Refresh
+      </button>
+      <a href="./index.html" class="bg-red-500 hover:bg-red-600 text-white text-xs py-2 px-3 rounded-lg transition" title="Kembali ke Dashboard">
+        <i class="fa-solid fa-arrow-left"></i> Kembali
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 fade-in">
+  
+  <!-- Kartu Ringkasan -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-xl">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <div>
+        <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Data Ujian</div>
+        <div class="text-2xl font-bold text-slate-800" id="stat-total">0</div>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
+        <i class="fa-solid fa-check-double"></i>
+      </div>
+      <div>
+        <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tuntas (≥ 75)</div>
+        <div class="text-2xl font-bold text-emerald-700" id="stat-tuntas">0</div>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div>
+        <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Remidi (&lt; 75)</div>
+        <div class="text-2xl font-bold text-amber-700" id="stat-remidi">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabel Data -->
+  <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+    <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
+      <h3 class="font-bold text-sm flex items-center gap-2">
+        <i class="fa-solid fa-file-invoice text-indigo-600"></i> Hasil Ujian Siswa
+      </h3>
+    </div>
+    
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs text-left border-collapse">
+        <thead class="bg-white border-b text-slate-600 font-bold">
+          <tr>
+            <th class="p-4 w-16 text-center">No</th>
+            <th class="p-4">Nama Siswa</th>
+            <th class="p-4 w-32 text-center">Nilai</th>
+            <th class="p-4 w-32 text-center">Keterangan</th>
+          </tr>
+        </thead>
+        <tbody id="table-body" class="divide-y divide-slate-100">
+          <tr>
+            <td colspan="4" class="p-10 text-center text-slate-400">
+              <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>Memuat data dari Supabase...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // ================= KONFIGURASI SUPABASE =================
+  const SUPABASE_URL = 'https://fjedugqoeupieqxfcprw.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqZWR1Z3FvZXVwaWVxeGZjcHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDgwNTcsImV4cCI6MjEwOTAyNDA1N30.R59XI8nSssSc4-sk5YZtdqGw168OrZHH6ZL6SgF2wSw';
+  const KKM = 75; // Batas Nilai KKM
+
+  // Inisialisasi Supabase
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ================= UTILITAS UI =================
+  function showLoading(on) {
+    const el = document.getElementById('loading-overlay');
+    if (on) {
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    } else {
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+  }
+
+  function showToast(msg, type = "info") {
+    const c = document.getElementById('toast-container');
+    const bg = type === "success" ? "bg-emerald-600" : type === "error" ? "bg-red-600" : "bg-indigo-600";
+    const t = document.createElement("div");
+    t.className = `${bg} text-white text-xs px-4 py-3 rounded-xl shadow-xl flex items-center justify-between gap-3 fade-in`;
+    t.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" class="text-white/80 hover:text-white"><i class="fa-solid fa-xmark"></i></button>`;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ================= FUNGSI UTAMA =================
+  async function loadData() {
+    showLoading(true);
+    const tbody = document.getElementById('table-body');
+    
+    try {
+      // 1. Ambil data hasil ujian
+      const { data: hasilData, error: hasilError } = await supabaseClient
+        .from('hasil_ujian')
+        .select('*')
+        .order('nilai', { ascending: false });
+
+      if (hasilError) throw hasilError;
+
+      // 2. Ambil data profil siswa untuk mendapatkan nama
+      const { data: profilesData, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('id, full_name, email');
+
+      if (profileError) throw profileError;
+
+      // Buat map ID -> Nama untuk pencarian cepat
+      const mapSiswa = {};
+      (profilesData || []).forEach(p => {
+        mapSiswa[p.id] = p.full_name || p.email || 'Siswa Tanpa Nama';
+      });
+
+      // 3. Hitung Statistik
+      let totalTuntas = 0;
+      let totalRemidi = 0;
+
+      if (!hasilData || hasilData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-slate-400">Belum ada data hasil ujian.</td></tr>`;
+        document.getElementById('stat-total').innerText = "0";
+        document.getElementById('stat-tuntas').innerText = "0";
+        document.getElementById('stat-remidi').innerText = "0";
+        return;
+      }
+
+      // Render Data
+      tbody.innerHTML = hasilData.map((row, index) => {
+        const namaSiswa = mapSiswa[row.siswa_id] || `Siswa (${row.siswa_id ? row.siswa_id.substring(0, 5) : '?'}...)`;
+        const nilai = Number(row.nilai) || 0;
+        
+        // Logika Keterangan (KKM 75)
+        const isTuntas = nilai >= KKM;
+        if (isTuntas) totalTuntas++;
+        else totalRemidi++;
+
+        const badgeClass = isTuntas ? 'badge-tuntas' : 'badge-remidi';
+        const badgeText = isTuntas ? '✓ TUNTAS' : '✗ REMIDI';
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-4 text-center font-mono text-slate-400">${index + 1}</td>
+            <td class="p-4 font-semibold text-slate-800">${namaSiswa}</td>
+            <td class="p-4 text-center font-black text-sm ${isTuntas ? 'text-emerald-700' : 'text-amber-700'}">
+              ${nilai}
+            </td>
+            <td class="p-4 text-center">
+              <span class="${badgeClass} text-[10px] font-bold px-3 py-1 rounded-full whitespace-nowrap">${badgeText}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Update Kartu Statistik
+      document.getElementById('stat-total').innerText = hasilData.length;
+      document.getElementById('stat-tuntas').innerText = totalTuntas;
+      document.getElementById('stat-remidi').innerText = totalRemidi;
+
+      showToast(`Berhasil memuat ${hasilData.length} data ujian.`, "success");
+
+    } catch (err) {
+      console.error(err);
+      tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-red-500 font-bold">Gagal memuat data: ${err.message}</td></tr>`;
+      showToast("Gagal mengambil data dari Supabase.", "error");
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  // Jalankan saat halaman dimuat
+  document.addEventListener("DOMContentLoaded", loadData);
+
+</script>
+</body>
+</html>
