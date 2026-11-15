@@ -1252,73 +1252,72 @@
     </div>
   </div>
 
-    <header id="appHeader" class="app-header hidden">
+  <header id="appHeader" class="app-header hidden">
     <div class="brand-title">
       <button class="btn-sidebar-toggle" onclick="toggleSidebar()" title="Menu"><i class="fas fa-bars"></i></button>
       <i class="fas fa-graduation-cap" style="color: #fbbf24;"></i> EduSmart LMS
     </div>
     
     <div class="user-badge">
-  <div>
-    <span id="userNameDisplay" style="font-weight: 700; font-size: 0.9rem;">-</span>
-    <span id="userRoleTag" class="role-tag">ROLE</span>
-  </div>
-
-  <!-- TOMBOL GANTI TEMA DI SINI -->
-  <div class="theme-picker">
-    <span>Tema:</span>
-    <button class="theme-btn btn-blue" onclick="document.body.className='theme-blue'" title="Biru"></button>
-    <button class="theme-btn btn-green" onclick="document.body.className='theme-green'" title="Hijau"></button>
-    <button class="theme-btn btn-red" onclick="document.body.className='theme-red'" title="Merah"></button>
-    <button class="theme-btn btn-purple" onclick="document.body.className='theme-purple'" title="Ungu"></button>
-  </div>
-  <!-- SAMPAI SINI -->
-
-  <!-- ===== PATCH: TOMBOL INTIP (khusus admin) ===== -->
-  <div id="impersonateControl" class="hidden" style="position:relative;margin-right:6px;">
-    <button class="lms-action sm" id="impersonateBtn" onclick="toggleImpersonateMenu(event)" title="Intip dashboard guru/siswa">
-      <i class="fas fa-user-secret"></i> Intip
-    </button>
-    <div id="impersonateMenu" class="notif-panel" style="display:none;width:320px;right:0;top:48px;padding:14px;">
-      <div style="font-weight:800;font-size:0.85rem;margin-bottom:8px;color:var(--text-main);">
-        <i class="fas fa-user-secret" style="color:var(--accent);"></i> Intip Dashboard
+      <div>
+        <span id="userNameDisplay" style="font-weight: 700; font-size: 0.9rem;">-</span>
+        <span id="userRoleTag" class="role-tag">ROLE</span>
       </div>
-      <div class="lms-field" style="margin-bottom:8px;">
-        <label>Cari Guru / Siswa</label>
-        <input id="impersonateSearch" placeholder="Ketik nama / email..." oninput="filterImpersonateList()">
-      </div>
-      <div id="impersonateList" style="max-height:280px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;">
-        <div class="notif-empty">Memuat...</div>
-      </div>
-    </div>
-  </div>
-  <!-- ===== END PATCH ===== -->
 
-  <div class="notif-wrap">
-    <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel(event)" title="Notifikasi">
-      <i class="fas fa-bell"></i>
-      <span class="notif-badge" id="notifBadge">0</span>
-    </button>
-    <div class="notif-panel" id="notifPanel">
-      <div class="notif-header">
-        <h4><i class="fas fa-bell" style="color: var(--accent); margin-right: 4px;"></i> Notifikasi</h4>
-        <div class="notif-header-actions">
-          <button class="notif-mini-btn" onclick="markAllNotificationsRead()" title="Tandai semua dibaca">✓ Semua</button>
-          <button class="notif-mini-btn" onclick="deleteAllNotifications()" title="Hapus semua">🗑️</button>
+      <!-- TOMBOL GANTI TEMA DI SINI -->
+      <div class="theme-picker">
+        <span>Tema:</span>
+        <button class="theme-btn btn-blue" onclick="document.body.className='theme-blue'" title="Biru"></button>
+        <button class="theme-btn btn-green" onclick="document.body.className='theme-green'" title="Hijau"></button>
+        <button class="theme-btn btn-red" onclick="document.body.className='theme-red'" title="Merah"></button>
+        <button class="theme-btn btn-purple" onclick="document.body.className='theme-purple'" title="Ungu"></button>
+      </div>
+
+      <!-- ===== PATCH: TOMBOL INTIP (khusus admin) ===== -->
+      <div id="impersonateControl" class="hidden" style="position:relative;margin-right:6px;">
+        <button class="lms-action sm" id="impersonateBtn" onclick="toggleImpersonateMenu(event)" title="Intip dashboard guru/siswa">
+          <i class="fas fa-user-secret"></i> Intip
+        </button>
+        <div id="impersonateMenu" class="notif-panel" style="display:none;width:320px;right:0;top:48px;padding:14px;">
+          <div style="font-weight:800;font-size:0.85rem;margin-bottom:8px;color:var(--text-main);">
+            <i class="fas fa-user-secret" style="color:var(--accent);"></i> Intip Dashboard
+          </div>
+          <div class="lms-field" style="margin-bottom:8px;">
+            <label>Cari Guru / Siswa</label>
+            <input id="impersonateSearch" placeholder="Ketik nama / email..." oninput="filterImpersonateList()">
+          </div>
+          <div id="impersonateList" style="max-height:280px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;">
+            <div class="notif-empty">Memuat...</div>
+          </div>
         </div>
       </div>
-      <div class="notif-list" id="notifList">
-        <div class="notif-empty">Memuat...</div>
+      <!-- ===== END PATCH ===== -->
+
+      <div class="notif-wrap">
+        <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel(event)" title="Notifikasi">
+          <i class="fas fa-bell"></i>
+          <span class="notif-badge" id="notifBadge">0</span>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-header">
+            <h4><i class="fas fa-bell" style="color: var(--accent); margin-right: 4px;"></i> Notifikasi</h4>
+            <div class="notif-header-actions">
+              <button class="notif-mini-btn" onclick="markAllNotificationsRead()" title="Tandai semua dibaca">✓ Semua</button>
+              <button class="notif-mini-btn" onclick="deleteAllNotifications()" title="Hapus semua">🗑️</button>
+            </div>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-empty">Memuat...</div>
+          </div>
+          <div class="notif-footer">
+            <button class="notif-mini-btn" onclick="loadNotifications()">🔄 Refresh</button>
+          </div>
+        </div>
       </div>
-      <div class="notif-footer">
-        <button class="notif-mini-btn" onclick="loadNotifications()">🔄 Refresh</button>
-      </div>
+      <button class="btn-logout" onclick="handleLogout()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
     </div>
-  </div>
-  <button class="btn-logout" onclick="handleLogout()">
-    <i class="fas fa-sign-out-alt"></i> Logout
-  </button>
-</div>
   </header>
 
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -1340,6 +1339,10 @@
         <button class="sidebar-item" onclick="adminNav('schedules', this)"><i class="fas fa-calendar-days"></i> Jadwal Sesi</button>
         <button class="sidebar-item" onclick="adminNav('materials', this)"><i class="fas fa-book-open"></i> Materi</button>
         <button class="sidebar-item" onclick="adminNav('assignments', this)"><i class="fas fa-tasks"></i> Tugas & Pengumpulan</button>
+        
+        <!-- MENU MONITOR KUIS -->
+        <button class="sidebar-item" onclick="adminNav('monitor', this)"><i class="fas fa-desktop"></i> Monitor Kuis</button>
+        
         <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="adminNav('rapor', this)"><i class="fas fa-file-lines"></i> Rapor Digital</button>
         <div class="sidebar-divider"></div>
@@ -1526,7 +1529,7 @@
         <!-- MATERIALS -->
         <div id="admin-view-materials" class="admin-view hidden">
           <h2 style="margin-bottom: 1.5rem;">Materi</h2>
-                    <div class="panel-box">
+          <div class="panel-box">
             <div class="panel-title"><span><i class="fas fa-book-open" style="color: var(--accent);"></i> Tambah Materi</span></div>
             <form onsubmit="adminCreateMaterial(event)">
               <div class="lms-grid">
@@ -1575,6 +1578,28 @@
             <div class="panel-title">Pengumpulan Siswa</div>
             <div class="lms-field"><label>Pilih Tugas</label><select id="adminGradeSelect" onchange="loadAdminSubmissions()"><option value="">Pilih tugas...</option></select></div>
             <div id="adminSubmissionList"></div>
+          </div>
+        </div>
+
+        <!-- ADMIN - MONITOR KUIS -->
+        <div id="admin-view-monitor" class="admin-view hidden">
+          <h2 style="margin-bottom: 1.5rem;">Monitor Pengerjaan Kuis</h2>
+          <div class="panel-box">
+            <div class="panel-title">
+              <span><i class="fas fa-desktop" style="color: var(--accent);"></i> Siswa yang Sudah Mengumpulkan Jawaban</span>
+              <button class="lms-action sm primary" onclick="window.open('monitor.html', '_blank')"><i class="fas fa-external-link-alt"></i> Buka Halaman Monitor Penuh</button>
+            </div>
+            <p class="lms-muted" style="margin-bottom: 1rem;">Data ini diambil langsung dari tabel <code>jawaban_siswa</code> di Supabase secara real-time.</p>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr><th>Nama Siswa</th><th>Paket ID</th><th>Soal ID</th><th>Status Jawaban</th><th>Waktu Kirim</th></tr>
+                </thead>
+                <tbody id="adminMonitorTableBody">
+                  <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -1818,6 +1843,10 @@
         <button class="sidebar-item" onclick="guruNav('materials', this)"><i class="fas fa-book-open"></i> Materi</button>
         <button class="sidebar-item" onclick="guruNav('assignments', this)"><i class="fas fa-tasks"></i> Tugas</button>
         <button class="sidebar-item" onclick="guruNav('grading', this)"><i class="fas fa-check-double"></i> Penilaian</button>
+        
+        <!-- MENU MONITOR KUIS -->
+        <button class="sidebar-item" onclick="guruNav('monitor', this)"><i class="fas fa-desktop"></i> Monitor Kuis</button>
+        
         <button class="sidebar-item" onclick="window.open('buat_kuis.html', '_blank')"><i class="fas fa-file-signature"></i> buat Kuis</button>
         <button class="sidebar-item" onclick="guruNav('rapor', this)"><i class="fas fa-file-lines"></i> Rapor Siswa</button>
         <div class="sidebar-divider"></div>
@@ -1972,6 +2001,28 @@
             <div class="panel-title">Pilih Tugas</div>
             <div class="lms-field"><label>Tugas</label><select id="guruGradeSelect" onchange="loadGuruSubmissions()"><option value="">Pilih tugas...</option></select></div>
             <div id="guruSubmissionList" style="margin-top:1rem"></div>
+          </div>
+        </div>
+
+        <!-- GURU - MONITOR KUIS -->
+        <div id="guru-view-monitor" class="guru-view hidden">
+          <h2 style="margin-bottom: 1.5rem;">Monitor Pengerjaan Kuis</h2>
+          <div class="panel-box">
+            <div class="panel-title">
+              <span><i class="fas fa-desktop" style="color: var(--accent);"></i> Siswa yang Sudah Mengumpulkan Jawaban</span>
+              <button class="lms-action sm primary" onclick="window.open('monitor.html', '_blank')"><i class="fas fa-external-link-alt"></i> Buka Halaman Monitor Penuh</button>
+            </div>
+            <p class="lms-muted" style="margin-bottom: 1rem;">Data ini diambil langsung dari tabel <code>jawaban_siswa</code> di Supabase secara real-time.</p>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr><th>Nama Siswa</th><th>Paket ID</th><th>Soal ID</th><th>Status Jawaban</th><th>Waktu Kirim</th></tr>
+                </thead>
+                <tbody id="guruMonitorTableBody">
+                  <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -2260,7 +2311,6 @@
         </div>
 
         <!-- FILES -->
-        <!-- FILES -->
         <div id="siswa-view-files" class="siswa-view hidden">
           <h2 style="margin-bottom: 1.5rem;">File Kelas</h2>
           <div class="panel-box">
@@ -2489,6 +2539,7 @@ const ADMIN_LOADERS = {
   schedules: () => { loadAdminClasses(); loadAdminSubjects(); loadAdminSchedules(); },
   materials: () => { loadAdminClasses(); loadAdminSubjects(); loadAdminMaterials(); },
   assignments: () => { loadAdminClasses(); loadAdminSubjects(); loadAdminAssignments(); loadAdminAssignmentOptions(); },
+  monitor: () => loadMonitorKuis('adminMonitorTableBody'),
   news: () => loadAdminNews(),
   blocks: () => { loadAdminBlocks(); loadAdminBlockOptions(); },
   menus: () => { loadAdminMenus(); loadAdminMenuParentOptions(); },
@@ -2505,9 +2556,6 @@ function adminNav(view, btn) {
   ADMIN_LOADERS[view]?.();
 }
 
-// ============================================================
-// ✅ GURU NAV — SATU DEKLARASI SAJA (tidak ada override)
-// ============================================================
 function guruNav(view, btn) {
   switchView('guruDashboard', 'guru-view-' + view, btn);
   const map = {
@@ -2522,6 +2570,7 @@ function guruNav(view, btn) {
       loadGuruAssignments();
     },
     grading: () => loadGuruAssignmentOptions(),
+    monitor: () => loadMonitorKuis('guruMonitorTableBody'), // <-- MENU MONITOR GURU
     files: () => loadGuruFiles(),
     menus: () => loadGuruMenus(),
     rapor: () => { loadGuruRaporPeriods(); loadGuruGroupOptions(); loadGuruRapor(); }
@@ -2537,7 +2586,7 @@ function guruNav(view, btn) {
 function siswaNav(view, btn) {
   switchView('siswaDashboard', 'siswa-view-' + view, btn);
   const map = {
-    overview: () => { loadSiswaOverview(); loadSiswaDailyStreak(); }, // <-- DIPERBARUI
+    overview: () => { loadSiswaOverview(); loadSiswaDailyStreak(); },
     groups: () => loadSiswaGroups(),
     schedules: () => loadSiswaSchedules(),
     materials: () => loadSiswaMaterials(),
@@ -2545,7 +2594,7 @@ function siswaNav(view, btn) {
     files: () => loadSiswaFiles(),
     teachermenus: () => loadSiswaTeacherMenus(),
     rapor: () => { loadSiswaRaporPeriods(); loadSiswaRapor(); },
-    dailygoals: () => loadSiswaDailyGoals() // <-- DITAMBAHKAN
+    dailygoals: () => loadSiswaDailyGoals()
   };
   map[view]?.();
 }
@@ -2616,15 +2665,17 @@ async function handleLogin(e) {
       btn.innerHTML = originalBtnText;
       return;
     }
-        // Beri jeda sedikit agar token login benar-benar tersimpan
+    
+    // Beri jeda sedikit agar token login benar-benar tersimpan
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('is_active, role')
       .eq('id', data.user.id)
-      .limit(1) // Ganti maybeSingle() dengan limit(1)
+      .limit(1)
       .then(res => ({ data: res.data ? res.data[0] : null, error: res.error }));
+      
     if (profileError || !profile) {
       showToast('⚠️ Profil tidak ditemukan. Hubungi admin.');
       await supabaseClient.auth.signOut();
@@ -2632,14 +2683,15 @@ async function handleLogin(e) {
       btn.innerHTML = originalBtnText;
       return;
     }
-    // Ubah pengecekan menjadi !== true (jika bukan true, blokir)
-if (profile.role === 'siswa' && profile.is_active !== true) {
-  showToast('⏳ Akun Anda belum disetujui Admin. Silakan tunggu.');
-  await supabaseClient.auth.signOut();
-  btn.disabled = false;
-  btn.innerHTML = originalBtnText;
-  return;
-}
+    
+    if (profile.role === 'siswa' && profile.is_active !== true) {
+      showToast('⏳ Akun Anda belum disetujui Admin. Silakan tunggu.');
+      await supabaseClient.auth.signOut();
+      btn.disabled = false;
+      btn.innerHTML = originalBtnText;
+      return;
+    }
+    
     currentUser = data.user;
     showToast('✅ Login berhasil! Memuat data...');
     await loadUserProfile(data.user.id);
@@ -2662,7 +2714,6 @@ async function handleLogout() {
   NOTIF_CACHE.items = [];
   NOTIF_CACHE.isOpen = false;
   showToast('👋 Berhasil keluar');
-  // Redirect ke halaman utama
   window.location.href = 'index.html';
 }
 
@@ -2693,6 +2744,65 @@ function showLoginView() {
   ['adminDashboard', 'guruDashboard', 'siswaDashboard'].forEach(id => document.getElementById(id).classList.add('hidden'));
   document.getElementById('loginView').classList.remove('hidden');
 }
+
+// ============================================================
+// FUNGSI MONITOR KUIS (jawaban_siswa)
+// ============================================================
+async function loadMonitorKuis(targetTableId) {
+  const tbody = document.getElementById(targetTableId);
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat data dari Supabase...</td></tr>';
+  
+  try {
+    // 1. Ambil data jawaban_siswa
+    const { data: jawaban, error: errJwb } = await supabaseClient
+      .from('jawaban_siswa')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50); // Batasi 50 data terbaru
+
+    if (errJwb) throw errJwb;
+
+    if (!jawaban || jawaban.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada data jawaban siswa.</td></tr>';
+      return;
+    }
+
+    // 2. Ambil data profil untuk nama siswa
+    const studentIds = [...new Set(jawaban.map(j => j.siswa_id))];
+    const { data: profiles } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, email')
+      .in('id', studentIds);
+
+    const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+    // 3. Render ke Tabel
+    tbody.innerHTML = jawaban.map(j => {
+      const student = profileMap.get(j.siswa_id) || {};
+      const namaSiswa = student.full_name || student.email || `Siswa (${j.siswa_id.substring(0,5)}...)`;
+      const statusBadge = j.benar 
+        ? '<span class="lms-status">BENAR</span>' 
+        : '<span class="lms-status danger">SALAH</span>';
+      const waktu = j.created_at ? new Date(j.created_at).toLocaleString('id-ID') : '-';
+
+      return `
+        <tr>
+          <td><strong>${escapeHtml(namaSiswa)}</strong></td>
+          <td>${j.paket_id || '-'}</td>
+          <td>${j.soal_id || '-'}</td>
+          <td>${statusBadge}</td>
+          <td>${waktu}</td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger)">Gagal memuat data: ${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
 
 // ============================================================
 // ==================== ADMIN MODULES =========================
@@ -4086,9 +4196,6 @@ async function guruDeleteMaterial(id) {
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
-// ============================================================
-// ✅ loadGuruAssignments — versi stabil dengan .map()
-// ============================================================
 async function loadGuruAssignments() {
   const el = document.getElementById('guruAssignmentList');
   if (!el) return;
@@ -5389,7 +5496,8 @@ async function renderSiswaRaporCharts(reportRows, periodId) {
 function cetakRaporSiswa() {
   window.print();
 }
-// === TAMBAHKAN SELURUH FUNGSI JS INI DI PALING BAWAH ===
+
+// === FUNGSI TARGET HARIAN SISWA ===
 async function loadSiswaDailyStreak() {
   if (!currentUser) return;
   const todayStr = new Date().toISOString().split('T')[0];
