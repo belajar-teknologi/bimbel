@@ -804,16 +804,15 @@ async function loadPaketSiswa() {
   const wrap = document.getElementById("paket-list-wrap");
   if (!wrap) return;
   try {
-    const kelas = appState.user.kelas || "";
-    // Paket AKTIF saja (paket nonaktif guru → tidak muncul)
+        // Hapus filter kelas, ambil semua paket yang aktif
     const pakets = await sbFetch("paket_soal",
-      `?aktif=eq.true&kelas=eq.${encodeURIComponent(kelas)}&order=created_at.desc&limit=100`);
+      `?aktif=eq.true&order=created_at.desc&limit=100`);
 
     if (!pakets.length) {
       wrap.innerHTML = `
         <div class="text-center py-8">
           <i class="fa-solid fa-inbox text-4xl text-slate-300 mb-3"></i>
-          <p class="text-slate-400 text-xs">Belum ada paket ujian untuk kelas ${esc(kelas)}.</p>
+          <p class="text-slate-400 text-xs">Belum ada paket ujian yang tersedia.</p>
         </div>`;
       return;
     }
@@ -1099,6 +1098,8 @@ async function mulaiUjian(paketId) {
     }
 
     // Load paket + soal
+        // Load paket + soal
+    // (Filter kelas dihapus di sini juga agar siswa bisa mengerjakan paket "SMP")
     const paket = (await sbFetch("paket_soal", `?id=eq.${paketId}&limit=1`))?.[0];
     if (!paket) throw new Error("Paket tidak ditemukan.");
     if (!paket.aktif) throw new Error("Paket sudah tidak aktif.");

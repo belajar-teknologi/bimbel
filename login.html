@@ -2616,11 +2616,15 @@ async function handleLogin(e) {
       btn.innerHTML = originalBtnText;
       return;
     }
+        // Beri jeda sedikit agar token login benar-benar tersimpan
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('is_active, role')
       .eq('id', data.user.id)
-      .maybeSingle();
+      .limit(1) // Ganti maybeSingle() dengan limit(1)
+      .then(res => ({ data: res.data ? res.data[0] : null, error: res.error }));
     if (profileError || !profile) {
       showToast('⚠️ Profil tidak ditemukan. Hubungi admin.');
       await supabaseClient.auth.signOut();
@@ -3861,17 +3865,32 @@ async function loadGuruGroupMembers() {
   if (!classId) { el.innerHTML = ''; return; }
   el.innerHTML = '<div class="lms-empty">Memuat...</div>';
   try {
-    const { data, error } = await supabaseClient.from('class_members').select('id, joined_at, student_id, profiles:student_id(full_name, email, nip_nisn, kelas)').eq('class_id', classId).order('joined_at', { ascending: false });
+    // 1. Ambil data anggota kelas
+    const { data, error } = await supabaseClient.from('class_members').select('id, joined_at, student_id').eq('class_id', classId).order('joined_at', { ascending: false });
     if (error) throw error;
     if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada anggota.</div>'; return; }
-    el.innerHTML = data.map(m => `
+
+    // 2. Ambil data profil berdasarkan student_id
+    const studentIds = data.map(m => m.student_id);
+    const { data: profiles, error: pError } = await supabaseClient.from('profiles').select('id, full_name, email, nip_nisn, kelas').in('id', studentIds);
+    if (pError) throw pError;
+    
+    const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+    // 3. Render ke HTML
+    el.innerHTML = data.map(m => {
+      const prof = profileMap.get(m.student_id) || {};
+      return `
       <div class="lms-card">
-        <b>${escapeHtml(m.profiles?.full_name || m.profiles?.email || m.student_id)}</b>
-        <div class="lms-muted">NISN: ${escapeHtml(m.profiles?.nip_nisn || '-')} • Kelas: ${escapeHtml(m.profiles?.kelas || '-')}</div>
+        <b>${escapeHtml(prof.full_name || prof.email || m.student_id)}</b>
+        <div class="lms-muted">NISN: ${escapeHtml(prof.nip_nisn || '-')} • Kelas: ${escapeHtml(prof.kelas || '-')}</div>
         <div style="margin-top:.5rem"><button class="lms-action sm danger" onclick="guruRemoveMember(${m.id})"><i class="fas fa-user-minus"></i> Keluarkan</button></div>
       </div>
-    `).join('');
-  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
+      `;
+    }).join('');
+  } catch (e) { 
+    el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; 
+  }
 }
 
 async function guruAddMember(e) {

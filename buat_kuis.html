@@ -325,16 +325,10 @@ async function sbUpsert(table, rows) {
 async function sbDelete(table, query = "") {
   const sb = getSupabaseConfig();
   if (!sb) throw new Error("Supabase belum dikonfigurasi.");
-  
   const res = await fetch(`${sb.url}/rest/v1/${table}${query}`, {
-    method: "DELETE", 
-    headers: sbHeaders() // Menghapus "Prefer: return=representation" agar tidak error saat kosong
+    method: "DELETE", headers: sbHeaders()
   });
-  
-  if (!res.ok) { 
-    const t = await res.text(); 
-    throw new Error(`Delete ${table} gagal: ${t.slice(0,200)}`); 
-  }
+  if (!res.ok) { const t = await res.text(); throw new Error(`Delete ${table} gagal: ${t.slice(0,200)}`); }
   return true;
 }
 
@@ -1265,33 +1259,12 @@ async function hapusPaket(id) {
   if (!confirm("Hapus paket ini? Soal di bank soal TIDAK dihapus.")) return;
   try {
     showLoading(true, "Menghapus...");
-    
-    // 1. Paksa hapus item soal dengan Prefer: return=representation
-    // Ini untuk memastikan tidak ada error "row level security" yang tersembunyi
-    await sbDelete("paket_soal_items", `?paket_id=eq.${id}`);
-    
-    // 2. Hapus paketnya
     await sbDelete("paket_soal", `?id=eq.${id}`);
-    
-    // 3. Hapus link materi
-    try { await kmDeleteRecord(id); } catch(e) { console.warn(e); }
-
-    showToast("✓ Paket berhasil dihapus.", "success");
-    
-    // 4. MENGOSONGKAN CACHE LOKAL
-    // Terkadang fungsi refresh membaca cache, jadi kita kosongkan dulu
-    __paketCache = []; 
-    
-    // 5. Panggil ulang render dengan delay sedikit agar Supabase selesai memproses
-    setTimeout(() => {
-      showLoading(false);
-      renderPaketList(document.getElementById("main-view-container")); 
-    }, 500);
-    
-  } catch (err) { 
-    showLoading(false); 
-    showToast("Gagal: " + err.message, "error"); 
-  }
+    await kmDeleteRecord(id);
+    showLoading(false);
+    showToast("Paket dihapus.", "success");
+    refreshPaket();
+  } catch (err) { showLoading(false); showToast("Gagal: " + err.message, "error"); }
 }
 /* =========================================================
    BAGIAN 3/7 — BANK SOAL (LIST + FORM MANUAL 5 JENIS)
