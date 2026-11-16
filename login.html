@@ -2501,7 +2501,10 @@
 const SUPABASE_URL = 'https://fjedugqoeupieqxfcprw.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqZWR1Z3FvZXVwaWVxeGZjcHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDgwNTcsImV4cCI6MjEwOTAyNDA1N30.R59XI8nSssSc4-sk5YZtdqGw168OrZHH6ZL6SgF2wSw';
 
-let supabaseClient = null;
+// =========================================================
+// BLOK INISIALISASI SUPABASE
+// =========================================================
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let currentProfile = null;
 
@@ -4292,37 +4295,78 @@ async function loadGuruMaterials() {
   }
 }
 
-async function guruCreateMaterial(e) {
-  e.preventDefault();
+async function guruCreateMaterial(event) {
+  event.preventDefault();
+  const btn = event.target.querySelector('button[type="submit"]');
+  const originalText = btn.innerHTML;
   
-  const title = document.getElementById('gmatTitle').value.trim();
-  const content = document.getElementById('gmatContent').value.trim();
-  const file_url = document.getElementById('gmatFile').value.trim() || null;
-  const video_url = document.getElementById('gmatVideo').value.trim() || null;
-  const published = document.getElementById('gmatPublished').checked;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
 
-  if (!title) { alert("Judul kosong!"); return; }
+  try {
+    const fileInput = document.getElementById('gmatFileUpload');
+    const manualUrl = document.getElementById('gmatFile').value;
+    
+    // ✅ GUNAKAN LET, BUKAN CONST (Untuk mencegah error "Assignment to constant variable")
+    let finalFileUrl = manualUrl || null; 
 
-  // Coba simpan
-  const { data, error } = await supabaseClient
-    .from('learning_materials')
-    .insert({
-      title: title,
-      content: content,
-      file_url: file_url,
-      video_url: video_url,
-      published: published,
-      created_by: currentUser.id 
-    })
-    .select();
+    // ✅ PROSES UPLOAD FILE KE CLOUDINARY JIKA ADA FILE YANG DIPILIH
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      
+      // Mengambil setting dari variabel global CLOUD_DEFAULT di file Anda
+      const cloudName = CLOUD_DEFAULT.cloudName; 
+      const uploadPreset = CLOUD_DEFAULT.uploadPreset;
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', uploadPreset);
+      // formData.append('folder', 'materi_guru'); // Hapus komentar ini jika folder sudah dibuat di Cloudinary
 
-  if (error) {
-    // Tampilkan Error jika gagal
-    alert("DATABASE ERROR:\n" + error.message);
-  } else {
-    // Jika berhasil
-    alert("SUKSES! Materi berhasil disimpan.");
-    window.location.reload();
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const cloudData = await response.json();
+      
+      if (cloudData.secure_url) {
+        finalFileUrl = cloudData.secure_url; // <--- Ini mengisi link dari Cloudinary
+      } else {
+        throw new Error('Cloudinary menolak upload: ' + (cloudData.error?.message || 'Unknown Error'));
+      }
+    }
+
+    // ✅ SIMPAN KE SUPABASE
+    const payload = {
+      title: document.getElementById('gmatTitle').value,
+      class_id: document.getElementById('gmatClass').value || null,
+      subject_id: document.getElementById('gmatSubject').value || null,
+      description: document.getElementById('gmatContent').value,
+      file_url: finalFileUrl, // Menyimpan link Cloudinary atau URL manual
+      video_url: document.getElementById('gmatVideo').value || null,
+      is_published: document.getElementById('gmatPublished').checked,
+      published: document.getElementById('gmatPublished').checked,
+      created_by: currentUser.id
+    };
+
+    const { error } = await supabaseClient.from('learning_materials').insert(payload);
+    if (error) throw error;
+
+    showToast('Materi berhasil disimpan!');
+    
+    // Reset form
+    event.target.reset();
+    document.getElementById('fileUploadName').innerText = 'Belum ada file dipilih';
+    
+    if (typeof loadGuruMaterials === 'function') loadGuruMaterials();
+
+  } catch (err) {
+    console.error('Error create material:', err);
+    showToast('Gagal menyimpan materi: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
   }
 }
 
@@ -4835,27 +4879,64 @@ async function loadSiswaSchedules() {
 }
 
 async function loadSiswaMaterials() {
-  const el = document.getElementById('siswaMaterialList');
-  el.innerHTML = '<div class="lms-empty">Memuat...</div>';
+  const container = document.getElementById('siswaMaterialList');
+  if (!container) return;
+  container.innerHTML = '<div class="lms-empty">Memuat materi...</div>';
+
   try {
-    const ids = await getSiswaGroupIds();
-    if (!ids.length) { el.innerHTML = '<div class="lms-empty">Anda belum tergabung di grup manapun.</div>'; return; }
-    const { data, error } = await supabaseClient.from('learning_materials').select('*, classes(class_name), subjects(subject_name)').in('class_id', ids).eq('is_published', true).order('created_at', { ascending: false });
-    if (error) throw error;
-    if (!data?.length) { el.innerHTML = '<div class="lms-empty">Belum ada materi yang dipublikasikan.</div>'; return; }
-    el.innerHTML = data.map(m => `
-      <div class="lms-card">
-        <b>${escapeHtml(m.title)}</b>
-        <div class="lms-muted">${escapeHtml(m.classes?.class_name || '-')} • ${escapeHtml(m.subjects?.subject_name || '-')} • ${formatDateTime(m.created_at)}</div>
-        ${m.description ? `<p style="margin-top:.4rem">${escapeHtml(m.description)}</p>` : ''}
-        ${m.content ? `<p>${escapeHtml(m.content)}</p>` : ''}
-        <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
-          ${m.file_url ? `<a href="${escapeHtml(m.file_url)}" target="_blank" rel="noopener" class="lms-action primary sm" style="text-decoration:none;"><i class="fas fa-file-download"></i> Buka / Unduh File Materi</a>` : ''}
-          ${m.video_url ? `<a href="${escapeHtml(m.video_url)}" target="_blank" rel="noopener" class="lms-action danger sm" style="text-decoration:none;"><i class="fab fa-youtube"></i> Tonton Video</a>` : ''}
+    // Ambil SEMUA materi yang statusnya published = true
+    // Kita gunakan .or agar sistem membaca kolom 'published' ATAU 'is_published'
+    const { data: materials, error: errMat } = await supabaseClient
+      .from('learning_materials')
+      .select('*') 
+      .eq('published', true) // Mengambil semua materi yang published
+      .order('created_at', { ascending: false });
+
+    if (errMat) throw errMat;
+
+    if (!materials || materials.length === 0) {
+      container.innerHTML = '<div class="lms-empty">Belum ada materi yang dipublikasikan.</div>';
+      return;
+    }
+
+    // Render materi ke HTML
+    let html = '';
+    materials.forEach(m => {
+      const fileUrl = m.file_url; 
+      const videoUrl = m.video_url;
+      
+      const btnFile = fileUrl 
+        ? `<a href="${fileUrl}" target="_blank" class="lms-action sm primary" style="margin-right:6px; margin-bottom: 6px;"><i class="fas fa-download"></i> Unduh File Materi</a>` 
+        : '';
+        
+      const btnVideo = videoUrl 
+        ? `<a href="${videoUrl}" target="_blank" class="lms-action sm success" style="margin-bottom: 6px;"><i class="fab fa-youtube"></i> Tonton Video</a>` 
+        : '';
+
+      // Tampilkan nama kelas jika materi punya class_id, atau tulisan "Semua Kelas"
+      const labelKelas = m.class_id ? `Kelas ID: ${m.class_id}` : `Semua Kelas`;
+
+      html += `
+        <div class="lms-card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h4>${m.title || 'Materi Tanpa Judul'}</h4>
+            <span class="lms-status info" style="font-size:0.65rem;">${labelKelas}</span>
+          </div>
+          <p class="lms-muted" style="margin-bottom: 8px; margin-top:4px;">${m.description || m.content || '-'}</p>
+          <div style="display:flex; flex-wrap:wrap;">
+            ${btnFile}
+            ${btnVideo}
+          </div>
         </div>
-      </div>
-    `).join('');
-  } catch (e) { el.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`; }
+      `;
+    });
+
+    container.innerHTML = html;
+
+  } catch (err) {
+    console.error('Gagal memuat materi siswa:', err);
+    container.innerHTML = `<div class="lms-empty">Gagal memuat materi: ${err.message}</div>`;
+  }
 }
 
 async function loadSiswaAssignments() {
