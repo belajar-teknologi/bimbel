@@ -2780,6 +2780,495 @@ setTimeout(() => {
     console.warn("[EduSmart] ⚠️ Masalah kompatibilitas:", masalah);
   }
 })();
+/* =========================================================
+   BAGIAN 6/6 — KUIS DARI PDF (dijawab dari dalam kuis.html)
+   Tidak mengubah struktur/state ujian paket reguler.
+   ========================================================= */
+
+/* ---------- Section dashboard ---------- */
+async function renderSectionKuisPdf() {
+  // Sisipkan container kecil setelah card paket reguler
+  const paketCard = document.getElementById("paket-list-wrap")?.closest(".bg-white.rounded-2xl");
+  if (!paketCard) return;
+  let wrap = document.getElementById("pdf-kuis-section");
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = "pdf-kuis-section";
+    wrap.className = "bg-white rounded-2xl border shadow-sm p-4";
+    paketCard.parentElement.insertBefore(wrap, paketCard.nextSibling);
+  }
+  wrap.innerHTML = `
+    <div class="flex items-center justify-between mb-3">
+      <div>
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-file-pdf text-rose-600"></i> Kuis dari PDF
+        </h3>
+        <p class="text-[11px] text-slate-500 mt-0.5">Kuis berbasis dokumen yang diaktifkan guru.</p>
+      </div>
+      <button onclick="loadKuisPdfSiswa(true)" class="text-slate-400 hover:text-indigo-600 p-2" title="Refresh">
+        <i class="fa-solid fa-rotate text-xs"></i>
+      </button>
+    </div>
+    <div id="pdf-kuis-list">
+      <div class="text-center py-6 text-slate-400 text-xs">
+        <i class="fa-solid fa-spinner fa-spin"></i> Memuat kuis PDF...
+      </div>
+    </div>`;
+  await loadKuisPdfSiswa(false);
+}
+
+async function loadKuisPdfSiswa(forceToast) {
+  const box = document.getElementById("pdf-kuis-list");
+  if (!box) return;
+  try {
+    const quizzes = await sbFetch("pdf_quizzes",
+      `?is_published=eq.true&order=created_at.desc&limit=50`);
+
+    // Filter kelas: kalau quiz punya class_name yang tidak cocok dengan siswa → skip
+    const kelasSiswa = String(appState.user?.kelas || "").trim().toLowerCase();
+    const cocok = (quizzes || []).filter(q => {
+      const k = String(q.class_name || "").trim().toLowerCase();
+      if (!k || k === "semua kelas" || k === "semua") return true;
+      return !kelasSiswa || k.includes(kelasSiswa) || kelasSiswa.includes(k);
+    });
+
+    if (!cocok.length) {
+      box.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">
+        <i class="fa-solid fa-inbox text-2xl mb-1 block"></i>
+        Belum ada kuis PDF yang tersedia.
+      </div>`;
+      return;
+    }
+
+    // Ambil riwayat attempt PDF siswa untuk status "sudah dikerjakan"
+    let attempts = [];
+    try {
+      attempts = await sbFetch("pdf_quiz_attempts",
+        `?student_id=eq.${encodeURIComponent(appState.user.siswaId)}&order=created_at.desc&limit=500`);
+    } catch (e) { /* tabel mungkin bernama lain; abaikan */ }
+
+    const attMap = {};
+    (attempts || []).forEach(a => {
+      if (!attMap[a.quiz_id]) attMap[a.quiz_id] = [];
+      attMap[a.quiz_id].push(a);
+    });
+
+    box.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      ${cocok.map(q => renderKartuKuisPdf(q, attMap[q.id] || [])).join("")}
+    </div>`;
+
+    if (forceToast) showToast("Daftar kuis PDF diperbarui.", "info");
+  } catch (err) {
+    console.error(err);
+    box.innerHTML = `<div class="text-center py-4 text-red-500 text-xs">
+      Gagal memuat kuis PDF: ${esc(err.message)}
+    </div>`;
+  }
+}
+
+function renderKartuKuisPdf(q, attemptArr) {
+  const sudah = attemptArr.length > 0;
+  const best = sudah ? Math.max(...attemptArr.map(a => Number(a.score) || 0)) : null;
+  const bestPct = sudah ? Math.max(...attemptArr.map(a => Number(a.percentage) || 0)) : null;
+  const soalCount = (q.question_types || []).length;
+
+  return `
+    <div class="border-2 rounded-2xl p-4 transition ${sudah ? 'border-rose-200 bg-rose-50/40' : 'border-slate-100 bg-white hover:border-rose-400'}">
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0 ${sudah ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700'}">
+          <i class="fa-solid fa-file-pdf"></i>
+        </div>
+        ${sudah
+          ? `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-rose-200 text-rose-800">SUDAH</span>`
+          : `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-indigo-100 text-indigo-700">BARU</span>`}
+      </div>
+      <h4 class="font-bold text-sm text-slate-800 leading-tight">${esc(q.title || "(tanpa judul)")}</h4>
+      <div class="mt-2 space-y-1 text-[11px] text-slate-600">
+        <div><i class="fa-solid fa-book text-indigo-500 w-4"></i> ${esc(q.subject || "-")}</div>
+        <div><i class="fa-solid fa-list-ol text-indigo-500 w-4"></i> ${soalCount} soal</div>
+        <div><i class="fa-solid fa-clock text-indigo-500 w-4"></i> ${q.duration_minutes || 0} menit</div>
+        <div><i class="fa-solid fa-file-lines text-indigo-500 w-4"></i> ${(q.visible_pages || []).length} halaman PDF</div>
+      </div>
+      ${sudah ? `
+        <div class="mt-3 p-2 bg-white border rounded-lg">
+          <div class="flex items-baseline justify-between">
+            <span class="text-[10px] text-slate-500">Nilai terbaik</span>
+            <span class="text-lg font-black text-rose-700">${bestPct !== null ? bestPct.toFixed(1) + "%" : "-"}</span>
+          </div>
+          <div class="text-[10px] text-slate-500 mt-1">Percobaan: <b>${attemptArr.length}</b></div>
+        </div>
+      ` : ""}
+      <button onclick="mulaiKuisPdf('${q.id}')"
+        class="w-full mt-3 ${sudah ? 'bg-rose-500 hover:bg-rose-600' : 'bg-indigo-600 hover:bg-indigo-700'} text-white font-bold text-xs py-2.5 rounded-xl">
+        <i class="fa-solid ${sudah ? 'fa-rotate-right' : 'fa-play'}"></i>
+        ${sudah ? "Kerjakan Lagi" : "Mulai Kuis PDF"}
+      </button>
+    </div>`;
+}
+
+/* ---------- Mulai kuis PDF ---------- */
+async function mulaiKuisPdf(quizId) {
+  showLoading(true, "Memuat kuis PDF...");
+  try {
+    const quiz = (await sbFetch("pdf_quizzes",
+      `?id=eq.${quizId}&is_published=eq.true&limit=1`))?.[0];
+    if (!quiz) throw new Error("Kuis tidak ditemukan atau belum aktif.");
+
+    const { data: sign, error: se } = await sb.storage
+      .from("edusmart-quiz-pdf")
+      .createSignedUrl(quiz.student_path, 3600);
+    if (se || !sign) throw new Error("PDF siswa tidak dapat dibuka: " + (se?.message || ""));
+
+    appState.pdfQuiz = {
+      quiz,
+      pdfUrl: sign.signedUrl,
+      questions: quiz.question_types || [],
+      answers: {},
+      startedAt: Date.now(),
+      finishAt: Date.now() + (Number(quiz.duration_minutes) || 30) * 60 * 1000,
+      timerId: null,
+      sudahSubmit: false
+    };
+
+    showLoading(false);
+    renderUjianPdf();
+  } catch (err) {
+    showLoading(false);
+    showToast("Gagal memulai kuis PDF: " + err.message, "error");
+  }
+}
+
+/* ---------- Render halaman ujian PDF (reuse layout, isi berbeda) ---------- */
+function renderUjianPdf() {
+  const c = document.getElementById("main-view-container");
+  const P = appState.pdfQuiz;
+  if (!c || !P) return;
+  const q = P.quiz;
+
+  // Matikan state paket reguler agar tidak bentrok
+  appState.paketAktif = null;
+  appState.soalList = [];
+  if (appState.timerId) { clearInterval(appState.timerId); appState.timerId = null; }
+
+  renderWatermark();
+
+  c.innerHTML = `
+    <div class="space-y-3 fade-in">
+      <div class="bg-white rounded-2xl border shadow-sm p-3 flex items-center justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="text-[10px] text-rose-600 font-bold">KUIS DARI PDF</div>
+          <div class="font-bold text-xs sm:text-sm text-slate-800 truncate">${esc(q.title || "Kuis")}</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">${esc(q.subject || "")} · Kelas ${esc(q.class_name || "-")}</div>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="text-[10px] text-slate-500 font-semibold">SISA WAKTU</div>
+          <div id="pdf-timer-display" class="text-xl sm:text-2xl text-rose-700 font-mono font-extrabold">--:--</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+        <div class="px-3 py-2 border-b bg-slate-50 flex items-center justify-between">
+          <div class="text-xs font-bold text-slate-700"><i class="fa-solid fa-file-pdf text-rose-600"></i> Dokumen PDF</div>
+          <a href="${esc(P.pdfUrl)}" target="_blank" rel="noopener" class="text-[11px] text-indigo-600 hover:underline">
+            <i class="fa-solid fa-up-right-from-square"></i> Buka tab baru
+          </a>
+        </div>
+        <iframe src="${esc(P.pdfUrl)}" class="w-full h-[55vh] bg-slate-100" frameborder="0"></iframe>
+      </div>
+
+      <div id="pdf-jawaban-wrap" class="space-y-3"></div>
+
+      <div class="bg-white rounded-2xl border shadow-sm p-3 sticky bottom-2">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <span id="pdf-progress-text" class="text-[11px] text-slate-500"><b class="text-emerald-700">0</b> dijawab</span>
+          <button onclick="batalKuisPdf()" class="text-[11px] text-slate-500 hover:text-red-600 font-semibold">
+            <i class="fa-solid fa-xmark"></i> Batal
+          </button>
+        </div>
+        <button onclick="submitKuisPdf()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl">
+          <i class="fa-solid fa-paper-plane"></i> Kumpulkan Jawaban PDF
+        </button>
+      </div>
+    </div>`;
+
+  renderPdfAnswerRows();
+  updatePdfProgress();
+  mulaiTimerPdf();
+  trapHistory();
+}
+
+/* ---------- Lembar jawaban per jenis ---------- */
+function renderPdfAnswerRows() {
+  const wrap = document.getElementById("pdf-jawaban-wrap");
+  const P = appState.pdfQuiz;
+  if (!wrap || !P) return;
+
+  const HURUF = ["A","B","C","D"];
+  wrap.innerHTML = P.questions.map(q => {
+    const no = q.no;
+    let inner = "";
+
+    if (q.type === "PG") {
+      inner = `<div class="flex flex-wrap gap-2 mt-2">${HURUF.map(h => `
+        <button type="button" data-no="${no}" data-val="${h}"
+          onclick="pilihJawabanPdf(${no}, '${h}', false)"
+          class="pdf-opt px-4 py-2 rounded-lg border-2 text-xs font-bold ${P.answers[no]===h ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-200'}">${h}</button>
+      `).join("")}</div>`;
+    } else if (q.type === "PGK") {
+      const cur = Array.isArray(P.answers[no]) ? P.answers[no] : [];
+      inner = `<div class="flex flex-wrap gap-2 mt-2">${HURUF.map(h => `
+        <button type="button" data-no="${no}" data-val="${h}"
+          onclick="pilihJawabanPdf(${no}, '${h}', true)"
+          class="pdf-opt px-4 py-2 rounded-lg border-2 text-xs font-bold ${cur.includes(h) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-200'}">${h}</button>
+      `).join("")}</div>`;
+    } else if (q.type === "KATEGORI") {
+      const sub = q.sub_count || 3;
+      const cur = Array.isArray(P.answers[no]) ? P.answers[no] : [];
+      inner = `<div class="mt-2 space-y-1.5">${Array.from({length: sub}, (_,i) => `
+        <div class="flex items-center justify-between text-xs bg-slate-50 rounded-lg p-2">
+          <span>Pernyataan ${i+1}</span>
+          <span class="flex gap-2">
+            <button type="button" onclick="pilihKategoriPdf(${no}, ${i}, 'B')"
+              class="px-3 py-1 rounded-md border text-[11px] font-bold ${cur[i]==='B'?'bg-emerald-600 text-white border-emerald-600':'bg-white border-slate-200'}">Benar</button>
+            <button type="button" onclick="pilihKategoriPdf(${no}, ${i}, 'S')"
+              class="px-3 py-1 rounded-md border text-[11px] font-bold ${cur[i]==='S'?'bg-red-600 text-white border-red-600':'bg-white border-slate-200'}">Salah</button>
+          </span>
+        </div>`).join("")}</div>`;
+    } else if (q.type === "ISIAN") {
+      inner = `<input type="text" value="${esc(P.answers[no] || "")}"
+        oninput="inputPdfText(${no}, this.value, false)"
+        placeholder="Tulis jawaban singkat..."
+        class="w-full mt-2 px-3 py-2 border-2 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">`;
+    } else {
+      inner = `<textarea rows="4" oninput="inputPdfText(${no}, this.value, true)"
+        placeholder="Tulis jawaban uraian..."
+        class="w-full mt-2 px-3 py-2 border-2 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">${esc(P.answers[no] || "")}</textarea>`;
+    }
+
+    const label = { PG:"Pilihan Ganda", PGK:"PG Kompleks", KATEGORI:"Benar/Salah", ISIAN:"Isian", URAIAN:"Uraian" }[q.type] || q.type;
+    return `
+      <div class="bg-white rounded-2xl border shadow-sm p-3" data-qrow="${no}">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">${no}</span>
+          <span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">${label}</span>
+          <span class="ml-auto text-[10px] text-slate-400">Bobot ${q.score || 1}</span>
+        </div>
+        ${inner}
+      </div>`;
+  }).join("");
+}
+
+function pilihJawabanPdf(no, val, multi) {
+  const P = appState.pdfQuiz; if (!P) return;
+  if (multi) {
+    let arr = Array.isArray(P.answers[no]) ? [...P.answers[no]] : [];
+    if (arr.includes(val)) arr = arr.filter(x => x !== val);
+    else arr.push(val);
+    arr.sort();
+    P.answers[no] = arr;
+  } else {
+    P.answers[no] = val;
+  }
+  renderPdfAnswerRows();
+  updatePdfProgress();
+}
+function pilihKategoriPdf(no, idx, val) {
+  const P = appState.pdfQuiz; if (!P) return;
+  const sub = P.questions.find(q => q.no === no)?.sub_count || 3;
+  let arr = Array.isArray(P.answers[no]) ? [...P.answers[no]] : Array(sub).fill("");
+  arr[idx] = val;
+  P.answers[no] = arr;
+  renderPdfAnswerRows();
+  updatePdfProgress();
+}
+function inputPdfText(no, val, isUraian) {
+  const P = appState.pdfQuiz; if (!P) return;
+  P.answers[no] = val;
+  updatePdfProgress();
+}
+
+function updatePdfProgress() {
+  const P = appState.pdfQuiz; if (!P) return;
+  let dijawab = 0;
+  P.questions.forEach(q => {
+    const a = P.answers[q.no];
+    if (q.type === "PG" || q.type === "ISIAN" || q.type === "URAIAN") {
+      if (String(a || "").trim()) dijawab++;
+    } else if (q.type === "PGK") {
+      if (Array.isArray(a) && a.length) dijawab++;
+    } else if (q.type === "KATEGORI") {
+      const sub = q.sub_count || 3;
+      if (Array.isArray(a) && a.length === sub && a.every(x => x)) dijawab++;
+    }
+  });
+  const el = document.getElementById("pdf-progress-text");
+  if (el) el.innerHTML = `<b class="text-emerald-700">${dijawab}</b> / ${P.questions.length} dijawab`;
+}
+
+/* ---------- Timer ---------- */
+function mulaiTimerPdf() {
+  const P = appState.pdfQuiz; if (!P) return;
+  if (P.timerId) clearInterval(P.timerId);
+  const tick = () => {
+    if (!appState.pdfQuiz || appState.pdfQuiz.sudahSubmit) {
+      clearInterval(appState.pdfQuiz.timerId);
+      return;
+    }
+    const sisa = Math.max(0, Math.floor((appState.pdfQuiz.finishAt - Date.now()) / 1000));
+    const el = document.getElementById("pdf-timer-display");
+    if (el) {
+      el.textContent = formatWaktu(sisa);
+      el.classList.toggle("text-red-600", sisa <= 300);
+    }
+    if (sisa <= 0) {
+      clearInterval(appState.pdfQuiz.timerId);
+      showToast("⏰ Waktu habis! Jawaban dikumpulkan otomatis.", "warning", 4000);
+      setTimeout(() => submitKuisPdf(true), 600);
+    }
+  };
+  tick();
+  P.timerId = setInterval(tick, 1000);
+}
+
+/* ---------- Batal & Submit ---------- */
+function batalKuisPdf() {
+  if (!confirm("Batalkan kuis PDF? Jawaban yang belum dikumpulkan akan hilang.")) return;
+  const P = appState.pdfQuiz;
+  if (P?.timerId) clearInterval(P.timerId);
+  appState.pdfQuiz = null;
+  sembunyikanWatermark();
+  releaseHistory();
+  renderDashboard();
+}
+
+async function submitKuisPdf(karenaWaktu) {
+  const P = appState.pdfQuiz;
+  if (!P || P.sudahSubmit) return;
+
+  // Validasi: minimal semua PG/PGK/KATEGORI/ISIAN terisi (URAIAN bebas)
+  for (const q of P.questions) {
+    const a = P.answers[q.no];
+    if (q.type === "URAIAN") continue;
+    if (q.type === "PG" || q.type === "ISIAN") {
+      if (!String(a || "").trim()) { showToast(`Nomor ${q.no} belum diisi.`, "warning"); return; }
+    } else if (q.type === "PGK") {
+      if (!Array.isArray(a) || !a.length) { showToast(`Nomor ${q.no} belum diisi.`, "warning"); return; }
+    } else if (q.type === "KATEGORI") {
+      const sub = q.sub_count || 3;
+      if (!Array.isArray(a) || a.length !== sub || a.some(x => !x)) { showToast(`Nomor ${q.no} belum lengkap.`, "warning"); return; }
+    }
+  }
+
+  P.sudahSubmit = true;
+  if (P.timerId) clearInterval(P.timerId);
+  sembunyikanWatermark();
+  releaseHistory();
+  showLoading(true, "Mengirim jawaban...");
+
+  try {
+    // Kirim format yang sama seperti kuis_pdf.html: keys string
+    const answersPayload = {};
+    P.questions.forEach(q => {
+      const a = P.answers[q.no];
+      if (q.type === "PGK") answersPayload[q.no] = (a || []).sort();
+      else if (q.type === "KATEGORI") answersPayload[q.no] = a || [];
+      else answersPayload[q.no] = a ?? "";
+    });
+
+    const { data, error } = await sbFetchRpc("submit_pdf_quiz_attempt", {
+      p_quiz_id: P.quiz.id,
+      p_answers: answersPayload
+    });
+    if (error) throw new Error(typeof error === "string" ? error : (error.message || "RPC gagal"));
+
+    showLoading(false);
+    renderHasilKuisPdf(Array.isArray(data) ? data[0] : data);
+  } catch (err) {
+    console.error(err);
+    showLoading(false);
+    P.sudahSubmit = false;
+    trapHistory();
+    showToast("Gagal mengumpulkan: " + err.message, "error", 5000);
+  }
+}
+
+/* ---------- Wrapper RPC via fetch (karena file ini pakai sbFetch, bukan supabase-js) ---------- */
+async function sbFetchRpc(fnName, params) {
+  const sb = getSupabaseConfig();
+  if (!sb) throw new Error("Supabase belum dikonfigurasi.");
+  const res = await fetch(`${sb.url}/rest/v1/rpc/${fnName}`, {
+    method: "POST",
+    headers: sbHeaders(),
+    body: JSON.stringify(params)
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    return { data: null, error: t.slice(0, 300) };
+  }
+  return { data: await res.json(), error: null };
+}
+
+/* ---------- Hasil ---------- */
+function renderHasilKuisPdf(r) {
+  const c = document.getElementById("main-view-container");
+  const P = appState.pdfQuiz;
+  if (!c || !P || !r) return;
+
+  const score = Number(r.score || 0);
+  const maxScore = Number(r.max_score || 0);
+  const pct = Number(r.percentage || 0);
+  const benar = Number(r.correct_count || 0);
+  const salah = Number(r.wrong_count || 0);
+  const pending = Number(r.pending_count || 0);
+
+  // Reset state
+  appState.pdfQuiz = null;
+  sembunyikanWatermark();
+  releaseHistory();
+
+  const gradient = pct >= 75
+    ? "linear-gradient(135deg,#10b981 0%,#047857 100%)"
+    : pct >= 50
+      ? "linear-gradient(135deg,#f59e0b 0%,#b45309 100%)"
+      : "linear-gradient(135deg,#ef4444 0%,#b91c1c 100%)";
+
+  c.innerHTML = `
+    <div class="max-w-2xl mx-auto space-y-4 fade-in">
+      <div style="background:${gradient}" class="rounded-2xl p-6 text-white shadow-lg text-center">
+        <div class="text-[10px] uppercase tracking-widest font-bold opacity-80">Hasil Kuis PDF</div>
+        <div class="text-sm mt-1 font-semibold">${esc(P.quiz.title || "Kuis")}</div>
+        <div class="text-6xl font-black my-3">${pct.toFixed(1)}<span class="text-2xl">%</span></div>
+        <div class="text-sm opacity-90">${score.toFixed(2)} / ${maxScore.toFixed(2)} poin</div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2">
+        <div class="bg-white rounded-xl border shadow-sm p-3 text-center">
+          <div class="text-[10px] text-slate-500 font-semibold">Benar</div>
+          <div class="text-2xl font-bold text-emerald-600 mt-1">${benar}</div>
+        </div>
+        <div class="bg-white rounded-xl border shadow-sm p-3 text-center">
+          <div class="text-[10px] text-slate-500 font-semibold">Salah</div>
+          <div class="text-2xl font-bold text-red-600 mt-1">${salah}</div>
+        </div>
+        <div class="bg-white rounded-xl border shadow-sm p-3 text-center">
+          <div class="text-[10px] text-slate-500 font-semibold">Perlu Koreksi</div>
+          <div class="text-2xl font-bold text-amber-600 mt-1">${pending}</div>
+        </div>
+      </div>
+
+      ${pending > 0 ? `
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-[11px] text-amber-900">
+          <i class="fa-solid fa-pen-fancy mr-1"></i>
+          Ada <b>${pending} soal uraian</b> yang akan dikoreksi guru. Nilai akhir bisa berubah.
+        </div>` : ""}
+
+      <button onclick="kembaliKeDashboard()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3 rounded-xl">
+        <i class="fa-solid fa-house"></i> Kembali ke Dashboard
+      </button>
+    </div>`;
+
+  showToast("✓ Jawaban terkirim!", "success");
+}
 </script>
 </body>
 </html>
