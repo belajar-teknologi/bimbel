@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Kuis Interaktif - EduSmart LMS</title>
 <script src="https://cdn.tailwindcss.com" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
@@ -131,11 +132,10 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 </main>
 
 <script>
-  // ==========================================================
+// ==========================================================
 // BRIDGE SESI LMS & KREDENSIAL API
 // ==========================================================
 (function() {
-  // 1. Suntikkan sesi Siswa dari URL login.html
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('siswa_id')) {
     const user = {
@@ -149,16 +149,15 @@ input, textarea { user-select: text; -webkit-user-select: text; }
     localStorage.setItem('edusmart_user', JSON.stringify(user));
   }
 
-  // 2. Suntikkan Konfigurasi Supabase
   const SUPABASE_URL = 'https://fjedugqoeupieqxfcprw.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqZWR1Z3FvZXVwaWVxeGZjcHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDgwNTcsImV4cCI6MjEwOTAyNDA1N30.R59XI8nSssSc4-sk5YZtdqGw168OrZHH6ZL6SgF2wSw';
-  
+
   localStorage.setItem('edusmart_supabase_url', SUPABASE_URL);
   localStorage.setItem('edusmart_supabase_anon_key', SUPABASE_KEY);
 })();
-// ==========================================================
+
 /* =========================================================
-   BAGIAN 1/5 — KONSTANTA, STATE, HELPER, CONFIG, ANTI-CHEAT, INIT
+   BAGIAN 1/6 — KONSTANTA, STATE, HELPER, CONFIG, ANTI-CHEAT, INIT
    ========================================================= */
 
 const STORAGE = {
@@ -176,11 +175,15 @@ const STORAGE = {
 
 const HURUF = ["A", "B", "C", "D"];
 const MAX_PELANGGARAN = 5;
-const KKM = 75;                  /* ✅ Nilai minimum lulus */
-const MAX_PERCOBAAN = 2;         /* ✅ 1 percobaan awal + 1 kesempatan remedial */
+const KKM = 75;
+const MAX_PERCOBAAN = 2;
+
+let sb = null;
 
 let appState = {
   user: null,
+  accessToken: null,
+  authUserId: null,
   db: null,
   paketAktif: null,
   soalList: [],
@@ -195,7 +198,8 @@ let appState = {
   logPelanggaran: [],
   sudahSubmit: false,
   timerId: null,
-  percobaanKe: 1                 /* ✅ Nomor percobaan saat ini */
+  percobaanKe: 1,
+  pdfQuiz: null
 };
 
 let __historyTrapped = false;
@@ -255,12 +259,23 @@ function showLoading(on, text = "Memuat...") {
   if (txt) txt.textContent = text;
 }
 
-/* ==== CONFIG ==== */
+/* ==== CONFIG & SUPABASE CLIENT ==== */
 function getSupabaseConfig() {
   const url = String(getLS(STORAGE.SB_URL)).trim();
   const key = String(getLS(STORAGE.SB_KEY)).trim();
   return url && key ? { url, key } : null;
 }
+
+function getSupabaseClient() {
+  if (sb) return sb;
+  const cfg = getSupabaseConfig();
+  if (!cfg || !window.supabase) return null;
+  sb = window.supabase.createClient(cfg.url, cfg.key, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+  return sb;
+}
+
 function getJsonBinCredential() {
   const key = String(getLS(STORAGE.JSONBIN_KEY)).trim();
   const type = String(getLS(STORAGE.JSONBIN_TYPE, "master")).toLowerCase();
@@ -270,21 +285,27 @@ function getAppConfig() { return safeParse(getLS(STORAGE.APP_CONFIG)); }
 
 /* ==== SUPABASE HELPERS ==== */
 function sbHeaders(extra = {}) {
-  const sb = getSupabaseConfig();
-  if (!sb) throw new Error("Supabase belum dikonfigurasi.");
-  return { "apikey": sb.key, "Authorization": `Bearer ${sb.key}`, "Content-Type": "application/json", ...extra };
+  const cfg = getSupabaseConfig();
+  if (!cfg) throw new Error("Supabase belum dikonfigurasi.");
+  const bearer = appState.accessToken || cfg.key;
+  return {
+    "apikey": cfg.key,
+    "Authorization": `Bearer ${bearer}`,
+    "Content-Type": "application/json",
+    ...extra
+  };
 }
 async function sbFetch(table, query = "") {
-  const sb = getSupabaseConfig();
-  if (!sb) throw new Error("Supabase belum dikonfigurasi.");
-  const res = await fetch(`${sb.url}/rest/v1/${table}${query}`, { headers: sbHeaders() });
+  const cfg = getSupabaseConfig();
+  if (!cfg) throw new Error("Supabase belum dikonfigurasi.");
+  const res = await fetch(`${cfg.url}/rest/v1/${table}${query}`, { headers: sbHeaders() });
   if (!res.ok) throw new Error(`Fetch ${table} gagal (${res.status}).`);
   return res.json();
 }
 async function sbInsert(table, rows) {
-  const sb = getSupabaseConfig();
-  if (!sb) throw new Error("Supabase belum dikonfigurasi.");
-  const res = await fetch(`${sb.url}/rest/v1/${table}`, {
+  const cfg = getSupabaseConfig();
+  if (!cfg) throw new Error("Supabase belum dikonfigurasi.");
+  const res = await fetch(`${cfg.url}/rest/v1/${table}`, {
     method: "POST",
     headers: sbHeaders({ "Prefer": "return=representation" }),
     body: JSON.stringify(Array.isArray(rows) ? rows : [rows])
@@ -293,7 +314,7 @@ async function sbInsert(table, rows) {
   return res.json();
 }
 
-/* ==== JSONBIN HELPERS (link materi + foto siswa) ==== */
+/* ==== JSONBIN HELPERS ==== */
 async function loadJsonBinDB() {
   const cfg = getAppConfig();
   const cred = getJsonBinCredential();
@@ -368,7 +389,6 @@ function lanjutUjian() {
   mintaFullscreen();
 }
 
-/* FIX #3 — history trap hanya aktif saat ujian */
 function trapHistory() {
   if (__historyTrapped) return;
   __historyTrapped = true;
@@ -381,13 +401,13 @@ function releaseHistory() {
   window.removeEventListener("popstate", __onPopState);
 }
 function __onPopState() {
-  if (appState.paketAktif && !appState.sudahSubmit) {
+  if ((appState.paketAktif && !appState.sudahSubmit) || (appState.pdfQuiz && !appState.pdfQuiz.sudahSubmit)) {
     try { history.pushState(null, "", location.href); } catch(e) {}
-    catatPelanggaran("back_button", "Tombol back ditekan");
+    if (appState.paketAktif) catatPelanggaran("back_button", "Tombol back ditekan");
   }
 }
 function __handlerBeforeUnload(e) {
-  if (appState.paketAktif && !appState.sudahSubmit) {
+  if ((appState.paketAktif && !appState.sudahSubmit) || (appState.pdfQuiz && !appState.pdfQuiz.sudahSubmit)) {
     e.preventDefault();
     e.returnValue = "Ujian sedang berlangsung. Yakin ingin keluar?";
     return e.returnValue;
@@ -439,15 +459,49 @@ function pasangAntiCheat() {
 /* =========================================================
    AUTH & INIT
    ========================================================= */
+async function syncSupabaseSession() {
+  const client = getSupabaseClient();
+  if (!client) return;
+  try {
+    const { data: { session } } = await client.auth.getSession();
+    if (session) {
+      appState.accessToken = session.access_token;
+      appState.authUserId = session.user.id;
+
+      // Jika edusmart_user belum ada di localStorage, ambil dari tabel profiles
+      if (!safeParse(getLS(STORAGE.USER))) {
+        const { data: prof } = await client.from("profiles")
+          .select("id,full_name,role,kelas,nis,is_active")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        if (prof && prof.is_active !== false) {
+          const u = {
+            id: prof.id,
+            siswaId: prof.id,
+            name: prof.full_name || "Siswa",
+            kelas: prof.kelas || "-",
+            role: prof.role || "siswa",
+            nis: prof.nis || "-"
+          };
+          setLS(STORAGE.USER, JSON.stringify(u));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[EduSmart] Gagal sinkron sesi Supabase:", e);
+  }
+}
+
 function checkAuth() {
   const user = safeParse(getLS(STORAGE.USER));
   if (!user) return { ok: false, msg: "Anda belum login. Silakan login di Dashboard dulu." };
   if (user.role !== "siswa") return { ok: false, msg: "Halaman ini khusus untuk siswa. Login sebagai siswa di Dashboard." };
   appState.user = user;
-  const sb = getSupabaseConfig();
-  if (!sb) return { ok: false, msg: "Supabase belum dikonfigurasi. Hubungi guru/admin." };
+  const cfg = getSupabaseConfig();
+  if (!cfg) return { ok: false, msg: "Supabase belum dikonfigurasi. Hubungi guru/admin." };
   return { ok: true };
 }
+
 function updateHeaderUI() {
   const u = appState.user;
   if (!u) return;
@@ -491,6 +545,8 @@ function updateHeaderUI() {
 
 /* ==== INIT ==== */
 document.addEventListener("DOMContentLoaded", async () => {
+  await syncSupabaseSession();
+
   const auth = checkAuth();
   if (!auth.ok) {
     document.getElementById("main-view-container").innerHTML = `
@@ -502,32 +558,37 @@ document.addEventListener("DOMContentLoaded", async () => {
       </div>`;
     return;
   }
-    try {
+
+  try {
     showLoading(true, "Memuat data...");
-    // BYPASS JSONBIN: Gunakan data default
-    const db = { mp: [], sw: [], a: { ns: 'EduSmart LMS' }, km: [] }; 
+    const db = { mp: [], sw: [], a: { ns: 'EduSmart LMS' }, km: [] };
     appState.db = db;
     setLS(STORAGE.DB_LOCAL, JSON.stringify(db));
     showLoading(false);
   } catch (err) {
     showLoading(false);
   }
+
   updateHeaderUI();
   pasangAntiCheat();
-  renderDashboard();
+  await renderDashboard();
+
+  // Jika dibuka langsung dengan parameter ?quiz_id=... (link kuis PDF), langsung buka soalnya
+  const urlParams = new URLSearchParams(window.location.search);
+  const directQuizId = urlParams.get("quiz_id");
+  if (directQuizId) {
+    await mulaiKuisPdf(directQuizId);
+  }
 });
+
 /* =========================================================
-   BAGIAN 2/5 — DASHBOARD SISWA, KARTU PAKET, MULAI UJIAN
+   BAGIAN 2/6 — DASHBOARD SISWA, KARTU PAKET, MULAI UJIAN
    ========================================================= */
 
-/* ---------------------------------------------------------
-   2A. RENDER DASHBOARD
-   --------------------------------------------------------- */
 async function renderDashboard() {
   const c = document.getElementById("main-view-container");
   if (!c) return;
 
-  // Reset state ujian
   if (appState.timerId) clearInterval(appState.timerId);
   appState.timerId = null;
   appState.paketAktif = null;
@@ -536,6 +597,8 @@ async function renderDashboard() {
   appState.soalIdx = 0;
   appState.raguSet = new Set();
   appState.sudahSubmit = false;
+  if (appState.pdfQuiz?.timerId) clearInterval(appState.pdfQuiz.timerId);
+  appState.pdfQuiz = null;
   sembunyikanWatermark();
   releaseHistory();
 
@@ -557,7 +620,7 @@ async function renderDashboard() {
 
       <div id="alert-progress" class="hidden"></div>
 
-      <div class="bg-white rounded-2xl border shadow-sm p-4">
+      <div id="paket-reguler-card" class="bg-white rounded-2xl border shadow-sm p-4">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-file-pen text-indigo-600"></i> Paket Ujian Tersedia</h3>
@@ -574,6 +637,7 @@ async function renderDashboard() {
   isiFotoWelcome();
   cekProgressTersimpan();
   await loadPaketSiswa();
+  await renderSectionKuisPdf();
 }
 
 function isiFotoWelcome() {
@@ -590,11 +654,10 @@ function isiFotoWelcome() {
     img.src = foto;
   }
 }
-/* =========================================================
-   FUNGSI TAMBAHAN: LINK MATERI (Supabase + Preview Embed)
-   ========================================================= */
 
-/* Ambil link materi dari Supabase (fallback ke JSONBin data lama) */
+/* =========================================================
+   FUNGSI TAMBAHAN: LINK MATERI
+   ========================================================= */
 async function kmGetLinksFromSupabase(paketId) {
   try {
     const paket = (await sbFetch("paket_soal", `?id=eq.${paketId}&select=link_materi&limit=1`))?.[0];
@@ -604,18 +667,15 @@ async function kmGetLinksFromSupabase(paketId) {
   } catch (e) {
     console.warn("[EduSmart] Gagal ambil link dari Supabase:", e);
   }
-  // Fallback: JSONBin (data lama)
   const km = appState.db?.km || [];
   const rec = km.find(r => String(r[1]) === String(paketId));
   return rec ? (Array.isArray(rec[2]) ? rec[2].filter(Boolean) : []) : [];
 }
 
-/* Deteksi jenis link + generate HTML preview embed */
 function linkPreviewHtml(url) {
   const u = String(url || "").trim();
   if (!u) return { jenis: "unknown", icon: "fa-solid fa-link", label: "Link", html: "" };
 
-  // === YouTube (watch, embed, shorts, youtu.be) ===
   const ytMatch = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
   if (ytMatch) {
     const videoId = ytMatch[1];
@@ -623,15 +683,10 @@ function linkPreviewHtml(url) {
       jenis: "youtube",
       icon: "fa-brands fa-youtube",
       label: "Video YouTube",
-      html: `<iframe src="https://www.youtube.com/embed/${videoId}" 
-                      class="w-full aspect-video rounded-xl shadow-lg" 
-                      frameborder="0" allowfullscreen 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-             </iframe>`
+      html: `<iframe src="https://www.youtube.com/embed/${videoId}" class="w-full aspect-video rounded-xl shadow-lg" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`
     };
   }
 
-  // === Google Drive (file) ===
   const driveMatch = u.match(/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]+)/);
   if (driveMatch) {
     const fileId = driveMatch[1];
@@ -639,14 +694,10 @@ function linkPreviewHtml(url) {
       jenis: "drive",
       icon: "fa-brands fa-google-drive",
       label: "Google Drive",
-      html: `<iframe src="https://drive.google.com/file/d/${fileId}/preview" 
-                      class="w-full h-[60vh] rounded-xl shadow-lg" 
-                      frameborder="0" allowfullscreen>
-             </iframe>`
+      html: `<iframe src="https://drive.google.com/file/d/${fileId}/preview" class="w-full h-[60vh] rounded-xl shadow-lg" frameborder="0" allowfullscreen></iframe>`
     };
   }
 
-  // === Google Docs / Slides / Sheets ===
   const gdocMatch = u.match(/docs\.google\.com\/(document|presentation|spreadsheets)\/d\/([A-Za-z0-9_-]+)/);
   if (gdocMatch) {
     const fileId = gdocMatch[2];
@@ -656,27 +707,19 @@ function linkPreviewHtml(url) {
       jenis: "gdoc",
       icon: "fa-solid fa-file-lines",
       label: `Google ${tipeLabel}`,
-      html: `<iframe src="https://docs.google.com/${tipe}/d/${fileId}/preview" 
-                      class="w-full h-[60vh] rounded-xl shadow-lg" 
-                      frameborder="0" allowfullscreen>
-             </iframe>`
+      html: `<iframe src="https://docs.google.com/${tipe}/d/${fileId}/preview" class="w-full h-[60vh] rounded-xl shadow-lg" frameborder="0" allowfullscreen></iframe>`
     };
   }
 
-  // === PDF langsung ===
   if (/\.pdf(\?|#|$)/i.test(u)) {
     return {
       jenis: "pdf",
       icon: "fa-solid fa-file-pdf",
       label: "File PDF",
-      html: `<iframe src="${esc(u)}" 
-                      class="w-full h-[60vh] rounded-xl shadow-lg" 
-                      frameborder="0">
-             </iframe>`
+      html: `<iframe src="${esc(u)}" class="w-full h-[60vh] rounded-xl shadow-lg" frameborder="0"></iframe>`
     };
   }
 
-  // === Link umum (tidak bisa di-embed) ===
   return {
     jenis: "unknown",
     icon: "fa-solid fa-link",
@@ -686,15 +729,13 @@ function linkPreviewHtml(url) {
         <i class="fa-solid fa-link text-4xl text-slate-400 mb-3"></i>
         <p class="text-xs text-slate-500 px-4 break-all">${esc(u)}</p>
         <p class="text-[10px] text-slate-400 mt-2">Link ini tidak bisa diputar langsung di popup.</p>
-        <a href="${esc(u)}" target="_blank" rel="noopener"
-           class="inline-block mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl">
+        <a href="${esc(u)}" target="_blank" rel="noopener" class="inline-block mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl">
           <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka di Tab Baru
         </a>
       </div>`
   };
 }
 
-/* Tampilkan modal preview link materi */
 async function showLinkMateriModal(paketId, paketNama) {
   showLoading(true, "Memuat link materi...");
   try {
@@ -706,19 +747,15 @@ async function showLinkMateriModal(paketId, paketNama) {
       return;
     }
 
-    // Buat overlay
     const overlay = document.createElement("div");
     overlay.id = "link-materi-overlay";
     overlay.className = "fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4";
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-    // Precompute info tiap link
     const linkInfos = links.map(u => ({ url: u, ...linkPreviewHtml(u) }));
 
     overlay.innerHTML = `
       <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        
-        <!-- Header -->
         <div class="flex items-start justify-between border-b p-4 shrink-0">
           <div class="min-w-0 flex-1">
             <h3 class="font-bold text-sm sm:text-base flex items-center gap-2">
@@ -726,18 +763,15 @@ async function showLinkMateriModal(paketId, paketNama) {
             </h3>
             <p class="text-[11px] text-slate-500 mt-0.5 truncate">${esc(paketNama || "Paket")}</p>
           </div>
-          <button onclick="document.getElementById('link-materi-overlay').remove()" 
-                  class="text-slate-400 hover:text-slate-600 p-1 shrink-0 ml-2">
+          <button onclick="document.getElementById('link-materi-overlay').remove()" class="text-slate-400 hover:text-slate-600 p-1 shrink-0 ml-2">
             <i class="fa-solid fa-xmark text-lg"></i>
           </button>
         </div>
 
-        <!-- Tab bar (kalau >1 link) -->
         ${links.length > 1 ? `
           <div class="flex gap-1 p-2 border-b bg-slate-50 overflow-x-auto custom-scrollbar shrink-0">
             ${linkInfos.map((info, i) => `
-              <button onclick="window.__gantiLinkMateri(${i})" 
-                      data-tab-idx="${i}"
+              <button onclick="window.__gantiLinkMateri(${i})" data-tab-idx="${i}"
                       class="link-tab px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition ${i === 0 ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}">
                 <i class="${info.icon} mr-1"></i> ${esc(info.label)} ${i+1}
               </button>
@@ -745,12 +779,8 @@ async function showLinkMateriModal(paketId, paketNama) {
           </div>
         ` : ""}
 
-        <!-- Konten preview -->
-        <div class="flex-1 overflow-y-auto p-3 sm:p-4 bg-slate-100" id="link-preview-container">
-          <!-- Preview pertama dimuat di sini -->
-        </div>
+        <div class="flex-1 overflow-y-auto p-3 sm:p-4 bg-slate-100" id="link-preview-container"></div>
 
-        <!-- Footer -->
         <div class="flex items-center justify-between gap-2 p-3 border-t bg-white shrink-0">
           <div class="text-[10px] text-slate-500 truncate">
             <i class="fa-solid fa-link"></i> <span id="link-url-text">${esc(links[0] || "")}</span>
@@ -766,72 +796,61 @@ async function showLinkMateriModal(paketId, paketNama) {
             </button>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
     document.body.appendChild(overlay);
 
-    // Fungsi ganti link
     window.__gantiLinkMateri = function(idx) {
       const container = document.getElementById("link-preview-container");
       const info = linkInfos[idx];
       if (!container || !info) return;
       container.innerHTML = info.html;
-      // Update URL text
       const urlText = document.getElementById("link-url-text");
       if (urlText) urlText.textContent = info.url;
-      // Update tombol "Buka"
       const openBtn = document.getElementById("link-open-btn");
       if (openBtn) openBtn.href = info.url;
-      // Update tab active
       document.querySelectorAll(".link-tab").forEach(t => {
         const isActive = Number(t.dataset.tabIdx) === idx;
         t.className = `link-tab px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition ${isActive ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`;
       });
     };
 
-    // Load preview pertama
     window.__gantiLinkMateri(0);
-
   } catch (err) {
     showLoading(false);
     showToast("Gagal memuat link: " + err.message, "error");
   }
 }
+
 /* ---------------------------------------------------------
-   2B. LOAD & RENDER LIST PAKET (4 kondisi)
+   2B. LOAD & RENDER LIST PAKET
    --------------------------------------------------------- */
 async function loadPaketSiswa() {
   const wrap = document.getElementById("paket-list-wrap");
   if (!wrap) return;
   try {
-        // Hapus filter kelas, ambil semua paket yang aktif
-    const pakets = await sbFetch("paket_soal",
-      `?aktif=eq.true&order=created_at.desc&limit=100`);
+    const pakets = await sbFetch("paket_soal", `?aktif=eq.true&order=created_at.desc&limit=100`);
 
     if (!pakets.length) {
       wrap.innerHTML = `
-        <div class="text-center py-8">
-          <i class="fa-solid fa-inbox text-4xl text-slate-300 mb-3"></i>
-          <p class="text-slate-400 text-xs">Belum ada paket ujian yang tersedia.</p>
+        <div class="text-center py-6">
+          <i class="fa-solid fa-inbox text-3xl text-slate-300 mb-2"></i>
+          <p class="text-slate-400 text-xs">Belum ada paket ujian reguler yang tersedia.</p>
         </div>`;
       return;
     }
 
-    // Ambil SEMUA riwayat siswa (untuk hitung percobaan & nilai tertinggi)
     let riwayatSemua = [];
     try {
       riwayatSemua = await sbFetch("hasil_ujian",
         `?siswa_id=eq.${encodeURIComponent(appState.user.siswaId)}&order=created_at.asc&limit=500`);
     } catch (e) { console.warn("Gagal load riwayat:", e); }
 
-    // Group riwayat per paket_id → array
     const riwayatMap = {};
     (riwayatSemua || []).forEach(r => {
       if (!riwayatMap[r.paket_id]) riwayatMap[r.paket_id] = [];
       riwayatMap[r.paket_id].push(r);
     });
 
-    // Hitung jumlah soal + lampirkan riwayat
     const paketDenganJumlah = await Promise.all(pakets.map(async p => {
       try {
         const items = await sbFetch("paket_soal_items", `?paket_id=eq.${p.id}`);
@@ -861,7 +880,7 @@ async function loadPaketSiswa() {
 }
 
 /* ---------------------------------------------------------
-   2C. RENDER KARTU PAKET — 4 KONDISI
+   2C. RENDER KARTU PAKET
    --------------------------------------------------------- */
 function renderKartuPaket(p) {
   const links = kmGetLinks(p.id);
@@ -875,31 +894,24 @@ function renderKartuPaket(p) {
   let badgeHtml = "";
   let tombolHtml = "";
   let infoTambahan = "";
-    /* Cek apakah paket punya link materi (dari JSONBin cache, tampil cepat) */
   const linksLama = kmGetLinks(p.id);
   const totalLinks = linksLama.length || (Array.isArray(p.link_materi) ? p.link_materi.length : 0);
 
-    /* KONDISI 1: BELUM DIKERJAKAN */
   if (!sudahDikerjakan) {
     badgeHtml = `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-indigo-100 text-indigo-700">BARU</span>`;
     tombolHtml = `
       <button onclick="mulaiUjian('${p.id}')" class="w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl"><i class="fa-solid fa-play"></i> Mulai Ujian</button>
       ${totalLinks > 0 ? `
-        <button onclick="showLinkMateriModal('${p.id}', '${esc(p.nama || "Paket")}')" 
+        <button onclick="showLinkMateriModal('${p.id}', '${esc(p.nama || "Paket")}')"
                 class="w-full mt-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs py-2 rounded-xl transition">
           <i class="fa-solid fa-book-open"></i> Materi (${totalLinks})
-        </button>` : ""}
-    `;
-  }
-  /* KONDISI 2: SUDAH LULUS → TIDAK BISA ULANG */
-    else if (lulus) {
+        </button>` : ""}`;
+  } else if (lulus) {
     badgeHtml = `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-200 text-emerald-800">✓ LULUS</span>`;
     tombolHtml = `<button onclick="lihatHasilDariDashboard('${p.id}')" class="w-full mt-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl"><i class="fa-solid fa-eye"></i> Lihat Hasil</button>`;
-  }
-  /* KONDISI 3: REMEDIAL — MASIH BISA ULANG */
-    else if (bisaUlang) {
+  } else if (bisaUlang) {
     badgeHtml = `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-200 text-amber-800">⚠ REMEDIAL</span>`;
-    infoTambahan = `...`; /* biarkan isi infoTambahan tetap sama */
+    infoTambahan = `<p class="text-[10px] text-amber-700 mt-1.5">Tersisa 1x kesempatan remedial. Pelajari materi sebelum mengulang.</p>`;
     tombolHtml = `
       <div class="flex gap-2 mt-3">
         <button onclick="lihatHasilDariDashboard('${p.id}')" class="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-[11px] py-2 rounded-xl">
@@ -910,24 +922,20 @@ function renderKartuPaket(p) {
         </button>
       </div>
       ${totalLinks > 0 ? `
-        <button onclick="showLinkMateriModal('${p.id}', '${esc(p.nama || "Paket")}')" 
+        <button onclick="showLinkMateriModal('${p.id}', '${esc(p.nama || "Paket")}')"
                 class="w-full mt-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs py-2 rounded-xl transition">
           <i class="fa-solid fa-book-open"></i> Materi (${totalLinks})
-        </button>` : ""}
-    `;
-  }
-  /* KONDISI 4: KESEMPATAN HABIS */
-    else {
+        </button>` : ""}`;
+  } else {
     badgeHtml = `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-red-200 text-red-800">✗ REMEDIAL FINAL</span>`;
-    infoTambahan = `...`; /* biarkan isi infoTambahan tetap sama */
+    infoTambahan = `<p class="text-[10px] text-red-700 mt-1.5">Batas percobaan telah habis.</p>`;
     tombolHtml = `
       <button onclick="lihatHasilDariDashboard('${p.id}')" class="w-full mt-3 bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs py-2.5 rounded-xl"><i class="fa-solid fa-eye"></i> Lihat Hasil</button>
       ${totalLinks > 0 ? `
-        <button onclick="showLinkMateriModal('${p.id}', '${esc(p.nama || "Paket")}')" 
+        <button onclick="showLinkMateriModal('${p.id}', '${esc(p.nama || "Paket")}')"
                 class="w-full mt-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs py-2 rounded-xl transition">
           <i class="fa-solid fa-book-open"></i> Materi (${totalLinks})
-        </button>` : ""}
-    `;
+        </button>` : ""}`;
   }
 
   return `
@@ -1074,14 +1082,12 @@ function hapusProgressPaket(paketId) {
 async function mulaiUjian(paketId) {
   showLoading(true, "Memeriksa status...");
   try {
-    // ✅ CEK RIWAYAT — apakah masih boleh mengerjakan?
     const riwayat = await sbFetch("hasil_ujian",
       `?paket_id=eq.${paketId}&siswa_id=eq.${encodeURIComponent(appState.user.siswaId)}&order=created_at.asc`);
 
     const jumlahPercobaan = riwayat.length;
     const nilaiTertinggi = jumlahPercobaan ? Math.max(...riwayat.map(r => Number(r.nilai) || 0)) : 0;
 
-    // Tolak kalau kuota habis
     if (jumlahPercobaan >= MAX_PERCOBAAN) {
       showLoading(false);
       showToast("Kesempatan habis. Nilai akhir sudah tercatat.", "warning");
@@ -1089,7 +1095,6 @@ async function mulaiUjian(paketId) {
       return;
     }
 
-    // Tolak kalau sudah lulus
     if (jumlahPercobaan > 0 && nilaiTertinggi >= KKM) {
       showLoading(false);
       showToast(`Kamu sudah LULUS dengan nilai ${nilaiTertinggi.toFixed(1)}. Tidak bisa mengulang.`, "info");
@@ -1097,9 +1102,6 @@ async function mulaiUjian(paketId) {
       return;
     }
 
-    // Load paket + soal
-        // Load paket + soal
-    // (Filter kelas dihapus di sini juga agar siswa bisa mengerjakan paket "SMP")
     const paket = (await sbFetch("paket_soal", `?id=eq.${paketId}&limit=1`))?.[0];
     if (!paket) throw new Error("Paket tidak ditemukan.");
     if (!paket.aktif) throw new Error("Paket sudah tidak aktif.");
@@ -1116,7 +1118,6 @@ async function mulaiUjian(paketId) {
     if (paket.acak_soal) soalList = shuffle(soalList);
     if (paket.acak_pilihan) soalList = soalList.map(s => acakPilihanSoal(s));
 
-    // Set state
     appState.paketAktif = paket;
     appState.soalList = soalList;
     appState.jawabanSiswa = {};
@@ -1179,7 +1180,7 @@ function konfirmasiMulai() {
     <div class="p-3 bg-amber-50 border border-amber-300 rounded-xl mb-4">
       <div class="font-bold text-amber-900 text-xs mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Percobaan Terakhir!</div>
       <p class="text-[11px] text-amber-800">
-        Ini kesempatan <b>terakhir</b> kamu. <b>Silakan belajar lagi sebelum mengulangi soal agar nilai di atas KKM (${KKM})</b>. 
+        Ini kesempatan <b>terakhir</b> kamu. <b>Silakan belajar lagi sebelum mengulangi soal agar nilai di atas KKM (${KKM})</b>.
         Nilai tertinggi dari kedua percobaan akan menjadi acuan.
       </p>
     </div>` : "";
@@ -1266,28 +1267,22 @@ async function lihatHasilDariDashboard(paketId) {
   showLoading(true, "Memuat hasil...");
   try {
     const paket = (await sbFetch("paket_soal", `?id=eq.${paketId}&limit=1`))?.[0];
-
-    // ✅ Ambil SEMUA riwayat percobaan
     const semuaRiwayat = await sbFetch("hasil_ujian",
       `?paket_id=eq.${paketId}&siswa_id=eq.${encodeURIComponent(appState.user.siswaId)}&order=created_at.asc`);
 
     if (!semuaRiwayat.length) throw new Error("Hasil ujian belum tersedia.");
 
-    // Nilai tertinggi & percobaan terbaik
     const nilaiTertinggi = Math.max(...semuaRiwayat.map(r => Number(r.nilai) || 0));
     const percobaanTerbaik = semuaRiwayat.find(r => Number(r.nilai) === nilaiTertinggi) || semuaRiwayat[0];
 
-    // Jawaban siswa (untuk review)
     const jawabanList = await sbFetch("jawaban_siswa",
       `?paket_id=eq.${paketId}&siswa_id=eq.${encodeURIComponent(appState.user.siswaId)}&order=created_at.asc`);
 
-    // Soal
     const items = await sbFetch("paket_soal_items", `?paket_id=eq.${paketId}&order=urutan.asc`);
     const soalIds = items.map(it => it.soal_id).filter(Boolean);
     const soalAll = soalIds.length ? await sbFetch("bank_soal", `?id=in.(${soalIds.map(i => `"${i}"`).join(",")})`) : [];
     const soalList = items.map(it => soalAll.find(s => s.id === it.soal_id)).filter(Boolean);
 
-    // Rata-rata semua paket siswa
     let rata2Semua = null;
     try {
       const semuaHasil = await sbFetch("hasil_ujian",
@@ -1317,13 +1312,11 @@ async function lihatHasilDariDashboard(paketId) {
     showToast("Gagal memuat hasil: " + err.message, "error");
   }
 }
+
 /* =========================================================
-   BAGIAN 3/5 — HALAMAN UJIAN, TIMER, NAVIGASI, 5 JENIS SOAL, SUBMIT
+   BAGIAN 3/6 — HALAMAN UJIAN, TIMER, NAVIGASI, 5 JENIS SOAL, SUBMIT
    ========================================================= */
 
-/* ---------------------------------------------------------
-   3A. RENDER HALAMAN UJIAN
-   --------------------------------------------------------- */
 function renderUjian() {
   const c = document.getElementById("main-view-container");
   if (!c) return;
@@ -1401,9 +1394,6 @@ function renderUjianLayout() {
   updateTombolNav();
 }
 
-/* ---------------------------------------------------------
-   3B. RENDER SOAL AKTIF
-   --------------------------------------------------------- */
 function renderSoalAktif() {
   const wrap = document.getElementById("soal-wrap");
   if (!wrap) return;
@@ -1443,9 +1433,6 @@ function renderSoalAktif() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-/* ---------------------------------------------------------
-   3C. PG
-   --------------------------------------------------------- */
 function renderJawabanPG(s) {
   const area = document.getElementById("jawaban-area");
   if (!area) return;
@@ -1476,9 +1463,6 @@ function pilihPG(soalId, k) {
   updateNavNomor();
 }
 
-/* ---------------------------------------------------------
-   3D. PGK
-   --------------------------------------------------------- */
 function renderJawabanPGK(s) {
   const area = document.getElementById("jawaban-area");
   if (!area) return;
@@ -1514,9 +1498,6 @@ function togglePGK(soalId, k) {
   updateNavNomor();
 }
 
-/* ---------------------------------------------------------
-   3E. ISIAN
-   --------------------------------------------------------- */
 function renderJawabanIsian(s) {
   const area = document.getElementById("jawaban-area");
   if (!area) return;
@@ -1541,9 +1522,6 @@ function inputIsian(soalId, v) {
   updateNavNomor();
 }
 
-/* ---------------------------------------------------------
-   3F. MENJODOHKAN
-   --------------------------------------------------------- */
 function renderJawabanJodoh(s) {
   const area = document.getElementById("jawaban-area");
   if (!area) return;
@@ -1651,9 +1629,6 @@ function resetJodoh(soalId) {
   updateNavNomor();
 }
 
-/* ---------------------------------------------------------
-   3G. URAIAN
-   --------------------------------------------------------- */
 function renderJawabanUraian(s) {
   const area = document.getElementById("jawaban-area");
   if (!area) return;
@@ -1677,9 +1652,6 @@ function inputUraian(soalId, v) {
   updateNavNomor();
 }
 
-/* ---------------------------------------------------------
-   3H. NAVIGASI
-   --------------------------------------------------------- */
 function soalSebelumnya() {
   if (appState.soalIdx > 0) {
     appState.soalIdx--;
@@ -1737,9 +1709,6 @@ function toggleRagu() {
   updateProgressUI();
 }
 
-/* ---------------------------------------------------------
-   3I. NAV GRID + PROGRESS
-   --------------------------------------------------------- */
 function renderNavNomor() {
   const el = document.getElementById("nav-nomor-grid");
   if (!el) return;
@@ -1784,9 +1753,6 @@ function updateProgressUI() {
   if (txt) txt.innerHTML = `<b class="text-emerald-700">${dijawab}</b> dijawab · <b class="text-amber-600">${ragu}</b> ragu`;
 }
 
-/* ---------------------------------------------------------
-   3J. TIMER
-   --------------------------------------------------------- */
 function mulaiTimer() {
   if (appState.timerId) clearInterval(appState.timerId);
   updateTimerDisplay();
@@ -1818,9 +1784,6 @@ function updateTimerDisplay() {
   if (sisa === 60) showToast("⚠️ Sisa waktu 1 menit!", "error", 5000);
 }
 
-/* ---------------------------------------------------------
-   3K. KONFIRMASI SUBMIT
-   --------------------------------------------------------- */
 function konfirmasiSubmit() {
   let dijawab = 0, ragu = 0, kosong = 0;
   appState.soalList.forEach(s => {
@@ -1887,9 +1850,6 @@ function konfirmasiSubmit() {
   document.body.appendChild(overlay);
 }
 
-/* ---------------------------------------------------------
-   3L. SUBMIT UJIAN — HITUNG NILAI + SIMPAN
-   --------------------------------------------------------- */
 async function submitUjian(karenaCurang) {
   if (appState.sudahSubmit) return;
   appState.sudahSubmit = true;
@@ -2009,7 +1969,6 @@ async function submitUjian(karenaCurang) {
     };
 
     const hasilRes = await sbInsert("hasil_ujian", [hasilPayload]);
-
     appState.waktuSelesai = waktuSelesai;
 
     if (karenaCurang || appState.pelanggaran > 0) {
@@ -2049,7 +2008,6 @@ async function submitUjian(karenaCurang) {
       showToast("✓ Jawaban terkirim!", "success");
     }
 
-    // ✅ Setelah submit, load semua riwayat untuk halaman hasil
     setTimeout(async () => {
       try {
         const semuaRiwayat = await sbFetch("hasil_ujian",
@@ -2057,7 +2015,6 @@ async function submitUjian(karenaCurang) {
         const nilaiTertinggi = Math.max(...semuaRiwayat.map(r => Number(r.nilai) || 0));
         const percobaanTerbaik = semuaRiwayat.find(r => Number(r.nilai) === nilaiTertinggi) || semuaRiwayat[semuaRiwayat.length - 1];
 
-        // Rata-rata semua paket
         let rata2Semua = null;
         try {
           const semuaHasil = await sbFetch("hasil_ujian",
@@ -2081,7 +2038,6 @@ async function submitUjian(karenaCurang) {
           rata2Semua
         });
       } catch(e) {
-        // Fallback kalau fetch gagal
         renderHasil(paket, hasilRes?.[0] || hasilPayload, soalList, jawabanUntukSimpan, {
           semuaRiwayat: [hasilPayload],
           nilaiTertinggi: nilaiAkhir,
@@ -2100,19 +2056,14 @@ async function submitUjian(karenaCurang) {
   }
 }
 
-console.log("[EduSmart] Bagian 3/5 loaded — halaman ujian siap");
 /* =========================================================
-   BAGIAN 4/5 — HALAMAN HASIL, REVIEW, LEADERBOARD, ULANGI
+   BAGIAN 4/6 — HALAMAN HASIL, REVIEW, LEADERBOARD, ULANGI
    ========================================================= */
 
-/* ---------------------------------------------------------
-   4A. RENDER HALAMAN HASIL
-   --------------------------------------------------------- */
 function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
   const c = document.getElementById("main-view-container");
   if (!c) return;
 
-  // Reset state ujian
   appState.paketAktif = null;
   appState.soalList = [];
   appState.jawabanSiswa = {};
@@ -2136,7 +2087,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
 
   const adaUraian = soalList.some(s => s.jenis === "URAIAN");
 
-  // Foto + info siswa
   let fotoSiswa = "";
   let namaSiswa = appState.user?.name || "Siswa";
   let kelasSiswa = appState.user?.kelas || "-";
@@ -2151,7 +2101,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
     }
   }
 
-  // Gradient & emoji berdasarkan nilai
   let emoji, pesan, gradient;
   if (nilai >= 90) { emoji = "🏆"; pesan = "Luar biasa! Pertahankan!"; gradient = "linear-gradient(135deg, #10b981 0%, #047857 100%)"; }
   else if (nilai >= 80) { emoji = "🎉"; pesan = "Bagus sekali!"; gradient = "linear-gradient(135deg, #10b981 0%, #065f46 100%)"; }
@@ -2162,15 +2111,12 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
   const kuotaHabis = jumlahPercobaan >= MAX_PERCOBAAN;
   const bisaUlang = !lulus && !kuotaHabis;
 
-  // Foto HTML
   const fotoHtml = fotoSiswa && (fotoSiswa.startsWith("http") || fotoSiswa.startsWith("data:"))
     ? `<img src="${esc(fotoSiswa)}" referrerpolicy="no-referrer" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white/40 shadow-lg" onerror="this.style.display='none'">`
     : `<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/20 border-4 border-white/40 flex items-center justify-center text-4xl shadow-lg"><i class="fa-solid fa-user-graduate"></i></div>`;
 
   c.innerHTML = `
     <div class="space-y-4 fade-in">
-
-      <!-- HERO HASIL dengan FOTO -->
       <div style="background:${gradient}" class="rounded-2xl p-5 sm:p-6 text-white shadow-lg">
         <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
           <div class="shrink-0">${fotoHtml}</div>
@@ -2200,7 +2146,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
         </div>
       </div>
 
-      <!-- STATISTIK NILAI -->
       <div class="grid grid-cols-3 gap-3">
         <div class="bg-white rounded-xl border shadow-sm p-3 text-center">
           <div class="text-[10px] text-slate-500 font-semibold">Benar</div>
@@ -2216,7 +2161,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
         </div>
       </div>
 
-      <!-- STATISTIK SEMUA PAKET -->
       ${rata2Semua !== null ? `
         <div class="bg-white rounded-2xl border shadow-sm p-4">
           <div class="flex items-center gap-2 mb-2">
@@ -2236,7 +2180,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
         </div>
       ` : ""}
 
-      <!-- RIWAYAT PERCOBAAN -->
       ${semuaRiwayat.length > 1 ? `
         <div class="bg-white rounded-2xl border shadow-sm p-4">
           <div class="flex items-center gap-2 mb-3">
@@ -2262,7 +2205,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
         </div>
       ` : ""}
 
-      <!-- INFO PAKET -->
       <div class="bg-white rounded-2xl border shadow-sm p-4 text-xs">
         <div class="flex items-center gap-2 mb-2">
           <i class="fa-solid fa-circle-info text-indigo-600"></i>
@@ -2300,10 +2242,8 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
         </div>
       ` : ""}
 
-      <!-- LEADERBOARD -->
       <div id="leaderboard-wrap"></div>
 
-      <!-- REVIEW JAWABAN -->
       <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
         <button onclick="toggleReviewJawaban()" class="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition">
           <div class="flex items-center gap-2 text-sm font-bold text-slate-700">
@@ -2317,7 +2257,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
         </div>
       </div>
 
-      <!-- BISA ULANG -->
       ${bisaUlang ? `
         <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 space-y-3">
           <div class="text-center">
@@ -2345,7 +2284,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
         </div>
       ` : ""}
 
-      <!-- AKSI -->
       <div class="flex flex-col sm:flex-row gap-2">
         <button onclick="kembaliKeDashboard()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3 rounded-xl">
           <i class="fa-solid fa-house"></i> Kembali ke Dashboard
@@ -2359,17 +2297,11 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
   loadLeaderboard(paket.id, nilai);
 }
 
-/* ---------------------------------------------------------
-   4B. ULANGI SEKARANG
-   --------------------------------------------------------- */
 function ulangiSekarang(paketId) {
   if (!confirm("Ini akan menjadi percobaan terakhir Anda. Nilai tertinggi dari kedua percobaan yang akan dipakai. Yakin ingin mengulang?")) return;
   mulaiUjian(paketId);
 }
 
-/* ---------------------------------------------------------
-   4C. REVIEW JAWABAN
-   --------------------------------------------------------- */
 function renderReviewJawaban(soalList, jawabanList) {
   if (!soalList || !soalList.length) return `<div class="text-center text-slate-400 text-xs py-6">Tidak ada data.</div>`;
 
@@ -2410,15 +2342,11 @@ function renderReviewJawaban(soalList, jawabanList) {
   }).join("");
 }
 
-/* ---------------------------------------------------------
-   4D. REVIEW DETAIL PER JENIS
-   --------------------------------------------------------- */
 function renderReviewJawabanDetail(s, jw, benar) {
   const jenis = s.jenis;
   const pilihan = s.pilihan || {};
   const jawaban = s.jawaban || {};
 
-  /* PG */
   if (jenis === "PG") {
     const dipilih = String(jw.pilih || "").toUpperCase();
     const kunci = String(jawaban.kunci || "").toUpperCase();
@@ -2446,7 +2374,6 @@ function renderReviewJawabanDetail(s, jw, benar) {
       </div>`;
   }
 
-  /* PGK */
   if (jenis === "PGK") {
     const dipilihArr = Array.isArray(jw.pilih) ? jw.pilih.map(x => String(x).toUpperCase()) : [];
     const kunciArr = Array.isArray(jawaban.kunci) ? jawaban.kunci.map(x => String(x).toUpperCase()) : [];
@@ -2476,7 +2403,6 @@ function renderReviewJawabanDetail(s, jw, benar) {
       </div>`;
   }
 
-  /* ISIAN */
   if (jenis === "ISIAN") {
     const jwb = String(jw.pilih || "");
     const arrKunci = Array.isArray(jawaban.kunci) ? jawaban.kunci : [jawaban.kunci || ""];
@@ -2493,7 +2419,6 @@ function renderReviewJawabanDetail(s, jw, benar) {
       </div>`;
   }
 
-  /* MENJODOHKAN */
   if (jenis === "MENJODOHKAN") {
     const kiri = s.pilihan?.kiri || [];
     const kanan = s.pilihan?.kanan || [];
@@ -2517,7 +2442,6 @@ function renderReviewJawabanDetail(s, jw, benar) {
       </div>`;
   }
 
-  /* URAIAN */
   if (jenis === "URAIAN") {
     const jwb = String(jw.pilih || "");
     const kunci = String(jawaban.kunci || "");
@@ -2546,9 +2470,6 @@ function toggleReviewJawaban() {
   if (chev) chev.classList.toggle("rotate-180");
 }
 
-/* ---------------------------------------------------------
-   4E. LEADERBOARD 5 BESAR
-   --------------------------------------------------------- */
 async function loadLeaderboard(paketId, nilaiSiswa) {
   const wrap = document.getElementById("leaderboard-wrap");
   if (!wrap) return;
@@ -2573,7 +2494,6 @@ async function loadLeaderboard(paketId, nilaiSiswa) {
       return;
     }
 
-    // Dedupe: nilai terbaik per siswa
     const perSiswa = {};
     semuaHasil.forEach(h => {
       if (!perSiswa[h.siswa_id] || Number(h.nilai) > Number(perSiswa[h.siswa_id].nilai)) {
@@ -2644,9 +2564,6 @@ async function loadLeaderboard(paketId, nilaiSiswa) {
   }
 }
 
-/* ---------------------------------------------------------
-   4F. AKSI BAWAH
-   --------------------------------------------------------- */
 function kembaliKeDashboard() {
   appState.paketAktif = null;
   appState.soalList = [];
@@ -2656,6 +2573,8 @@ function kembaliKeDashboard() {
   appState.pelanggaran = 0;
   appState.logPelanggaran = [];
   appState.sudahSubmit = false;
+  if (appState.pdfQuiz?.timerId) clearInterval(appState.pdfQuiz.timerId);
+  appState.pdfQuiz = null;
   window.__jodohAktifKiri = null;
   if (appState.timerId) { clearInterval(appState.timerId); appState.timerId = null; }
   sembunyikanWatermark();
@@ -2673,137 +2592,73 @@ function shareHasilKeGuru() {
     window.open(wa, "_blank");
   }
 }
+
 /* =========================================================
-   BAGIAN 5/5 — UTILITY, BOOT LOG, SAFETY CHECK
+   BAGIAN 5/6 — UTILITY & KEYBOARD SHORTCUT
    ========================================================= */
 
-/* ---------------------------------------------------------
-   5A. FORMAT TANGGAL/WAKTU (utility tambahan)
-   --------------------------------------------------------- */
 function formatTanggal(iso) {
   if (!iso) return "-";
   try {
-    const d = new Date(iso);
-    return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+    return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
   } catch(e) { return "-"; }
 }
 function formatTanggalWaktu(iso) {
   if (!iso) return "-";
   try {
-    const d = new Date(iso);
-    return d.toLocaleString("id-ID", {
+    return new Date(iso).toLocaleString("id-ID", {
       day: "2-digit", month: "short", year: "numeric",
       hour: "2-digit", minute: "2-digit"
     });
   } catch(e) { return "-"; }
 }
 
-/* ---------------------------------------------------------
-   5B. HANDLE KEYBOARD SHORTCUT (tambahan)
-   --------------------------------------------------------- */
 document.addEventListener("keydown", (e) => {
-  // ESC → tutup konfirmasi submit
   if (e.key === "Escape") {
     const overlay = document.getElementById("konfirmasi-submit-overlay");
     if (overlay) overlay.remove();
   }
-  // Arrow keys di halaman ujian (kiri/kanan)
   if (appState.paketAktif && !appState.sudahSubmit) {
-    if (e.key === "ArrowLeft" && !e.target.matches("input, textarea")) {
-      soalSebelumnya();
-    }
-    if (e.key === "ArrowRight" && !e.target.matches("input, textarea")) {
-      soalBerikutnya();
-    }
+    if (e.key === "ArrowLeft" && !e.target.matches("input, textarea")) soalSebelumnya();
+    if (e.key === "ArrowRight" && !e.target.matches("input, textarea")) soalBerikutnya();
   }
 });
 
-/* ---------------------------------------------------------
-   5C. VISIBILITY API — SAVE PROGRESS SAAT TAB HIDDEN
-   --------------------------------------------------------- */
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && appState.paketAktif && !appState.sudahSubmit) {
     simpanProgress();
   }
 });
 
-/* ---------------------------------------------------------
-   5D. CLEANUP — BERSIHKAN STATE SAAT KELUAR
-   --------------------------------------------------------- */
-window.addEventListener("beforeunload", (e) => {
+window.addEventListener("beforeunload", () => {
   if (appState.paketAktif && !appState.sudahSubmit) {
     simpanProgress();
   }
 });
 
-/* ---------------------------------------------------------
-   5E. BOOT LOG & SAFETY CHECK
-   --------------------------------------------------------- */
-console.log("[EduSmart] kuis.html v2.0 loaded");
-console.log("  • KKM:", KKM);
-console.log("  • Max percobaan:", MAX_PERCOBAAN, "(1 awal + 1 remedial)");
-console.log("  • Anti-cheat: fullscreen, watermark, tab switch, 5x pelanggaran");
-console.log("  • Auto-save progress tiap jawab");
-console.log("  • Nilai akhir = tertinggi dari semua percobaan");
-console.log("  • Halaman hasil: foto + statistik + riwayat + review + leaderboard");
-console.log("  • Kalau remedi: tombol 'Ulangi Sekarang' + pesan 'belajar lagi'");
-
-// Safety check
-setTimeout(() => {
-  const fungsiWajib = [
-    "renderDashboard", "loadPaketSiswa", "renderKartuPaket",
-    "mulaiUjian", "konfirmasiMulai", "renderUjian",
-    "renderSoalAktif", "renderNavNomor", "submitUjian",
-    "renderHasil", "renderReviewJawaban", "loadLeaderboard",
-    "lihatHasilDariDashboard", "ulangiSekarang"
-  ];
-  const missing = fungsiWajib.filter(fn => typeof window[fn] !== "function");
-  if (missing.length) {
-    console.warn("[EduSmart] ⚠️ Fungsi belum terdefinisi:", missing);
-  } else {
-    console.log("[EduSmart] ✅ Semua fungsi utama terdefinisi");
-  }
-}, 1000);
-
-/* ---------------------------------------------------------
-   5F. CEK KOMPATIBILITAS BROWSER
-   --------------------------------------------------------- */
-(function cekKompatibilitas() {
-  const masalah = [];
-  if (!window.fetch) masalah.push("Fetch API (browser terlalu lama)");
-  if (!window.localStorage) masalah.push("LocalStorage (mode private?)");
-  if (!window.indexedDB) masalah.push("IndexedDB (mode private?)");
-  if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled && !document.msFullscreenEnabled) {
-    console.warn("[EduSmart] ⚠️ Fullscreen API tidak tersedia. Anti-cheat fullscreen akan di-skip.");
-  }
-  if (masalah.length) {
-    console.warn("[EduSmart] ⚠️ Masalah kompatibilitas:", masalah);
-  }
-})();
 /* =========================================================
-   BAGIAN 6/6 — KUIS DARI PDF (dijawab dari dalam kuis.html)
-   Tidak mengubah struktur/state ujian paket reguler.
+   BAGIAN 6/6 — KUIS DARI PDF (terintegrasi penuh)
    ========================================================= */
 
-/* ---------- Section dashboard ---------- */
 async function renderSectionKuisPdf() {
-  // Sisipkan container kecil setelah card paket reguler
-  const paketCard = document.getElementById("paket-list-wrap")?.closest(".bg-white.rounded-2xl");
-  if (!paketCard) return;
+  const container = document.querySelector("#main-view-container > div");
+  if (!container) return;
+
   let wrap = document.getElementById("pdf-kuis-section");
   if (!wrap) {
     wrap = document.createElement("div");
     wrap.id = "pdf-kuis-section";
     wrap.className = "bg-white rounded-2xl border shadow-sm p-4";
-    paketCard.parentElement.insertBefore(wrap, paketCard.nextSibling);
+    container.appendChild(wrap);
   }
+
   wrap.innerHTML = `
     <div class="flex items-center justify-between mb-3">
       <div>
         <h3 class="font-bold text-sm flex items-center gap-2">
           <i class="fa-solid fa-file-pdf text-rose-600"></i> Kuis dari PDF
         </h3>
-        <p class="text-[11px] text-slate-500 mt-0.5">Kuis berbasis dokumen yang diaktifkan guru.</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">Kuis berbasis dokumen PDF yang diaktifkan guru.</p>
       </div>
       <button onclick="loadKuisPdfSiswa(true)" class="text-slate-400 hover:text-indigo-600 p-2" title="Refresh">
         <i class="fa-solid fa-rotate text-xs"></i>
@@ -2814,6 +2669,7 @@ async function renderSectionKuisPdf() {
         <i class="fa-solid fa-spinner fa-spin"></i> Memuat kuis PDF...
       </div>
     </div>`;
+
   await loadKuisPdfSiswa(false);
 }
 
@@ -2824,12 +2680,12 @@ async function loadKuisPdfSiswa(forceToast) {
     const quizzes = await sbFetch("pdf_quizzes",
       `?is_published=eq.true&order=created_at.desc&limit=50`);
 
-    // Filter kelas: kalau quiz punya class_name yang tidak cocok dengan siswa → skip
     const kelasSiswa = String(appState.user?.kelas || "").trim().toLowerCase();
     const cocok = (quizzes || []).filter(q => {
       const k = String(q.class_name || "").trim().toLowerCase();
-      if (!k || k === "semua kelas" || k === "semua") return true;
-      return !kelasSiswa || k.includes(kelasSiswa) || kelasSiswa.includes(k);
+      if (!k || k === "semua kelas" || k === "semua" || k === "-") return true;
+      if (!kelasSiswa || kelasSiswa === "-") return true;
+      return k.includes(kelasSiswa) || kelasSiswa.includes(k);
     });
 
     if (!cocok.length) {
@@ -2840,12 +2696,14 @@ async function loadKuisPdfSiswa(forceToast) {
       return;
     }
 
-    // Ambil riwayat attempt PDF siswa untuk status "sudah dikerjakan"
     let attempts = [];
-    try {
-      attempts = await sbFetch("pdf_quiz_attempts",
-        `?student_id=eq.${encodeURIComponent(appState.user.siswaId)}&order=created_at.desc&limit=500`);
-    } catch (e) { /* tabel mungkin bernama lain; abaikan */ }
+    const studentId = appState.authUserId || appState.user?.siswaId;
+    if (studentId) {
+      try {
+        attempts = await sbFetch("pdf_quiz_attempts",
+          `?student_id=eq.${encodeURIComponent(studentId)}&order=created_at.desc&limit=500`);
+      } catch (e) { /* abaikan jika tabel belum ada / berbeda nama */ }
+    }
 
     const attMap = {};
     (attempts || []).forEach(a => {
@@ -2868,9 +2726,9 @@ async function loadKuisPdfSiswa(forceToast) {
 
 function renderKartuKuisPdf(q, attemptArr) {
   const sudah = attemptArr.length > 0;
-  const best = sudah ? Math.max(...attemptArr.map(a => Number(a.score) || 0)) : null;
   const bestPct = sudah ? Math.max(...attemptArr.map(a => Number(a.percentage) || 0)) : null;
-  const soalCount = (q.question_types || []).length;
+  const qList = Array.isArray(q.question_types) ? q.question_types : (safeParse(q.question_types) || []);
+  const soalCount = qList.length;
 
   return `
     <div class="border-2 rounded-2xl p-4 transition ${sudah ? 'border-rose-200 bg-rose-50/40' : 'border-slate-100 bg-white hover:border-rose-400'}">
@@ -2906,23 +2764,34 @@ function renderKartuKuisPdf(q, attemptArr) {
     </div>`;
 }
 
-/* ---------- Mulai kuis PDF ---------- */
 async function mulaiKuisPdf(quizId) {
   showLoading(true, "Memuat kuis PDF...");
   try {
-    const quiz = (await sbFetch("pdf_quizzes",
-      `?id=eq.${quizId}&is_published=eq.true&limit=1`))?.[0];
-    if (!quiz) throw new Error("Kuis tidak ditemukan atau belum aktif.");
+    const client = getSupabaseClient();
+    if (!client) throw new Error("Supabase client belum siap.");
 
-    const { data: sign, error: se } = await sb.storage
+    const quiz = (await sbFetch("pdf_quizzes",
+      `?id=eq.${encodeURIComponent(quizId)}&is_published=eq.true&limit=1`))?.[0];
+    if (!quiz) throw new Error("Kuis PDF tidak ditemukan atau belum aktif.");
+
+    const questions = Array.isArray(quiz.question_types)
+      ? quiz.question_types
+      : (safeParse(quiz.question_types) || []);
+    if (!questions.length) {
+      throw new Error("Kuis PDF ini belum memiliki daftar nomor soal.");
+    }
+
+    const { data: sign, error: se } = await client.storage
       .from("edusmart-quiz-pdf")
       .createSignedUrl(quiz.student_path, 3600);
-    if (se || !sign) throw new Error("PDF siswa tidak dapat dibuka: " + (se?.message || ""));
+    if (se || !sign?.signedUrl) {
+      throw new Error("PDF siswa tidak dapat dibuka: " + (se?.message || "Signed URL gagal"));
+    }
 
     appState.pdfQuiz = {
       quiz,
       pdfUrl: sign.signedUrl,
-      questions: quiz.question_types || [],
+      questions,
       answers: {},
       startedAt: Date.now(),
       finishAt: Date.now() + (Number(quiz.duration_minutes) || 30) * 60 * 1000,
@@ -2934,18 +2803,16 @@ async function mulaiKuisPdf(quizId) {
     renderUjianPdf();
   } catch (err) {
     showLoading(false);
-    showToast("Gagal memulai kuis PDF: " + err.message, "error");
+    showToast("Gagal memulai kuis PDF: " + err.message, "error", 5000);
   }
 }
 
-/* ---------- Render halaman ujian PDF (reuse layout, isi berbeda) ---------- */
 function renderUjianPdf() {
   const c = document.getElementById("main-view-container");
   const P = appState.pdfQuiz;
   if (!c || !P) return;
   const q = P.quiz;
 
-  // Matikan state paket reguler agar tidak bentrok
   appState.paketAktif = null;
   appState.soalList = [];
   if (appState.timerId) { clearInterval(appState.timerId); appState.timerId = null; }
@@ -2968,7 +2835,7 @@ function renderUjianPdf() {
 
       <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
         <div class="px-3 py-2 border-b bg-slate-50 flex items-center justify-between">
-          <div class="text-xs font-bold text-slate-700"><i class="fa-solid fa-file-pdf text-rose-600"></i> Dokumen PDF</div>
+          <div class="text-xs font-bold text-slate-700"><i class="fa-solid fa-file-pdf text-rose-600"></i> Dokumen Soal PDF</div>
           <a href="${esc(P.pdfUrl)}" target="_blank" rel="noopener" class="text-[11px] text-indigo-600 hover:underline">
             <i class="fa-solid fa-up-right-from-square"></i> Buka tab baru
           </a>
@@ -2985,7 +2852,7 @@ function renderUjianPdf() {
             <i class="fa-solid fa-xmark"></i> Batal
           </button>
         </div>
-        <button onclick="submitKuisPdf()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl">
+        <button onclick="submitKuisPdf(false)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl">
           <i class="fa-solid fa-paper-plane"></i> Kumpulkan Jawaban PDF
         </button>
       </div>
@@ -2997,26 +2864,25 @@ function renderUjianPdf() {
   trapHistory();
 }
 
-/* ---------- Lembar jawaban per jenis ---------- */
 function renderPdfAnswerRows() {
   const wrap = document.getElementById("pdf-jawaban-wrap");
   const P = appState.pdfQuiz;
   if (!wrap || !P) return;
 
-  const HURUF = ["A","B","C","D"];
+  const OPSI = ["A","B","C","D"];
   wrap.innerHTML = P.questions.map(q => {
     const no = q.no;
     let inner = "";
 
     if (q.type === "PG") {
-      inner = `<div class="flex flex-wrap gap-2 mt-2">${HURUF.map(h => `
+      inner = `<div class="flex flex-wrap gap-2 mt-2">${OPSI.map(h => `
         <button type="button" data-no="${no}" data-val="${h}"
           onclick="pilihJawabanPdf(${no}, '${h}', false)"
           class="pdf-opt px-4 py-2 rounded-lg border-2 text-xs font-bold ${P.answers[no]===h ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-200'}">${h}</button>
       `).join("")}</div>`;
     } else if (q.type === "PGK") {
       const cur = Array.isArray(P.answers[no]) ? P.answers[no] : [];
-      inner = `<div class="flex flex-wrap gap-2 mt-2">${HURUF.map(h => `
+      inner = `<div class="flex flex-wrap gap-2 mt-2">${OPSI.map(h => `
         <button type="button" data-no="${no}" data-val="${h}"
           onclick="pilihJawabanPdf(${no}, '${h}', true)"
           class="pdf-opt px-4 py-2 rounded-lg border-2 text-xs font-bold ${cur.includes(h) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-200'}">${h}</button>
@@ -3036,11 +2902,11 @@ function renderPdfAnswerRows() {
         </div>`).join("")}</div>`;
     } else if (q.type === "ISIAN") {
       inner = `<input type="text" value="${esc(P.answers[no] || "")}"
-        oninput="inputPdfText(${no}, this.value, false)"
+        oninput="inputPdfText(${no}, this.value)"
         placeholder="Tulis jawaban singkat..."
         class="w-full mt-2 px-3 py-2 border-2 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">`;
     } else {
-      inner = `<textarea rows="4" oninput="inputPdfText(${no}, this.value, true)"
+      inner = `<textarea rows="4" oninput="inputPdfText(${no}, this.value)"
         placeholder="Tulis jawaban uraian..."
         class="w-full mt-2 px-3 py-2 border-2 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">${esc(P.answers[no] || "")}</textarea>`;
     }
@@ -3081,7 +2947,7 @@ function pilihKategoriPdf(no, idx, val) {
   renderPdfAnswerRows();
   updatePdfProgress();
 }
-function inputPdfText(no, val, isUraian) {
+function inputPdfText(no, val) {
   const P = appState.pdfQuiz; if (!P) return;
   P.answers[no] = val;
   updatePdfProgress();
@@ -3105,7 +2971,6 @@ function updatePdfProgress() {
   if (el) el.innerHTML = `<b class="text-emerald-700">${dijawab}</b> / ${P.questions.length} dijawab`;
 }
 
-/* ---------- Timer ---------- */
 function mulaiTimerPdf() {
   const P = appState.pdfQuiz; if (!P) return;
   if (P.timerId) clearInterval(P.timerId);
@@ -3130,7 +2995,6 @@ function mulaiTimerPdf() {
   P.timerId = setInterval(tick, 1000);
 }
 
-/* ---------- Batal & Submit ---------- */
 function batalKuisPdf() {
   if (!confirm("Batalkan kuis PDF? Jawaban yang belum dikumpulkan akan hilang.")) return;
   const P = appState.pdfQuiz;
@@ -3145,17 +3009,18 @@ async function submitKuisPdf(karenaWaktu) {
   const P = appState.pdfQuiz;
   if (!P || P.sudahSubmit) return;
 
-  // Validasi: minimal semua PG/PGK/KATEGORI/ISIAN terisi (URAIAN bebas)
-  for (const q of P.questions) {
-    const a = P.answers[q.no];
-    if (q.type === "URAIAN") continue;
-    if (q.type === "PG" || q.type === "ISIAN") {
-      if (!String(a || "").trim()) { showToast(`Nomor ${q.no} belum diisi.`, "warning"); return; }
-    } else if (q.type === "PGK") {
-      if (!Array.isArray(a) || !a.length) { showToast(`Nomor ${q.no} belum diisi.`, "warning"); return; }
-    } else if (q.type === "KATEGORI") {
-      const sub = q.sub_count || 3;
-      if (!Array.isArray(a) || a.length !== sub || a.some(x => !x)) { showToast(`Nomor ${q.no} belum lengkap.`, "warning"); return; }
+  if (!karenaWaktu) {
+    for (const q of P.questions) {
+      const a = P.answers[q.no];
+      if (q.type === "URAIAN") continue;
+      if (q.type === "PG" || q.type === "ISIAN") {
+        if (!String(a || "").trim()) { showToast(`Nomor ${q.no} belum diisi.`, "warning"); return; }
+      } else if (q.type === "PGK") {
+        if (!Array.isArray(a) || !a.length) { showToast(`Nomor ${q.no} belum diisi.`, "warning"); return; }
+      } else if (q.type === "KATEGORI") {
+        const sub = q.sub_count || 3;
+        if (!Array.isArray(a) || a.length !== sub || a.some(x => !x)) { showToast(`Nomor ${q.no} belum lengkap.`, "warning"); return; }
+      }
     }
   }
 
@@ -3166,23 +3031,35 @@ async function submitKuisPdf(karenaWaktu) {
   showLoading(true, "Mengirim jawaban...");
 
   try {
-    // Kirim format yang sama seperti kuis_pdf.html: keys string
     const answersPayload = {};
     P.questions.forEach(q => {
       const a = P.answers[q.no];
-      if (q.type === "PGK") answersPayload[q.no] = (a || []).sort();
-      else if (q.type === "KATEGORI") answersPayload[q.no] = a || [];
+      if (q.type === "PGK") answersPayload[q.no] = Array.isArray(a) ? [...a].sort() : [];
+      else if (q.type === "KATEGORI") answersPayload[q.no] = Array.isArray(a) ? a : [];
       else answersPayload[q.no] = a ?? "";
     });
 
-    const { data, error } = await sbFetchRpc("submit_pdf_quiz_attempt", {
-      p_quiz_id: P.quiz.id,
-      p_answers: answersPayload
-    });
-    if (error) throw new Error(typeof error === "string" ? error : (error.message || "RPC gagal"));
+    const client = getSupabaseClient();
+    let resultData = null;
+
+    if (client) {
+      const { data, error } = await client.rpc("submit_pdf_quiz_attempt", {
+        p_quiz_id: P.quiz.id,
+        p_answers: answersPayload
+      });
+      if (error) throw new Error(error.message || "RPC gagal");
+      resultData = data;
+    } else {
+      const { data, error } = await sbFetchRpc("submit_pdf_quiz_attempt", {
+        p_quiz_id: P.quiz.id,
+        p_answers: answersPayload
+      });
+      if (error) throw new Error(typeof error === "string" ? error : (error.message || "RPC gagal"));
+      resultData = data;
+    }
 
     showLoading(false);
-    renderHasilKuisPdf(Array.isArray(data) ? data[0] : data);
+    renderHasilKuisPdf(Array.isArray(resultData) ? resultData[0] : resultData);
   } catch (err) {
     console.error(err);
     showLoading(false);
@@ -3192,11 +3069,10 @@ async function submitKuisPdf(karenaWaktu) {
   }
 }
 
-/* ---------- Wrapper RPC via fetch (karena file ini pakai sbFetch, bukan supabase-js) ---------- */
 async function sbFetchRpc(fnName, params) {
-  const sb = getSupabaseConfig();
-  if (!sb) throw new Error("Supabase belum dikonfigurasi.");
-  const res = await fetch(`${sb.url}/rest/v1/rpc/${fnName}`, {
+  const cfg = getSupabaseConfig();
+  if (!cfg) throw new Error("Supabase belum dikonfigurasi.");
+  const res = await fetch(`${cfg.url}/rest/v1/rpc/${fnName}`, {
     method: "POST",
     headers: sbHeaders(),
     body: JSON.stringify(params)
@@ -3208,7 +3084,6 @@ async function sbFetchRpc(fnName, params) {
   return { data: await res.json(), error: null };
 }
 
-/* ---------- Hasil ---------- */
 function renderHasilKuisPdf(r) {
   const c = document.getElementById("main-view-container");
   const P = appState.pdfQuiz;
@@ -3221,7 +3096,6 @@ function renderHasilKuisPdf(r) {
   const salah = Number(r.wrong_count || 0);
   const pending = Number(r.pending_count || 0);
 
-  // Reset state
   appState.pdfQuiz = null;
   sembunyikanWatermark();
   releaseHistory();
@@ -3257,7 +3131,7 @@ function renderHasilKuisPdf(r) {
       </div>
 
       ${pending > 0 ? `
-        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-[11px] text-amber-900">
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900">
           <i class="fa-solid fa-pen-fancy mr-1"></i>
           Ada <b>${pending} soal uraian</b> yang akan dikoreksi guru. Nilai akhir bisa berubah.
         </div>` : ""}
