@@ -2501,15 +2501,37 @@ async function loadLeaderboard(paketId, nilaiSiswa) {
       }
     });
 
-    const sw = (appState.db?.sw || []);
-    const getName = (sid) => {
-      const s = sw.find(x => String(x[0]) === String(sid));
-      return s ? s[3] : `Siswa ${sid}`;
-    };
-
     const urut = Object.values(perSiswa).sort((a, b) => Number(b.nilai) - Number(a.nilai));
     const top5 = urut.slice(0, 5);
-    const myId = String(appState.user.siswaId);
+    const myId = String(appState.user?.siswaId || "");
+
+    // Ambil nama dari tabel profiles Supabase untuk UUID yang valid
+    const profileMap = {};
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidList = [...new Set(top5.map(h => String(h.siswa_id)).filter(id => uuidRegex.test(id)))];
+
+    if (uuidList.length) {
+      try {
+        const profiles = await sbFetch("profiles",
+          `?id=in.(${uuidList.map(id => `"${id}"`).join(",")})&select=id,full_name`);
+        (profiles || []).forEach(p => {
+          if (p.full_name) profileMap[String(p.id)] = p.full_name;
+        });
+      } catch (e) {
+        console.warn("Gagal memuat nama dari profiles:", e);
+      }
+    }
+
+    const sw = (appState.db?.sw || []);
+    const getName = (sid) => {
+      const idStr = String(sid);
+      if (profileMap[idStr]) return profileMap[idStr];
+      if (idStr === myId && appState.user?.name) return appState.user.name;
+      const s = sw.find(x => String(x[0]) === idStr);
+      if (s && s[3]) return s[3];
+      return `Siswa #${idStr.slice(0, 6)}`;
+    };
+
     const myRank = urut.findIndex(h => String(h.siswa_id) === myId) + 1;
 
     wrap.innerHTML = `
@@ -2673,6 +2695,12 @@ async function renderSectionKuisPdf() {
   await loadKuisPdfSiswa(false);
 }
 
+function normalisasiKelas(val) {
+  const s = String(val || "").toLowerCase().replace(/kelas/g, "").trim();
+  const romawi = { i:"1", ii:"2", iii:"3", iv:"4", v:"5", vi:"6", vii:"7", viii:"8", ix:"9", x:"10", xi:"11", xii:"12" };
+  return romawi[s] || s;
+}
+
 async function loadKuisPdfSiswa(forceToast) {
   const box = document.getElementById("pdf-kuis-list");
   if (!box) return;
@@ -2680,18 +2708,19 @@ async function loadKuisPdfSiswa(forceToast) {
     const quizzes = await sbFetch("pdf_quizzes",
       `?is_published=eq.true&order=created_at.desc&limit=50`);
 
-    const kelasSiswa = String(appState.user?.kelas || "").trim().toLowerCase();
+    const kelasSiswa = normalisasiKelas(appState.user?.kelas);
     const cocok = (quizzes || []).filter(q => {
-      const k = String(q.class_name || "").trim().toLowerCase();
-      if (!k || k === "semua kelas" || k === "semua" || k === "-") return true;
+      const raw = String(q.class_name || "").trim().toLowerCase();
+      if (!raw || raw === "semua kelas" || raw === "semua" || raw === "-") return true;
       if (!kelasSiswa || kelasSiswa === "-") return true;
-      return k.includes(kelasSiswa) || kelasSiswa.includes(k);
+      const kelasKuis = normalisasiKelas(raw);
+      return kelasKuis.includes(kelasSiswa) || kelasSiswa.includes(kelasKuis);
     });
 
     if (!cocok.length) {
       box.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">
         <i class="fa-solid fa-inbox text-2xl mb-1 block"></i>
-        Belum ada kuis PDF yang tersedia.
+        Belum ada kuis PDF yang tersedia untuk Kelas ${esc(appState.user?.kelas || "-")}.
       </div>`;
       return;
     }
@@ -2702,7 +2731,7 @@ async function loadKuisPdfSiswa(forceToast) {
       try {
         attempts = await sbFetch("pdf_quiz_attempts",
           `?student_id=eq.${encodeURIComponent(studentId)}&order=created_at.desc&limit=500`);
-      } catch (e) { /* abaikan jika tabel belum ada / berbeda nama */ }
+      } catch (e) {}
     }
 
     const attMap = {};
