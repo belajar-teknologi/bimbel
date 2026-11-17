@@ -28,7 +28,7 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 /* Watermark */
 #watermark-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 9999; overflow: hidden; display: none; }
 #watermark-overlay.aktif { display: block; }
-#watermark-overlay .wm-text { position: absolute; font-size: 20px; font-weight: 800; color: rgba(15, 23, 42, 0.08); transform: rotate(-30deg); white-space: nowrap; user-select: none; pointer-events: none; }
+#watermark-overlay .wm-text { position: absolute; font-size: 20px; font-weight: 800; color: rgba(15, 23, 42, 0.03); transform: rotate(-30deg); white-space: nowrap; user-select: none; pointer-events: none; }
 
 /* Warning overlay */
 #warning-overlay { position: fixed; inset: 0; z-index: 99999; background: rgba(220, 38, 38, 0.95); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px; }
@@ -69,7 +69,7 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 #fs-notice.aktif { display: flex; }
 </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+<body class="bg-white text-slate-800 antialiased min-h-screen flex flex-col">
 
 <!-- Watermark -->
 <div id="watermark-overlay"></div>
@@ -2695,12 +2695,6 @@ async function renderSectionKuisPdf() {
   await loadKuisPdfSiswa(false);
 }
 
-function normalisasiKelas(val) {
-  const s = String(val || "").toLowerCase().replace(/kelas/g, "").trim();
-  const romawi = { i:"1", ii:"2", iii:"3", iv:"4", v:"5", vi:"6", vii:"7", viii:"8", ix:"9", x:"10", xi:"11", xii:"12" };
-  return romawi[s] || s;
-}
-
 async function loadKuisPdfSiswa(forceToast) {
   const box = document.getElementById("pdf-kuis-list");
   if (!box) return;
@@ -2708,19 +2702,18 @@ async function loadKuisPdfSiswa(forceToast) {
     const quizzes = await sbFetch("pdf_quizzes",
       `?is_published=eq.true&order=created_at.desc&limit=50`);
 
-    const kelasSiswa = normalisasiKelas(appState.user?.kelas);
+    const kelasSiswa = String(appState.user?.kelas || "").trim().toLowerCase();
     const cocok = (quizzes || []).filter(q => {
-      const raw = String(q.class_name || "").trim().toLowerCase();
-      if (!raw || raw === "semua kelas" || raw === "semua" || raw === "-") return true;
+      const k = String(q.class_name || "").trim().toLowerCase();
+      if (!k || k === "semua kelas" || k === "semua" || k === "-") return true;
       if (!kelasSiswa || kelasSiswa === "-") return true;
-      const kelasKuis = normalisasiKelas(raw);
-      return kelasKuis.includes(kelasSiswa) || kelasSiswa.includes(kelasKuis);
+      return k.includes(kelasSiswa) || kelasSiswa.includes(k);
     });
 
     if (!cocok.length) {
       box.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">
         <i class="fa-solid fa-inbox text-2xl mb-1 block"></i>
-        Belum ada kuis PDF yang tersedia untuk Kelas ${esc(appState.user?.kelas || "-")}.
+        Belum ada kuis PDF yang tersedia.
       </div>`;
       return;
     }
@@ -2731,7 +2724,7 @@ async function loadKuisPdfSiswa(forceToast) {
       try {
         attempts = await sbFetch("pdf_quiz_attempts",
           `?student_id=eq.${encodeURIComponent(studentId)}&order=created_at.desc&limit=500`);
-      } catch (e) {}
+      } catch (e) { /* abaikan jika tabel belum ada / berbeda nama */ }
     }
 
     const attMap = {};
@@ -2849,8 +2842,8 @@ function renderUjianPdf() {
   renderWatermark();
 
   c.innerHTML = `
-    <div class="space-y-3 fade-in">
-      <div class="bg-white rounded-2xl border shadow-sm p-3 flex items-center justify-between gap-3">
+    <div class="space-y-3 fade-in bg-white">
+      <div class="bg-white rounded-2xl border border-slate-200 p-3 flex items-center justify-between gap-3">
         <div class="min-w-0 flex-1">
           <div class="text-[10px] text-rose-600 font-bold">KUIS DARI PDF</div>
           <div class="font-bold text-xs sm:text-sm text-slate-800 truncate">${esc(q.title || "Kuis")}</div>
@@ -2862,19 +2855,35 @@ function renderUjianPdf() {
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-        <div class="px-3 py-2 border-b bg-slate-50 flex items-center justify-between">
-          <div class="text-xs font-bold text-slate-700"><i class="fa-solid fa-file-pdf text-rose-600"></i> Dokumen Soal PDF</div>
-          <a href="${esc(P.pdfUrl)}" target="_blank" rel="noopener" class="text-[11px] text-indigo-600 hover:underline">
-            <i class="fa-solid fa-up-right-from-square"></i> Buka tab baru
-          </a>
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="px-3 py-2 border-b border-slate-100 bg-white flex items-center justify-between gap-2">
+          <div class="text-xs font-bold text-slate-700">
+            <i class="fa-solid fa-file-pdf text-rose-600"></i> Dokumen Soal PDF
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="ubahZoomPdf(-0.15)" class="px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700" title="Perkecil">
+              <i class="fa-solid fa-minus"></i>
+            </button>
+            <span id="pdf-zoom-label" class="text-[11px] font-bold text-slate-600 min-w-[42px] text-center">100%</span>
+            <button type="button" onclick="ubahZoomPdf(0.15)" class="px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700" title="Perbesar">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <a href="${esc(P.pdfUrl)}" target="_blank" rel="noopener" class="ml-2 text-[11px] text-indigo-600 hover:underline">
+              <i class="fa-solid fa-up-right-from-square"></i> <span class="hidden sm:inline">Tab baru</span>
+            </a>
+          </div>
         </div>
-        <iframe src="${esc(P.pdfUrl)}" class="w-full h-[55vh] bg-slate-100" frameborder="0"></iframe>
+
+        <div id="pdf-clean-viewer" class="w-full h-[60vh] overflow-y-auto bg-white p-3 space-y-4 custom-scrollbar">
+          <div class="text-center py-12 text-slate-400 text-xs bg-white">
+            <i class="fa-solid fa-spinner fa-spin mr-1"></i> Memuat halaman soal...
+          </div>
+        </div>
       </div>
 
-      <div id="pdf-jawaban-wrap" class="space-y-3"></div>
+      <div id="pdf-jawaban-wrap" class="space-y-3 bg-white"></div>
 
-      <div class="bg-white rounded-2xl border shadow-sm p-3 sticky bottom-2">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 sticky bottom-2">
         <div class="flex items-center justify-between gap-2 mb-2">
           <span id="pdf-progress-text" class="text-[11px] text-slate-500"><b class="text-emerald-700">0</b> dijawab</span>
           <button onclick="batalKuisPdf()" class="text-[11px] text-slate-500 hover:text-red-600 font-semibold">
@@ -2887,10 +2896,90 @@ function renderUjianPdf() {
       </div>
     </div>`;
 
+  P.zoomFactor = 1;
+  renderPdfCanvasClean();
   renderPdfAnswerRows();
   updatePdfProgress();
   mulaiTimerPdf();
   trapHistory();
+}
+
+function loadPdfJsLib() {
+  return new Promise((resolve, reject) => {
+    if (window.pdfjsLib) return resolve(window.pdfjsLib);
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    s.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      resolve(window.pdfjsLib);
+    };
+    s.onerror = () => reject(new Error("Gagal memuat PDF.js"));
+    document.head.appendChild(s);
+  });
+}
+
+async function renderPdfCanvasClean() {
+  const P = appState.pdfQuiz;
+  const box = document.getElementById("pdf-clean-viewer");
+  if (!P || !box) return;
+
+  try {
+    const pdfjsLib = await loadPdfJsLib();
+    if (!P.pdfDoc) {
+      P.pdfDoc = await pdfjsLib.getDocument(P.pdfUrl).promise;
+    }
+
+    const pdf = P.pdfDoc;
+    const zoom = P.zoomFactor || 1;
+    const label = document.getElementById("pdf-zoom-label");
+    if (label) label.textContent = Math.round(zoom * 100) + "%";
+
+    box.innerHTML = "";
+    const containerWidth = Math.max(280, box.clientWidth - 24);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const fitScale = (containerWidth / baseViewport.width) * zoom;
+      const viewport = page.getViewport({ scale: fitScale * dpr });
+
+      const pageWrap = document.createElement("div");
+      pageWrap.className = "bg-white mx-auto flex flex-col items-center pb-3 border-b border-slate-100 last:border-b-0";
+
+      const canvas = document.createElement("canvas");
+      canvas.className = "bg-white block max-w-full";
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      canvas.style.width = `${Math.floor(viewport.width / dpr)}px`;
+      canvas.style.height = `${Math.floor(viewport.height / dpr)}px`;
+
+      const badge = document.createElement("div");
+      badge.className = "text-[10px] text-slate-400 mt-1";
+      badge.textContent = `Halaman ${pageNum} dari ${pdf.numPages}`;
+
+      pageWrap.appendChild(canvas);
+      pageWrap.appendChild(badge);
+      box.appendChild(pageWrap);
+
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+    }
+  } catch (err) {
+    console.warn("Fallback ke iframe PDF:", err);
+    box.className = "w-full h-[60vh] bg-white";
+    box.innerHTML = `<iframe src="${esc(P.pdfUrl)}#toolbar=0&navpanes=0" class="w-full h-full bg-white" frameborder="0"></iframe>`;
+  }
+}
+
+function ubahZoomPdf(delta) {
+  const P = appState.pdfQuiz;
+  if (!P) return;
+  P.zoomFactor = Math.min(2.0, Math.max(0.6, Number(((P.zoomFactor || 1) + delta).toFixed(2))));
+  renderPdfCanvasClean();
 }
 
 function renderPdfAnswerRows() {
