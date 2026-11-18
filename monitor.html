@@ -19,6 +19,7 @@
   /* Badge status warna */
   .badge-tuntas { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
   .badge-remidi { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+  .badge-pdf { background: #fce7f3; color: #9d174d; border: 1px solid #f472b6; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
@@ -97,7 +98,7 @@
   <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
     <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
       <h3 class="font-bold text-sm flex items-center gap-2">
-        <i class="fa-solid fa-file-invoice text-indigo-600"></i> Hasil Ujian Siswa
+        <i class="fa-solid fa-file-invoice text-indigo-600"></i> Semua Hasil Ujian
       </h3>
     </div>
     
@@ -107,13 +108,14 @@
           <tr>
             <th class="p-4 w-16 text-center">No</th>
             <th class="p-4">Nama Siswa</th>
+            <th class="p-4 w-40 text-center">Jenis Kuis</th>
             <th class="p-4 w-32 text-center">Nilai</th>
             <th class="p-4 w-32 text-center">Keterangan</th>
           </tr>
         </thead>
         <tbody id="table-body" class="divide-y divide-slate-100">
           <tr>
-            <td colspan="4" class="p-10 text-center text-slate-400">
+            <td colspan="5" class="p-10 text-center text-slate-400">
               <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>Memuat data dari Supabase...
             </td>
           </tr>
@@ -161,15 +163,25 @@
     const tbody = document.getElementById('table-body');
     
     try {
-      // 1. Ambil data hasil ujian
-      const { data: hasilData, error: hasilError } = await supabaseClient
+      // 1. Ambil data hasil ujian reguler
+      const { data: hasilReguler, error: errReguler } = await supabaseClient
         .from('hasil_ujian')
-        .select('*')
-        .order('nilai', { ascending: false });
+        .select('*');
 
-      if (hasilError) throw hasilError;
+      if (errReguler) throw errReguler;
 
-      // 2. Ambil data profil siswa untuk mendapatkan nama
+      // 2. Ambil data hasil kuis PDF (menggunakan try-catch terpisah agar jika tabel belum ada, tidak error total)
+      let hasilPdf = [];
+      try {
+        const { data: dataPdf, error: errPdf } = await supabaseClient
+          .from('pdf_quiz_attempts')
+          .select('*');
+        if (!errPdf && dataPdf) hasilPdf = dataPdf;
+      } catch (e) {
+        console.warn("Tabel pdf_quiz_attempts belum ada atau error, lanjut ambil data reguler saja.", e);
+      }
+
+      // 3. Ambil data profil siswa untuk mendapatkan nama
       const { data: profilesData, error: profileError } = await supabaseClient
         .from('profiles')
         .select('id, full_name, email');
@@ -182,22 +194,51 @@
         mapSiswa[p.id] = p.full_name || p.email || 'Siswa Tanpa Nama';
       });
 
-      // 3. Hitung Statistik
+      // 4. Gabungkan semua data (Reguler + PDF)
+      let semuaData = [];
+
+      // Format data reguler
+      (hasilReguler || []).forEach(r => {
+        semuaData.push({
+          siswa_id: r.siswa_id,
+          nilai: Number(r.nilai) || 0,
+          jenis: 'Reguler',
+          tanggal: r.created_at || r.waktu_selesai || new Date().toISOString()
+        });
+      });
+
+      // Format data PDF (Asumsi nama kolom di tabel pdf_quiz_attempts adalah siswa_id, score/nilai, created_at)
+      (hasilPdf || []).forEach(p => {
+        // Kita coba deteksi nama kolom yang umum digunakan di tabel PDF
+        const nilaiPdf = Number(p.score || p.nilai || p.grade || 0);
+        const siswaIdPdf = p.siswa_id || p.student_id || p.user_id;
+        
+        semuaData.push({
+          siswa_id: siswaIdPdf,
+          nilai: nilaiPdf,
+          jenis: 'Kuis PDF',
+          tanggal: p.created_at || p.submitted_at || new Date().toISOString()
+        });
+      });
+
+      // Urutkan berdasarkan nilai tertinggi
+      semuaData.sort((a, b) => b.nilai - a.nilai);
+
+      // 5. Hitung Statistik & Render
       let totalTuntas = 0;
       let totalRemidi = 0;
 
-      if (!hasilData || hasilData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-slate-400">Belum ada data hasil ujian.</td></tr>`;
+      if (semuaData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-400">Belum ada data hasil ujian (Reguler maupun PDF).</td></tr>`;
         document.getElementById('stat-total').innerText = "0";
         document.getElementById('stat-tuntas').innerText = "0";
         document.getElementById('stat-remidi').innerText = "0";
         return;
       }
 
-      // Render Data
-      tbody.innerHTML = hasilData.map((row, index) => {
-        const namaSiswa = mapSiswa[row.siswa_id] || `Siswa (${row.siswa_id ? row.siswa_id.substring(0, 5) : '?'}...)`;
-        const nilai = Number(row.nilai) || 0;
+      tbody.innerHTML = semuaData.map((row, index) => {
+        const namaSiswa = mapSiswa[row.siswa_id] || `Siswa (${row.siswa_id ? String(row.siswa_id).substring(0, 5) : '?'}...)`;
+        const nilai = row.nilai;
         
         // Logika Keterangan (KKM 75)
         const isTuntas = nilai >= KKM;
@@ -206,13 +247,18 @@
 
         const badgeClass = isTuntas ? 'badge-tuntas' : 'badge-remidi';
         const badgeText = isTuntas ? '✓ TUNTAS' : '✗ REMIDI';
+        
+        const jenisBadge = row.jenis === 'Kuis PDF' 
+          ? '<span class="badge-pdf text-[10px] font-bold px-2 py-1 rounded-md"><i class="fa-solid fa-file-pdf"></i> Kuis PDF</span>'
+          : '<span class="bg-indigo-100 text-indigo-700 border border-indigo-300 text-[10px] font-bold px-2 py-1 rounded-md"><i class="fa-solid fa-file-pen"></i> Reguler</span>';
 
         return `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-4 text-center font-mono text-slate-400">${index + 1}</td>
             <td class="p-4 font-semibold text-slate-800">${namaSiswa}</td>
+            <td class="p-4 text-center">${jenisBadge}</td>
             <td class="p-4 text-center font-black text-sm ${isTuntas ? 'text-emerald-700' : 'text-amber-700'}">
-              ${nilai}
+              ${nilai.toFixed(1)}
             </td>
             <td class="p-4 text-center">
               <span class="${badgeClass} text-[10px] font-bold px-3 py-1 rounded-full whitespace-nowrap">${badgeText}</span>
@@ -222,15 +268,15 @@
       }).join('');
 
       // Update Kartu Statistik
-      document.getElementById('stat-total').innerText = hasilData.length;
+      document.getElementById('stat-total').innerText = semuaData.length;
       document.getElementById('stat-tuntas').innerText = totalTuntas;
       document.getElementById('stat-remidi').innerText = totalRemidi;
 
-      showToast(`Berhasil memuat ${hasilData.length} data ujian.`, "success");
+      showToast(`Berhasil memuat ${semuaData.length} data ujian.`, "success");
 
     } catch (err) {
       console.error(err);
-      tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-red-500 font-bold">Gagal memuat data: ${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-red-500 font-bold">Gagal memuat data: ${err.message}</td></tr>`;
       showToast("Gagal mengambil data dari Supabase.", "error");
     } finally {
       showLoading(false);

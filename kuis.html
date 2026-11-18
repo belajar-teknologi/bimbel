@@ -2452,34 +2452,26 @@ async function loadLeaderboard(paketId, nilaiSiswa) {
         <div class="space-y-1.5">
           ${top5.map((h, i) => {
             const isMe = String(h.siswa_id) === myId;
-            const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`;
+            const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
             return `
-              <div class="flex items-center gap-2 p-2 rounded-lg ${isMe ? 'bg-amber-100 border-2 border-amber-300' : 'bg-slate-50'}">
-                <span class="font-bold w-8 text-center text-sm shrink-0">${medal}</span>
-                <span class="flex-1 truncate text-[11px] ${isMe ? 'font-bold text-amber-900' : 'text-slate-700'}">
-                  ${esc(getName(h.siswa_id))}${isMe ? ' <span class="text-[9px] bg-amber-600 text-white px-1.5 py-0.5 rounded-full">KAMU</span>' : ''}
-                </span>
-                <span class="font-black text-sm ${isMe ? 'text-amber-700' : 'text-emerald-700'} shrink-0">${Number(h.nilai).toFixed(1)}</span>
+              <div class="flex items-center gap-2 p-2 rounded-lg ${isMe ? 'bg-indigo-50 border border-indigo-200' : 'bg-slate-50'}">
+                <div class="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 ${i < 3 ? 'bg-amber-100' : 'bg-slate-200 text-slate-600'}">
+                  ${medal}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold text-slate-800 truncate">
+                    ${esc(getName(h.siswa_id))} ${isMe ? '<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded ml-1">KAMU</span>' : ''}
+                  </div>
+                </div>
+                <div class="text-sm font-black text-indigo-700">${Number(h.nilai).toFixed(1)}</div>
               </div>`;
           }).join("")}
         </div>
 
         ${myRank > 5 ? `
-          <div class="mt-3 pt-3 border-t">
-            <div class="text-[10px] font-bold text-slate-500 mb-1.5">Peringkat Kamu</div>
-            <div class="flex items-center gap-2 p-2 rounded-lg bg-amber-100 border-2 border-amber-300">
-              <span class="font-bold w-8 text-center text-sm">#${myRank}</span>
-              <span class="flex-1 truncate text-[11px] font-bold text-amber-900">${esc(appState.user.name)}</span>
-              <span class="font-black text-sm text-amber-700">${Number(nilaiSiswa).toFixed(1)}</span>
-            </div>
-          </div>` : myRank > 0 ? `
-          <div class="mt-3 pt-3 border-t text-center text-[10px] text-emerald-700 font-bold">
-            🎉 Kamu di peringkat <b>#${myRank}</b> dari ${urut.length} siswa!
+          <div class="mt-3 pt-3 border-t text-[11px] text-slate-600 text-center">
+            Peringkat kamu: <b class="text-indigo-700">#${myRank}</b> dari ${urut.length} siswa
           </div>` : ""}
-
-        <div class="mt-3 text-center text-[10px] text-slate-400">
-          Total ${urut.length} siswa mengerjakan paket ini
-        </div>
       </div>`;
   } catch (err) {
     wrap.innerHTML = `
@@ -3308,6 +3300,12 @@ function renderHasilKuisPdf(r, quizObj = null, isJustSubmitted = true) {
     showToast("✓ Jawaban terkirim!", "success");
   }
 }
+window.renderDashboard = renderDashboard;
+window.mulaiUjian = mulaiUjian;
+window.lihatHasilDariDashboard = lihatHasilDariDashboard;
+window.kembaliKeDashboard = () => renderDashboard();
+window.toggleReviewJawaban = toggleReviewJawaban;
+window.loadLeaderboard = loadLeaderboard;
 </script>
 </body>
 </html>
