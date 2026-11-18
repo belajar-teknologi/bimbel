@@ -176,7 +176,7 @@ const STORAGE = {
 const HURUF = ["A", "B", "C", "D"];
 const MAX_PELANGGARAN = 5;
 const KKM = 75;
-const MAX_PERCOBAAN = 2;
+const MAX_PERCOBAAN = 1;
 
 let sb = null;
 
@@ -230,6 +230,9 @@ function shuffle(arr) {
 }
 function normalize(s) {
   return String(s ?? "").toLowerCase().trim().replace(/\s+/g, " ");
+}
+function getPdfStudentId() {
+  return String(appState.authUserId || appState.user?.siswaId || "").trim();
 }
 
 /* ==== UI HELPER ==== */
@@ -468,7 +471,6 @@ async function syncSupabaseSession() {
       appState.accessToken = session.access_token;
       appState.authUserId = session.user.id;
 
-      // Jika edusmart_user belum ada di localStorage, ambil dari tabel profiles
       if (!safeParse(getLS(STORAGE.USER))) {
         const { data: prof } = await client.from("profiles")
           .select("id,full_name,role,kelas,nis,is_active")
@@ -573,7 +575,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   pasangAntiCheat();
   await renderDashboard();
 
-  // Jika dibuka langsung dengan parameter ?quiz_id=... (link kuis PDF), langsung buka soalnya
+  // Jika dibuka langsung dengan parameter ?quiz_id=..., cek apakah sudah dikerjakan (tampilkan hasil) atau mulai baru
   const urlParams = new URLSearchParams(window.location.search);
   const directQuizId = urlParams.get("quiz_id");
   if (directQuizId) {
@@ -624,7 +626,7 @@ async function renderDashboard() {
         <div class="flex items-center justify-between mb-3">
           <div>
             <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-file-pen text-indigo-600"></i> Paket Ujian Tersedia</h3>
-            <p class="text-[11px] text-slate-500 mt-0.5">KKM: <b>${KKM}</b> · Maks. percobaan: <b>${MAX_PERCOBAAN}x</b></p>
+            <p class="text-[11px] text-slate-500 mt-0.5">KKM: <b>${KKM}</b> · Maks. percobaan: <b>1x</b></p>
           </div>
           <button onclick="renderDashboard()" class="text-slate-400 hover:text-indigo-600 p-2" title="Refresh"><i class="fa-solid fa-rotate text-xs"></i></button>
         </div>
@@ -880,7 +882,7 @@ async function loadPaketSiswa() {
 }
 
 /* ---------------------------------------------------------
-   2C. RENDER KARTU PAKET
+   2C. RENDER KARTU PAKET (1x PERCOBAAN SAJA)
    --------------------------------------------------------- */
 function renderKartuPaket(p) {
   const links = kmGetLinks(p.id);
@@ -888,8 +890,6 @@ function renderKartuPaket(p) {
   const nilaiTertinggi = p.nilaiTertinggi;
   const sudahDikerjakan = jumlahPercobaan > 0;
   const lulus = sudahDikerjakan && nilaiTertinggi >= KKM;
-  const kuotaHabis = jumlahPercobaan >= MAX_PERCOBAAN;
-  const bisaUlang = sudahDikerjakan && !lulus && !kuotaHabis;
 
   let badgeHtml = "";
   let tombolHtml = "";
@@ -906,31 +906,13 @@ function renderKartuPaket(p) {
                 class="w-full mt-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs py-2 rounded-xl transition">
           <i class="fa-solid fa-book-open"></i> Materi (${totalLinks})
         </button>` : ""}`;
-  } else if (lulus) {
-    badgeHtml = `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-200 text-emerald-800">✓ LULUS</span>`;
-    tombolHtml = `<button onclick="lihatHasilDariDashboard('${p.id}')" class="w-full mt-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl"><i class="fa-solid fa-eye"></i> Lihat Hasil</button>`;
-  } else if (bisaUlang) {
-    badgeHtml = `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-200 text-amber-800">⚠ REMEDIAL</span>`;
-    infoTambahan = `<p class="text-[10px] text-amber-700 mt-1.5">Tersisa 1x kesempatan remedial. Pelajari materi sebelum mengulang.</p>`;
-    tombolHtml = `
-      <div class="flex gap-2 mt-3">
-        <button onclick="lihatHasilDariDashboard('${p.id}')" class="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-[11px] py-2 rounded-xl">
-          <i class="fa-solid fa-eye"></i> Hasil
-        </button>
-        <button onclick="mulaiUjian('${p.id}')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] py-2 rounded-xl">
-          <i class="fa-solid fa-rotate-right"></i> Ulangi
-        </button>
-      </div>
-      ${totalLinks > 0 ? `
-        <button onclick="showLinkMateriModal('${p.id}', '${esc(p.nama || "Paket")}')"
-                class="w-full mt-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs py-2 rounded-xl transition">
-          <i class="fa-solid fa-book-open"></i> Materi (${totalLinks})
-        </button>` : ""}`;
   } else {
-    badgeHtml = `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-red-200 text-red-800">✗ REMEDIAL FINAL</span>`;
-    infoTambahan = `<p class="text-[10px] text-red-700 mt-1.5">Batas percobaan telah habis.</p>`;
+    badgeHtml = lulus
+      ? `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-200 text-emerald-800">✓ LULUS</span>`
+      : `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-200 text-slate-700">✓ SELESAI</span>`;
+    infoTambahan = `<p class="text-[10px] text-slate-500 mt-1.5">Ujian sudah dikerjakan (maksimal 1x).</p>`;
     tombolHtml = `
-      <button onclick="lihatHasilDariDashboard('${p.id}')" class="w-full mt-3 bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs py-2.5 rounded-xl"><i class="fa-solid fa-eye"></i> Lihat Hasil</button>
+      <button onclick="lihatHasilDariDashboard('${p.id}')" class="w-full mt-3 ${lulus ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700 hover:bg-slate-800'} text-white font-bold text-xs py-2.5 rounded-xl"><i class="fa-solid fa-eye"></i> Lihat Hasil</button>
       ${totalLinks > 0 ? `
         <button onclick="showLinkMateriModal('${p.id}', '${esc(p.nama || "Paket")}')"
                 class="w-full mt-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs py-2 rounded-xl transition">
@@ -941,8 +923,8 @@ function renderKartuPaket(p) {
   return `
     <div class="border-2 rounded-2xl p-4 transition ${sudahDikerjakan ? 'border-slate-200 bg-slate-50/40' : 'border-slate-100 bg-white hover:border-indigo-400'}">
       <div class="flex items-start justify-between gap-2 mb-2">
-        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0 ${lulus ? 'bg-emerald-100 text-emerald-700' : sudahDikerjakan ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">
-          <i class="fa-solid ${lulus ? 'fa-circle-check' : sudahDikerjakan ? 'fa-triangle-exclamation' : 'fa-file-pen'}"></i>
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0 ${lulus ? 'bg-emerald-100 text-emerald-700' : sudahDikerjakan ? 'bg-slate-200 text-slate-700' : 'bg-indigo-100 text-indigo-700'}">
+          <i class="fa-solid ${sudahDikerjakan ? 'fa-circle-check' : 'fa-file-pen'}"></i>
         </div>
         ${badgeHtml}
       </div>
@@ -960,11 +942,11 @@ function renderKartuPaket(p) {
       ${sudahDikerjakan ? `
         <div class="mt-3 p-2 bg-white border rounded-lg">
           <div class="flex items-baseline justify-between">
-            <span class="text-[10px] text-slate-500">Nilai Tertinggi</span>
+            <span class="text-[10px] text-slate-500">Nilai Akhir</span>
             <span class="text-2xl font-black ${lulus ? 'text-emerald-600' : 'text-amber-600'}">${nilaiTertinggi.toFixed(1)}</span>
           </div>
           <div class="text-[10px] text-slate-500 mt-1">
-            Percobaan: <b>${jumlahPercobaan}/${MAX_PERCOBAAN}</b>
+            Status: <b>Sudah Dikerjakan (1x)</b>
           </div>
         </div>
         ${infoTambahan}
@@ -1077,7 +1059,7 @@ function hapusProgressPaket(paketId) {
 }
 
 /* ---------------------------------------------------------
-   2F. MULAI UJIAN — CEK KUOTA PERCOBAAN
+   2F. MULAI UJIAN — MAKSIMAL 1x PERCOBAAN
    --------------------------------------------------------- */
 async function mulaiUjian(paketId) {
   showLoading(true, "Memeriksa status...");
@@ -1086,19 +1068,12 @@ async function mulaiUjian(paketId) {
       `?paket_id=eq.${paketId}&siswa_id=eq.${encodeURIComponent(appState.user.siswaId)}&order=created_at.asc`);
 
     const jumlahPercobaan = riwayat.length;
-    const nilaiTertinggi = jumlahPercobaan ? Math.max(...riwayat.map(r => Number(r.nilai) || 0)) : 0;
 
     if (jumlahPercobaan >= MAX_PERCOBAAN) {
+      hapusProgressPaket(paketId);
       showLoading(false);
-      showToast("Kesempatan habis. Nilai akhir sudah tercatat.", "warning");
-      lihatHasilDariDashboard(paketId);
-      return;
-    }
-
-    if (jumlahPercobaan > 0 && nilaiTertinggi >= KKM) {
-      showLoading(false);
-      showToast(`Kamu sudah LULUS dengan nilai ${nilaiTertinggi.toFixed(1)}. Tidak bisa mengulang.`, "info");
-      lihatHasilDariDashboard(paketId);
+      showToast("Anda sudah mengerjakan ujian ini. Menampilkan hasil Anda.", "info");
+      await lihatHasilDariDashboard(paketId);
       return;
     }
 
@@ -1128,7 +1103,7 @@ async function mulaiUjian(paketId) {
     appState.sudahSubmit = false;
     appState.waktuMulai = Date.now();
     appState.waktuSelesaiRencana = Date.now() + (Number(paket.durasi_menit) || 30) * 60 * 1000;
-    appState.percobaanKe = jumlahPercobaan + 1;
+    appState.percobaanKe = 1;
 
     simpanProgress();
     showLoading(false);
@@ -1174,16 +1149,6 @@ function konfirmasiMulai() {
   const p = appState.paketAktif;
   const links = kmGetLinks(p.id);
   const c = document.getElementById("main-view-container");
-  const percobaanKe = appState.percobaanKe || 1;
-
-  const warningRemedial = percobaanKe > 1 ? `
-    <div class="p-3 bg-amber-50 border border-amber-300 rounded-xl mb-4">
-      <div class="font-bold text-amber-900 text-xs mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Percobaan Terakhir!</div>
-      <p class="text-[11px] text-amber-800">
-        Ini kesempatan <b>terakhir</b> kamu. <b>Silakan belajar lagi sebelum mengulangi soal agar nilai di atas KKM (${KKM})</b>.
-        Nilai tertinggi dari kedua percobaan akan menjadi acuan.
-      </p>
-    </div>` : "";
 
   c.innerHTML = `
     <div class="max-w-2xl mx-auto space-y-4 fade-in">
@@ -1194,7 +1159,6 @@ function konfirmasiMulai() {
           </div>
           <h2 class="font-bold text-lg text-slate-800">${esc(p.nama || "Paket Ujian")}</h2>
           <p class="text-xs text-slate-500 mt-1">${esc(p.mapel_kode || "")} · Kelas ${esc(p.kelas || "-")}</p>
-          ${percobaanKe > 1 ? `<p class="text-[11px] font-bold text-amber-700 mt-1"><i class="fa-solid fa-rotate-right"></i> Percobaan ${percobaanKe} dari ${MAX_PERCOBAAN}</p>` : ""}
         </div>
 
         <div class="grid grid-cols-3 gap-2 mb-4">
@@ -1212,8 +1176,6 @@ function konfirmasiMulai() {
           </div>
         </div>
 
-        ${warningRemedial}
-
         ${links.length ? `
           <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl mb-4">
             <div class="font-semibold text-emerald-900 text-xs mb-2"><i class="fa-solid fa-link"></i> Link Materi (baca dulu sebelum ujian)</div>
@@ -1226,6 +1188,7 @@ function konfirmasiMulai() {
         <div class="p-3 bg-red-50 border border-red-200 rounded-xl mb-4">
           <div class="font-bold text-red-900 text-xs mb-2"><i class="fa-solid fa-triangle-exclamation"></i> Aturan Ujian:</div>
           <ul class="text-[11px] text-red-800 space-y-1 ml-4 list-disc">
+            <li>Ujian ini hanya dapat dikerjakan <b>1 kali</b></li>
             <li>Ujian akan masuk <b>mode layar penuh</b> (fullscreen)</li>
             <li><b>Dilarang keluar</b> dari halaman ujian — terdeteksi sebagai pelanggaran</li>
             <li><b>Dilarang pindah tab</b> atau minimize browser</li>
@@ -1334,13 +1297,12 @@ function renderUjianLayout() {
   const p = appState.paketAktif;
   const total = appState.soalList.length;
   const idx = appState.soalIdx;
-  const percobaanKe = appState.percobaanKe || 1;
 
   c.innerHTML = `
     <div class="space-y-3 fade-in">
       <div class="bg-white rounded-2xl border shadow-sm p-3 flex items-center justify-between gap-3">
         <div class="min-w-0 flex-1">
-          <div class="text-[10px] text-slate-500 font-semibold">SEDANG MENGERJAKAN · Percobaan ${percobaanKe}/${MAX_PERCOBAAN}</div>
+          <div class="text-[10px] text-slate-500 font-semibold">SEDANG MENGERJAKAN · 1x Kesempatan</div>
           <div class="font-bold text-xs sm:text-sm text-slate-800 truncate">${esc(p.nama || "Ujian")}</div>
           <div class="text-[10px] text-slate-500 mt-0.5">${esc(p.mapel_kode || "")} · Kelas ${esc(p.kelas || "-")}</div>
         </div>
@@ -1817,7 +1779,7 @@ function konfirmasiSubmit() {
           <i class="fa-solid fa-paper-plane"></i>
         </div>
         <h3 class="font-bold text-base text-slate-800">Kumpulkan Jawaban?</h3>
-        <p class="text-xs text-slate-500 mt-1">Setelah dikumpulkan, kamu tidak bisa mengubah jawaban.</p>
+        <p class="text-xs text-slate-500 mt-1">Ujian hanya bisa dikerjakan <b>1 kali</b>. Setelah dikumpulkan, kamu tidak bisa mengulang atau mengubah jawaban.</p>
       </div>
 
       <div class="grid grid-cols-3 gap-2 mb-4 text-center">
@@ -2057,7 +2019,7 @@ async function submitUjian(karenaCurang) {
 }
 
 /* =========================================================
-   BAGIAN 4/6 — HALAMAN HASIL, REVIEW, LEADERBOARD, ULANGI
+   BAGIAN 4/6 — HALAMAN HASIL, REVIEW, LEADERBOARD
    ========================================================= */
 
 function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
@@ -2081,8 +2043,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
   const kosong = Number(hasil?.jumlah_kosong || 0);
   const totalSoal = soalList.length;
   const lulus = nilai >= KKM;
-  const jumlahPercobaan = meta.jumlahPercobaan || 1;
-  const semuaRiwayat = meta.semuaRiwayat || [hasil];
   const rata2Semua = meta.rata2Semua;
 
   const adaUraian = soalList.some(s => s.jenis === "URAIAN");
@@ -2105,11 +2065,8 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
   if (nilai >= 90) { emoji = "🏆"; pesan = "Luar biasa! Pertahankan!"; gradient = "linear-gradient(135deg, #10b981 0%, #047857 100%)"; }
   else if (nilai >= 80) { emoji = "🎉"; pesan = "Bagus sekali!"; gradient = "linear-gradient(135deg, #10b981 0%, #065f46 100%)"; }
   else if (nilai >= KKM) { emoji = "😊"; pesan = "Kamu lulus. Tingkatkan lagi ya!"; gradient = "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)"; }
-  else if (nilai >= 50) { emoji = "💪"; pesan = "Belum lulus, tapi kamu bisa lebih baik!"; gradient = "linear-gradient(135deg, #f59e0b 0%, #b45309 100%)"; }
+  else if (nilai >= 50) { emoji = "💪"; pesan = "Tetap semangat belajar!"; gradient = "linear-gradient(135deg, #f59e0b 0%, #b45309 100%)"; }
   else { emoji = "📚"; pesan = "Ayo belajar lagi, kamu pasti bisa!"; gradient = "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)"; }
-
-  const kuotaHabis = jumlahPercobaan >= MAX_PERCOBAAN;
-  const bisaUlang = !lulus && !kuotaHabis;
 
   const fotoHtml = fotoSiswa && (fotoSiswa.startsWith("http") || fotoSiswa.startsWith("data:"))
     ? `<img src="${esc(fotoSiswa)}" referrerpolicy="no-referrer" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white/40 shadow-lg" onerror="this.style.display='none'">`
@@ -2139,7 +2096,7 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
                 ${lulus ? '✓ LULUS' : `✗ BELUM LULUS (KKM ${KKM})`}
               </span>
               <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-white/20">
-                <i class="fa-solid fa-rotate-right"></i> Percobaan ${jumlahPercobaan}/${MAX_PERCOBAAN}
+                <i class="fa-solid fa-circle-check"></i> Sudah Dikerjakan (1x)
               </span>
             </div>
           </div>
@@ -2176,31 +2133,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
               <div class="text-slate-500 text-[10px]">Nilai Paket Ini</div>
               <div class="font-bold text-emerald-700 text-lg">${nilai.toFixed(1)}</div>
             </div>
-          </div>
-        </div>
-      ` : ""}
-
-      ${semuaRiwayat.length > 1 ? `
-        <div class="bg-white rounded-2xl border shadow-sm p-4">
-          <div class="flex items-center gap-2 mb-3">
-            <i class="fa-solid fa-clock-rotate-left text-amber-600"></i>
-            <span class="font-bold text-sm text-slate-700">Riwayat Percobaan</span>
-          </div>
-          <div class="space-y-2">
-            ${semuaRiwayat.map((r, i) => {
-              const isBest = Number(r.nilai) === nilai;
-              return `
-                <div class="flex items-center justify-between p-2 rounded-lg ${isBest ? 'bg-emerald-50 border border-emerald-200' : 'bg-slate-50'}">
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] font-bold ${isBest ? 'text-emerald-700' : 'text-slate-600'}">Percobaan ${i+1}</span>
-                    ${isBest ? '<span class="text-[9px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full font-bold">TERBAIK</span>' : ''}
-                  </div>
-                  <div class="text-right">
-                    <div class="font-black text-sm ${Number(r.nilai) >= KKM ? 'text-emerald-700' : 'text-amber-700'}">${Number(r.nilai).toFixed(1)}</div>
-                    <div class="text-[9px] text-slate-500">✓ ${r.jumlah_benar || 0} · ✗ ${r.jumlah_salah || 0}</div>
-                  </div>
-                </div>`;
-            }).join("")}
           </div>
         </div>
       ` : ""}
@@ -2248,7 +2180,7 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
         <button onclick="toggleReviewJawaban()" class="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition">
           <div class="flex items-center gap-2 text-sm font-bold text-slate-700">
             <i class="fa-solid fa-list-check text-indigo-600"></i>
-            Review Jawaban (Percobaan Terbaik)
+            Review Jawaban
           </div>
           <i id="review-chevron" class="fa-solid fa-chevron-down text-slate-400 transition"></i>
         </button>
@@ -2257,32 +2189,9 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
         </div>
       </div>
 
-      ${bisaUlang ? `
-        <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 space-y-3">
-          <div class="text-center">
-            <div class="text-2xl mb-1">📖</div>
-            <div class="font-bold text-amber-900 text-sm">Masih Ada Kesempatan!</div>
-            <p class="text-[11px] text-amber-800 mt-1">
-              <b>Silakan belajar lagi sebelum mengulangi soal agar nilai di atas KKM (${KKM}).</b>
-              Nilai tertinggi dari kedua percobaan akan menjadi acuan.
-            </p>
-          </div>
-          <button onclick="ulangiSekarang('${paket.id}')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm py-3 rounded-xl">
-            <i class="fa-solid fa-rotate-right"></i> Ulangi Sekarang (Percobaan ${jumlahPercobaan + 1}/${MAX_PERCOBAAN})
-          </button>
-        </div>
-      ` : ""}
-
-      ${kuotaHabis && !lulus ? `
-        <div class="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
-          <div class="text-2xl mb-1">🔒</div>
-          <div class="font-bold text-red-900 text-sm">Kesempatan Habis</div>
-          <p class="text-[11px] text-red-800 mt-1">
-            Kamu sudah menggunakan semua kesempatan. Nilai akhir: <b>${nilai.toFixed(1)}</b>.
-            Hubungi guru untuk bantuan.
-          </p>
-        </div>
-      ` : ""}
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center text-[11px] text-slate-600">
+        <i class="fa-solid fa-lock text-slate-400 mr-1"></i> Ujian ini hanya dapat dikerjakan <b>1 kali</b>.
+      </div>
 
       <div class="flex flex-col sm:flex-row gap-2">
         <button onclick="kembaliKeDashboard()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3 rounded-xl">
@@ -2295,11 +2204,6 @@ function renderHasil(paket, hasil, soalList, jawabanList, meta = {}) {
     </div>`;
 
   loadLeaderboard(paket.id, nilai);
-}
-
-function ulangiSekarang(paketId) {
-  if (!confirm("Ini akan menjadi percobaan terakhir Anda. Nilai tertinggi dari kedua percobaan yang akan dipakai. Yakin ingin mengulang?")) return;
-  mulaiUjian(paketId);
 }
 
 function renderReviewJawaban(soalList, jawabanList) {
@@ -2505,7 +2409,6 @@ async function loadLeaderboard(paketId, nilaiSiswa) {
     const top5 = urut.slice(0, 5);
     const myId = String(appState.user?.siswaId || "");
 
-    // Ambil nama dari tabel profiles Supabase untuk UUID yang valid
     const profileMap = {};
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const uuidList = [...new Set(top5.map(h => String(h.siswa_id)).filter(id => uuidRegex.test(id)))];
@@ -2659,7 +2562,7 @@ window.addEventListener("beforeunload", () => {
 });
 
 /* =========================================================
-   BAGIAN 6/6 — KUIS DARI PDF (terintegrasi penuh)
+   BAGIAN 6/6 — KUIS DARI PDF (1x PENGERJAAN, LALU HANYA HASIL)
    ========================================================= */
 
 async function renderSectionKuisPdf() {
@@ -2680,7 +2583,7 @@ async function renderSectionKuisPdf() {
         <h3 class="font-bold text-sm flex items-center gap-2">
           <i class="fa-solid fa-file-pdf text-rose-600"></i> Kuis dari PDF
         </h3>
-        <p class="text-[11px] text-slate-500 mt-0.5">Kuis berbasis dokumen PDF yang diaktifkan guru.</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">Kuis berbasis dokumen PDF (maksimal 1x pengerjaan).</p>
       </div>
       <button onclick="loadKuisPdfSiswa(true)" class="text-slate-400 hover:text-indigo-600 p-2" title="Refresh">
         <i class="fa-solid fa-rotate text-xs"></i>
@@ -2705,7 +2608,7 @@ async function loadKuisPdfSiswa(forceToast) {
     const kelasSiswa = String(appState.user?.kelas || "").trim().toLowerCase();
     const cocok = (quizzes || []).filter(q => {
       const k = String(q.class_name || "").trim().toLowerCase();
-      if (!k || k === "semua kelas" || k === "semua" || k === "-") return true;
+      if (!k || k === "semua kelas" || k === "semua" || k === "all" || k === "-") return true;
       if (!kelasSiswa || kelasSiswa === "-") return true;
       return k.includes(kelasSiswa) || kelasSiswa.includes(k);
     });
@@ -2719,7 +2622,7 @@ async function loadKuisPdfSiswa(forceToast) {
     }
 
     let attempts = [];
-    const studentId = appState.authUserId || appState.user?.siswaId;
+    const studentId = getPdfStudentId();
     if (studentId) {
       try {
         attempts = await sbFetch("pdf_quiz_attempts",
@@ -2748,18 +2651,25 @@ async function loadKuisPdfSiswa(forceToast) {
 
 function renderKartuKuisPdf(q, attemptArr) {
   const sudah = attemptArr.length > 0;
-  const bestPct = sudah ? Math.max(...attemptArr.map(a => Number(a.percentage) || 0)) : null;
+  let bestPct = null;
+  if (sudah) {
+    bestPct = Math.max(...attemptArr.map(a => {
+      if (a.percentage !== undefined && a.percentage !== null) return Number(a.percentage) || 0;
+      const mx = Number(a.max_score) || 0;
+      return mx > 0 ? ((Number(a.score) || 0) / mx) * 100 : 0;
+    }));
+  }
   const qList = Array.isArray(q.question_types) ? q.question_types : (safeParse(q.question_types) || []);
   const soalCount = qList.length;
 
   return `
-    <div class="border-2 rounded-2xl p-4 transition ${sudah ? 'border-rose-200 bg-rose-50/40' : 'border-slate-100 bg-white hover:border-rose-400'}">
+    <div class="border-2 rounded-2xl p-4 transition ${sudah ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-100 bg-white hover:border-rose-400'}">
       <div class="flex items-start justify-between gap-2 mb-2">
-        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0 ${sudah ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700'}">
-          <i class="fa-solid fa-file-pdf"></i>
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0 ${sudah ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}">
+          <i class="fa-solid ${sudah ? 'fa-circle-check' : 'fa-file-pdf'}"></i>
         </div>
         ${sudah
-          ? `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-rose-200 text-rose-800">SUDAH</span>`
+          ? `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-200 text-emerald-800">✓ SELESAI</span>`
           : `<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-indigo-100 text-indigo-700">BARU</span>`}
       </div>
       <h4 class="font-bold text-sm text-slate-800 leading-tight">${esc(q.title || "(tanpa judul)")}</h4>
@@ -2772,23 +2682,43 @@ function renderKartuKuisPdf(q, attemptArr) {
       ${sudah ? `
         <div class="mt-3 p-2 bg-white border rounded-lg">
           <div class="flex items-baseline justify-between">
-            <span class="text-[10px] text-slate-500">Nilai terbaik</span>
-            <span class="text-lg font-black text-rose-700">${bestPct !== null ? bestPct.toFixed(1) + "%" : "-"}</span>
+            <span class="text-[10px] text-slate-500">Nilai Akhir</span>
+            <span class="text-lg font-black text-emerald-700">${bestPct !== null ? bestPct.toFixed(1) + "%" : "-"}</span>
           </div>
-          <div class="text-[10px] text-slate-500 mt-1">Percobaan: <b>${attemptArr.length}</b></div>
+          <div class="text-[10px] text-slate-500 mt-1">Status: <b>Sudah Dikerjakan (1x)</b></div>
         </div>
-      ` : ""}
-      <button onclick="mulaiKuisPdf('${q.id}')"
-        class="w-full mt-3 ${sudah ? 'bg-rose-500 hover:bg-rose-600' : 'bg-indigo-600 hover:bg-indigo-700'} text-white font-bold text-xs py-2.5 rounded-xl">
-        <i class="fa-solid ${sudah ? 'fa-rotate-right' : 'fa-play'}"></i>
-        ${sudah ? "Kerjakan Lagi" : "Mulai Kuis PDF"}
-      </button>
+        <button onclick="lihatHasilKuisPdf('${q.id}')"
+          class="w-full mt-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl">
+          <i class="fa-solid fa-eye"></i> Lihat Hasil
+        </button>
+      ` : `
+        <button onclick="mulaiKuisPdf('${q.id}')"
+          class="w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl">
+          <i class="fa-solid fa-play"></i> Mulai Kuis PDF
+        </button>
+      `}
     </div>`;
 }
 
 async function mulaiKuisPdf(quizId) {
   showLoading(true, "Memuat kuis PDF...");
   try {
+    const studentId = getPdfStudentId();
+    if (studentId) {
+      try {
+        const existing = await sbFetch("pdf_quiz_attempts",
+          `?quiz_id=eq.${encodeURIComponent(quizId)}&student_id=eq.${encodeURIComponent(studentId)}&limit=1`);
+        if (Array.isArray(existing) && existing.length > 0) {
+          showLoading(false);
+          showToast("Anda sudah mengerjakan kuis ini. Menampilkan hasil Anda.", "info");
+          await lihatHasilKuisPdf(quizId);
+          return;
+        }
+      } catch (e) {
+        console.warn("Cek attempt PDF:", e);
+      }
+    }
+
     const client = getSupabaseClient();
     if (!client) throw new Error("Supabase client belum siap.");
 
@@ -2829,6 +2759,54 @@ async function mulaiKuisPdf(quizId) {
   }
 }
 
+async function lihatHasilKuisPdf(quizId) {
+  showLoading(true, "Memuat hasil kuis PDF...");
+  try {
+    const studentId = getPdfStudentId();
+    if (!studentId) throw new Error("Sesi siswa tidak ditemukan.");
+
+    const quiz = (await sbFetch("pdf_quizzes",
+      `?id=eq.${encodeURIComponent(quizId)}&limit=1`))?.[0];
+    if (!quiz) throw new Error("Data kuis PDF tidak ditemukan.");
+
+    const attempts = await sbFetch("pdf_quiz_attempts",
+      `?quiz_id=eq.${encodeURIComponent(quizId)}&student_id=eq.${encodeURIComponent(studentId)}&order=created_at.desc&limit=1`);
+    const att = attempts?.[0];
+    if (!att) {
+      showLoading(false);
+      showToast("Hasil kuis belum ditemukan.", "warning");
+      return;
+    }
+
+    const score = Number(att.score || 0);
+    const maxScore = Number(att.max_score || 0);
+    const percentage = (att.percentage !== undefined && att.percentage !== null)
+      ? Number(att.percentage)
+      : (maxScore > 0 ? Number(((score / maxScore) * 100).toFixed(2)) : 0);
+
+    const details = Array.isArray(att.details) ? att.details : (safeParse(att.details) || []);
+    const correctCount = details.filter(d => d.status === "correct").length;
+    const wrongCount = details.filter(d => d.status === "wrong").length;
+    const pendingCount = details.filter(d => d.status === "pending").length;
+
+    showLoading(false);
+    renderHasilKuisPdf({
+      score,
+      max_score: maxScore,
+      percentage,
+      correct_count: correctCount,
+      wrong_count: wrongCount,
+      pending_count: pendingCount,
+      details,
+      answers: att.answers || {},
+      submitted_at: att.created_at || null
+    }, quiz, false);
+  } catch (err) {
+    showLoading(false);
+    showToast("Gagal memuat hasil kuis PDF: " + err.message, "error");
+  }
+}
+
 function renderUjianPdf() {
   const c = document.getElementById("main-view-container");
   const P = appState.pdfQuiz;
@@ -2845,7 +2823,7 @@ function renderUjianPdf() {
     <div class="space-y-3 fade-in bg-white">
       <div class="bg-white rounded-2xl border border-slate-200 p-3 flex items-center justify-between gap-3">
         <div class="min-w-0 flex-1">
-          <div class="text-[10px] text-rose-600 font-bold">KUIS DARI PDF</div>
+          <div class="text-[10px] text-rose-600 font-bold">KUIS DARI PDF · 1x KESEMPATAN</div>
           <div class="font-bold text-xs sm:text-sm text-slate-800 truncate">${esc(q.title || "Kuis")}</div>
           <div class="text-[10px] text-slate-500 mt-0.5">${esc(q.subject || "")} · Kelas ${esc(q.class_name || "-")}</div>
         </div>
@@ -3176,14 +3154,27 @@ async function submitKuisPdf(karenaWaktu) {
       resultData = data;
     }
 
+    const resObj = Array.isArray(resultData) ? resultData[0] : resultData;
+    if (resObj && typeof resObj === "object") {
+      resObj.answers = answersPayload;
+    }
+
     showLoading(false);
-    renderHasilKuisPdf(Array.isArray(resultData) ? resultData[0] : resultData);
+    renderHasilKuisPdf(resObj, P.quiz, true);
   } catch (err) {
     console.error(err);
     showLoading(false);
+    const msg = String(err.message || "");
+    if (msg.toLowerCase().includes("sudah mengumpulkan")) {
+      const qid = P.quiz.id;
+      appState.pdfQuiz = null;
+      showToast("Anda sudah mengerjakan kuis ini. Menampilkan hasil Anda.", "info");
+      await lihatHasilKuisPdf(qid);
+      return;
+    }
     P.sudahSubmit = false;
     trapHistory();
-    showToast("Gagal mengumpulkan: " + err.message, "error", 5000);
+    showToast("Gagal mengumpulkan: " + msg, "error", 5000);
   }
 }
 
@@ -3202,10 +3193,10 @@ async function sbFetchRpc(fnName, params) {
   return { data: await res.json(), error: null };
 }
 
-function renderHasilKuisPdf(r) {
+function renderHasilKuisPdf(r, quizObj = null, isJustSubmitted = true) {
   const c = document.getElementById("main-view-container");
-  const P = appState.pdfQuiz;
-  if (!c || !P || !r) return;
+  const quiz = quizObj || appState.pdfQuiz?.quiz;
+  if (!c || !quiz || !r) return;
 
   const score = Number(r.score || 0);
   const maxScore = Number(r.max_score || 0);
@@ -3213,7 +3204,11 @@ function renderHasilKuisPdf(r) {
   const benar = Number(r.correct_count || 0);
   const salah = Number(r.wrong_count || 0);
   const pending = Number(r.pending_count || 0);
+  const details = Array.isArray(r.details) ? r.details : [];
+  const answers = r.answers || {};
+  const qList = Array.isArray(quiz.question_types) ? quiz.question_types : (safeParse(quiz.question_types) || []);
 
+  if (appState.pdfQuiz?.timerId) clearInterval(appState.pdfQuiz.timerId);
   appState.pdfQuiz = null;
   sembunyikanWatermark();
   releaseHistory();
@@ -3224,13 +3219,57 @@ function renderHasilKuisPdf(r) {
       ? "linear-gradient(135deg,#f59e0b 0%,#b45309 100%)"
       : "linear-gradient(135deg,#ef4444 0%,#b91c1c 100%)";
 
+  const detailMap = {};
+  details.forEach(d => { detailMap[String(d.no)] = d.status; });
+
+  const rincianHtml = qList.length && Object.keys(detailMap).length ? `
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+      <button onclick="document.getElementById('pdf-rincian-list').classList.toggle('hidden'); document.getElementById('pdf-rincian-chev').classList.toggle('rotate-180');"
+              class="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition">
+        <div class="flex items-center gap-2 text-sm font-bold text-slate-700">
+          <i class="fa-solid fa-list-check text-indigo-600"></i>
+          Rincian Hasil Per Nomor
+        </div>
+        <i id="pdf-rincian-chev" class="fa-solid fa-chevron-down text-slate-400 transition"></i>
+      </button>
+      <div id="pdf-rincian-list" class="hidden border-t max-h-[420px] overflow-y-auto custom-scrollbar p-3 space-y-2 bg-slate-50">
+        ${qList.map(q => {
+          const noStr = String(q.no);
+          const st = detailMap[noStr] || "";
+          const jwbRaw = answers[noStr] ?? answers[q.no];
+          const jwbTeks = Array.isArray(jwbRaw) ? jwbRaw.join(", ") : String(jwbRaw ?? "-");
+          const badge = st === "correct"
+            ? `<span class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">✓ BENAR</span>`
+            : st === "wrong"
+              ? `<span class="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">✗ SALAH</span>`
+              : `<span class="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">⏳ PERLU KOREKSI</span>`;
+          return `
+            <div class="bg-white rounded-xl border p-2.5 flex items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 font-bold flex items-center justify-center shrink-0">${esc(noStr)}</span>
+                <div class="min-w-0">
+                  <div class="font-semibold text-slate-700 truncate">Jawaban: <b>${esc(jwbTeks || "-")}</b></div>
+                  <div class="text-[10px] text-slate-400">${esc(q.type || "")} · Bobot ${q.score || 1}</div>
+                </div>
+              </div>
+              <div class="shrink-0">${badge}</div>
+            </div>`;
+        }).join("")}
+      </div>
+    </div>` : "";
+
   c.innerHTML = `
     <div class="max-w-2xl mx-auto space-y-4 fade-in">
       <div style="background:${gradient}" class="rounded-2xl p-6 text-white shadow-lg text-center">
         <div class="text-[10px] uppercase tracking-widest font-bold opacity-80">Hasil Kuis PDF</div>
-        <div class="text-sm mt-1 font-semibold">${esc(P.quiz.title || "Kuis")}</div>
+        <div class="text-sm mt-1 font-semibold">${esc(quiz.title || "Kuis")}</div>
         <div class="text-6xl font-black my-3">${pct.toFixed(1)}<span class="text-2xl">%</span></div>
         <div class="text-sm opacity-90">${score.toFixed(2)} / ${maxScore.toFixed(2)} poin</div>
+        <div class="mt-3">
+          <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-white/20">
+            <i class="fa-solid fa-circle-check"></i> Sudah Dikerjakan (1x)
+          </span>
+        </div>
       </div>
 
       <div class="grid grid-cols-3 gap-2">
@@ -3254,12 +3293,20 @@ function renderHasilKuisPdf(r) {
           Ada <b>${pending} soal uraian</b> yang akan dikoreksi guru. Nilai akhir bisa berubah.
         </div>` : ""}
 
+      ${rincianHtml}
+
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center text-[11px] text-slate-600">
+        <i class="fa-solid fa-lock text-slate-400 mr-1"></i> Kuis ini hanya dapat dikerjakan <b>1 kali</b>.
+      </div>
+
       <button onclick="kembaliKeDashboard()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3 rounded-xl">
         <i class="fa-solid fa-house"></i> Kembali ke Dashboard
       </button>
     </div>`;
 
-  showToast("✓ Jawaban terkirim!", "success");
+  if (isJustSubmitted) {
+    showToast("✓ Jawaban terkirim!", "success");
+  }
 }
 </script>
 </body>
