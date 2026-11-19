@@ -1028,8 +1028,9 @@
     @page { size: A4; margin: 0; }
     body { background: #fff; }
     body * { visibility: hidden; }
-    #siswaRaporContent, #siswaRaporContent * { visibility: visible; }
-    #siswaRaporContent {
+    #siswaRaporContent, #siswaRaporContent *,
+    #siswaStrukContent, #siswaStrukContent * { visibility: visible; }
+    #siswaRaporContent, #siswaStrukContent {
       position: absolute;
       left: 0;
       top: 0;
@@ -1345,6 +1346,7 @@
         
         <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="adminNav('rapor', this)"><i class="fas fa-file-lines"></i> Rapor Digital</button>
+        <button class="sidebar-item" onclick="adminNav('pembayaran', this)"><i class="fas fa-wallet"></i> Pembayaran</button>
         <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="adminNav('news', this)"><i class="fas fa-newspaper"></i> Berita</button>
         <button class="sidebar-item" onclick="adminNav('blocks', this)"><i class="fas fa-layer-group"></i> Blok Halaman</button>
@@ -1652,6 +1654,60 @@
                   <tr><th>Siswa</th><th>Mapel</th><th>Rata-rata</th><th>Tugas</th><th>Kehadiran</th><th>Catatan Guru</th><th>Aksi</th></tr>
                 </thead>
                 <tbody id="adminRaporList"><tr><td colspan="7" style="text-align:center;">Pilih filter lalu klik "Tampilkan Rapor".</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADMIN — PEMBAYARAN BIMBEL -->
+        <div id="admin-view-pembayaran" class="admin-view hidden">
+          <h2 style="margin-bottom: 1.5rem;">Pembayaran Biaya Bimbel</h2>
+
+          <div class="grid-kpi">
+            <div class="kpi-card">
+              <div class="kpi-num" id="payStatLunasCount">0</div>
+              <div class="kpi-label">Siswa Lunas Bulan Ini</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-num" id="payStatBelumCount" style="color: var(--warning);">0</div>
+              <div class="kpi-label">Belum Lunas</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-num" id="payStatTotalNominal" style="color: var(--success);">Rp 0</div>
+              <div class="kpi-label">Total Terkumpul</div>
+            </div>
+          </div>
+
+          <div class="panel-box">
+            <div class="panel-title">
+              <span><i class="fas fa-money-check-dollar"></i> Verifikasi Pembayaran Siswa (Rp 150.000)</span>
+              <button class="lms-action sm" onclick="loadAdminPembayaran()"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
+
+            <div class="lms-toolbar">
+              <input type="month" id="adminPayMonth" onchange="loadAdminPembayaran()">
+              <input type="text" id="adminPaySearch" placeholder="Cari nama / kelas siswa..." oninput="renderAdminPembayaranTable()">
+              <select id="adminPayStatusFilter" onchange="renderAdminPembayaranTable()">
+                <option value="">Semua Status</option>
+                <option value="lunas">Lunas</option>
+                <option value="belum_lunas">Belum Lunas</option>
+              </select>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 60px; text-align: center;">Centang</th>
+                    <th>Nama Siswa & Kelas</th>
+                    <th>Biaya Bimbel</th>
+                    <th>Status</th>
+                    <th>Tanggal Bayar & No. Struk</th>
+                  </tr>
+                </thead>
+                <tbody id="adminPembayaranTableBody">
+                  <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
               </table>
             </div>
           </div>
@@ -2255,6 +2311,7 @@
         <button class="sidebar-item" onclick="window.open('kuis.html?siswa_id=' + currentUser.id + '&kelas=' + currentProfile.kelas + '&nama=' + encodeURIComponent(currentProfile.full_name), '_blank')"><i class="fas fa-pen-to-square"></i> Kerjakan Kuis</button>
         <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="siswaNav('rapor', this)"><i class="fas fa-file-lines"></i> Rapor Saya</button>
+        <button class="sidebar-item" onclick="siswaNav('pembayaran', this)"><i class="fas fa-receipt"></i> Pembayaran</button>
         <div class="sidebar-divider"></div>
         <button class="sidebar-item" onclick="siswaNav('teachermenus', this)"><i class="fas fa-external-link-alt"></i> tautan Guru </button>
         <button class="sidebar-item" onclick="siswaNav('files', this)"><i class="fas fa-folder-open"></i> File Kelas</button>
@@ -2413,6 +2470,86 @@
                 <h4><i class="fas fa-chart-column" style="color: var(--accent);"></i> Rata-rata Nilai per Mapel</h4>
                 <canvas id="siswaRaporBarChart" height="120"></canvas>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SISWA — PEMBAYARAN & STRUK LUNAS -->
+        <div id="siswa-view-pembayaran" class="siswa-view hidden">
+          <h2 style="margin-bottom: 1.5rem;">Pembayaran & Struk Bimbel</h2>
+
+          <!-- AREA STRUK PEMBAYARAN LUNAS (SIAP CETAK) -->
+          <div id="siswaStrukWrapper" class="hidden">
+            <div class="lms-toolbar no-print" style="justify-content: flex-end;">
+              <button class="lms-action success" onclick="cetakStrukPembayaran()">
+                <i class="fas fa-print"></i> Cetak Struk / Simpan PDF
+              </button>
+            </div>
+
+            <div id="siswaStrukContent">
+              <div class="panel-box" style="max-width: 680px; margin: 0 auto 1.5rem; border: 2px solid #C3F0DC; position: relative; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px dashed var(--line); padding-bottom: 1rem; margin-bottom: 1.2rem;">
+                  <div>
+                    <div style="font-size: 1.2rem; font-weight: 800; color: var(--accent-color);">
+                      <i class="fas fa-graduation-cap"></i> EduSmart LMS — Bimbel Cerdas
+                    </div>
+                    <div class="lms-muted" style="font-size: 0.8rem;">Bukti Pembayaran Resmi Biaya Bimbingan Belajar</div>
+                  </div>
+                  <div style="background: var(--pastel-mint); color: var(--pastel-mint-ink); border: 2px solid #22C55E; padding: 6px 16px; border-radius: 999px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.08em;">
+                    <i class="fas fa-check-circle"></i> LUNAS
+                  </div>
+                </div>
+
+                <table style="margin-bottom: 1rem;">
+                  <tbody>
+                    <tr>
+                      <td style="width: 38%; color: var(--text-muted); font-weight: 700;">No. Kwitansi / Struk</td>
+                      <td><strong id="strukNoKwitansi">-</strong></td>
+                    </tr>
+                    <tr>
+                      <td style="color: var(--text-muted); font-weight: 700;">Nama Siswa</td>
+                      <td><strong id="strukNamaSiswa">-</strong></td>
+                    </tr>
+                    <tr>
+                      <td style="color: var(--text-muted); font-weight: 700;">Kelas / NISN</td>
+                      <td id="strukKelasNisn">-</td>
+                    </tr>
+                    <tr>
+                      <td style="color: var(--text-muted); font-weight: 700;">Periode Pembayaran</td>
+                      <td><strong id="strukPeriode">-</strong></td>
+                    </tr>
+                    <tr>
+                      <td style="color: var(--text-muted); font-weight: 700;">Tanggal Lunas</td>
+                      <td id="strukTanggalBayar">-</td>
+                    </tr>
+                    <tr>
+                      <td style="color: var(--text-muted); font-weight: 700;">Keterangan</td>
+                      <td>Biaya Bimbingan Belajar Bulanan</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div style="background: var(--bg-main-soft); padding: 1rem 1.25rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-weight: 800; color: var(--text-main);">TOTAL DIBAYAR</span>
+                  <span style="font-size: 1.45rem; font-weight: 800; color: var(--pastel-mint-ink);" id="strukNominal">Rp 150.000</span>
+                </div>
+
+                <div style="margin-top: 1.2rem; text-align: right; font-size: 0.78rem; color: var(--text-muted);">
+                  <div>Diverifikasi secara digital oleh Admin EduSmart LMS</div>
+                  <div style="font-weight: 700; color: var(--text-main); margin-top: 2px;">Status: Sah & Lunas</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIWAYAT PEMBAYARAN SISWA -->
+          <div class="panel-box no-print">
+            <div class="panel-title">
+              <span><i class="fas fa-history"></i> Riwayat Pembayaran Saya</span>
+              <button class="lms-action sm" onclick="loadSiswaPembayaran()"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
+            <div id="siswaPembayaranList">
+              <div class="lms-empty">Memuat riwayat pembayaran...</div>
             </div>
           </div>
         </div>
@@ -4306,22 +4443,16 @@ async function guruCreateMaterial(event) {
   try {
     const fileInput = document.getElementById('gmatFileUpload');
     const manualUrl = document.getElementById('gmatFile').value;
-    
-    // ✅ GUNAKAN LET, BUKAN CONST (Untuk mencegah error "Assignment to constant variable")
     let finalFileUrl = manualUrl || null; 
 
-    // ✅ PROSES UPLOAD FILE KE CLOUDINARY JIKA ADA FILE YANG DIPILIH
     if (fileInput.files.length > 0) {
       const file = fileInput.files[0];
-      
-      // Mengambil setting dari variabel global CLOUD_DEFAULT di file Anda
       const cloudName = CLOUD_DEFAULT.cloudName; 
       const uploadPreset = CLOUD_DEFAULT.uploadPreset;
       
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', uploadPreset);
-      // formData.append('folder', 'materi_guru'); // Hapus komentar ini jika folder sudah dibuat di Cloudinary
 
       const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
         method: 'POST',
@@ -4331,31 +4462,60 @@ async function guruCreateMaterial(event) {
       const cloudData = await response.json();
       
       if (cloudData.secure_url) {
-        finalFileUrl = cloudData.secure_url; // <--- Ini mengisi link dari Cloudinary
+        finalFileUrl = cloudData.secure_url;
       } else {
         throw new Error('Cloudinary menolak upload: ' + (cloudData.error?.message || 'Unknown Error'));
       }
     }
 
-    // ✅ SIMPAN KE SUPABASE
+    const titleVal = document.getElementById('gmatTitle').value.trim();
+    const classIdVal = document.getElementById('gmatClass').value || null;
+    const isPublishedVal = document.getElementById('gmatPublished').checked;
+
     const payload = {
-      title: document.getElementById('gmatTitle').value,
-      class_id: document.getElementById('gmatClass').value || null,
+      title: titleVal,
+      class_id: classIdVal,
       subject_id: document.getElementById('gmatSubject').value || null,
       description: document.getElementById('gmatContent').value,
-      file_url: finalFileUrl, // Menyimpan link Cloudinary atau URL manual
+      file_url: finalFileUrl,
       video_url: document.getElementById('gmatVideo').value || null,
-      is_published: document.getElementById('gmatPublished').checked,
-      published: document.getElementById('gmatPublished').checked,
+      is_published: isPublishedVal,
+      published: isPublishedVal,
       created_by: currentUser.id
     };
 
     const { error } = await supabaseClient.from('learning_materials').insert(payload);
     if (error) throw error;
 
+    // Kirim notifikasi ke siswa jika materi dipublikasikan
+    if (isPublishedVal) {
+      const notifPayload = {
+        title: '📚 Materi Baru',
+        message: titleVal,
+        type: 'material',
+        link: '#materials',
+        excludeUserId: currentUser.id
+      };
+
+      if (classIdVal) {
+        await createNotificationsForClass(Number(classIdVal), notifPayload);
+      } else {
+        // Jika class_id kosong ("Semua Kelas"), kirim notifikasi ke seluruh siswa aktif
+        const { data: allStudents } = await supabaseClient
+          .from('profiles')
+          .select('id')
+          .eq('role', 'siswa')
+          .eq('is_active', true);
+
+        const studentIds = (allStudents || []).map(s => s.id);
+        if (studentIds.length > 0) {
+          await createNotificationsForClass('all', { ...notifPayload, userIds: studentIds });
+        }
+      }
+    }
+
     showToast('Materi berhasil disimpan!');
     
-    // Reset form
     event.target.reset();
     document.getElementById('fileUploadName').innerText = 'Belum ada file dipilih';
     
@@ -6803,6 +6963,288 @@ document.addEventListener('click', function(e) {
     setTimeout(timpaGrafikGuru, 800);
   }
 });
+// ============================================================
+// MODUL PEMBAYARAN BIMBEL (RP 150.000)
+// ============================================================
+const BIAYA_BIMBEL_DEFAULT = 150000;
+let ADMIN_PAY_CACHE = [];
+
+function formatRupiah(angka) {
+  return 'Rp ' + Number(angka || 0).toLocaleString('id-ID');
+}
+
+function formatBulanIndo(ym) {
+  if (!ym || !ym.includes('-')) return ym || '-';
+  const [tahun, bulan] = ym.split('-');
+  const namaBulan = [
+    '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  return `${namaBulan[parseInt(bulan, 10)] || bulan} ${tahun}`;
+}
+
+function getCurrentYearMonth() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+// --- ADMIN: LOAD & CENTANG PEMBAYARAN ---
+async function loadAdminPembayaran() {
+  const monthInput = document.getElementById('adminPayMonth');
+  if (monthInput && !monthInput.value) {
+    monthInput.value = getCurrentYearMonth();
+  }
+  const bulan = monthInput ? monthInput.value : getCurrentYearMonth();
+  const tbody = document.getElementById('adminPembayaranTableBody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat data pembayaran...</td></tr>';
+
+  try {
+    const [siswaRes, payRes] = await Promise.all([
+      supabaseClient
+        .from('profiles')
+        .select('id, full_name, email, kelas, nip_nisn')
+        .eq('role', 'siswa')
+        .eq('is_active', true)
+        .order('full_name', { ascending: true }),
+      supabaseClient
+        .from('pembayaran')
+        .select('*')
+        .eq('bulan', bulan)
+    ]);
+
+    if (siswaRes.error) throw siswaRes.error;
+    if (payRes.error) throw payRes.error;
+
+    const payMap = new Map((payRes.data || []).map(p => [p.student_id, p]));
+
+    ADMIN_PAY_CACHE = (siswaRes.data || []).map(s => {
+      const p = payMap.get(s.id);
+      return {
+        student_id: s.id,
+        full_name: s.full_name || s.email || '-',
+        email: s.email || '-',
+        kelas: s.kelas || '-',
+        nip_nisn: s.nip_nisn || '-',
+        bulan,
+        nominal: p?.nominal ?? BIAYA_BIMBEL_DEFAULT,
+        status: p?.status || 'belum_lunas',
+        no_kwitansi: p?.no_kwitansi || '-',
+        tanggal_bayar: p?.tanggal_bayar || null
+      };
+    });
+
+    renderAdminPembayaranTable();
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger)">Gagal memuat: ${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
+function renderAdminPembayaranTable() {
+  const tbody = document.getElementById('adminPembayaranTableBody');
+  if (!tbody) return;
+
+  const q = (document.getElementById('adminPaySearch')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('adminPayStatusFilter')?.value || '';
+
+  // Update KPI Ringkasan
+  const totalLunas = ADMIN_PAY_CACHE.filter(x => x.status === 'lunas');
+  const totalBelum = ADMIN_PAY_CACHE.filter(x => x.status !== 'lunas');
+  const sumNominal = totalLunas.reduce((acc, cur) => acc + Number(cur.nominal || 0), 0);
+
+  const elLunas = document.getElementById('payStatLunasCount');
+  const elBelum = document.getElementById('payStatBelumCount');
+  const elTotal = document.getElementById('payStatTotalNominal');
+  if (elLunas) elLunas.innerText = totalLunas.length;
+  if (elBelum) elBelum.innerText = totalBelum.length;
+  if (elTotal) elTotal.innerText = formatRupiah(sumNominal);
+
+  const filtered = ADMIN_PAY_CACHE.filter(row => {
+    if (statusFilter && row.status !== statusFilter) return false;
+    if (q && !(row.full_name + ' ' + row.kelas + ' ' + row.email).toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data siswa yang sesuai.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(row => {
+    const isLunas = row.status === 'lunas';
+    return `
+      <tr>
+        <td style="text-align:center; vertical-align:middle;">
+          <input type="checkbox"
+            ${isLunas ? 'checked' : ''}
+            onchange="adminTogglePembayaran('${row.student_id}', '${escapeHtml(row.bulan)}', this.checked)"
+            style="width:20px; height:20px; cursor:pointer; accent-color:var(--success);">
+        </td>
+        <td>
+          <strong>${escapeHtml(row.full_name)}</strong>
+          <div class="lms-muted" style="font-size:0.75rem;">Kelas: ${escapeHtml(row.kelas)} • NISN: ${escapeHtml(row.nip_nisn)}</div>
+        </td>
+        <td><strong>${formatRupiah(row.nominal)}</strong></td>
+        <td>
+          ${isLunas
+            ? '<span class="lms-status"><i class="fas fa-check-circle"></i> Lunas</span>'
+            : '<span class="lms-status warn"><i class="fas fa-clock"></i> Belum Lunas</span>'}
+        </td>
+        <td>
+          ${isLunas
+            ? `<div style="font-weight:700;font-size:0.8rem;">${escapeHtml(row.no_kwitansi)}</div>
+               <div class="lms-muted" style="font-size:0.75rem;">${formatDateTime(row.tanggal_bayar)}</div>`
+            : '<span class="lms-muted">-</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function adminTogglePembayaran(studentId, bulan, checked) {
+  if (!checked && !confirm('Batalkan status lunas untuk siswa ini?')) {
+    renderAdminPembayaranTable();
+    return;
+  }
+
+  try {
+    const noKwitansi = checked
+      ? `INV-${bulan.replace('-', '')}-${studentId.slice(0, 4).toUpperCase()}`
+      : null;
+
+    const payload = {
+      student_id: studentId,
+      bulan,
+      nominal: BIAYA_BIMBEL_DEFAULT,
+      status: checked ? 'lunas' : 'belum_lunas',
+      no_kwitansi: noKwitansi,
+      tanggal_bayar: checked ? new Date().toISOString() : null,
+      verified_by: currentUser.id,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabaseClient
+      .from('pembayaran')
+      .upsert(payload, { onConflict: 'student_id,bulan' });
+
+    if (error) throw error;
+
+    if (checked) {
+      showToast('✅ Pembayaran Rp 150.000 ditandai LUNAS.');
+      // Otomatis kirim notifikasi ke siswa
+      createNotification(
+        studentId,
+        '💳 Pembayaran Bimbel Lunas',
+        `Pembayaran biaya bimbel Rp 150.000 untuk bulan ${formatBulanIndo(bulan)} telah dikonfirmasi LUNAS. Struk sudah tersedia.`,
+        'info',
+        '#pembayaran'
+      );
+    } else {
+      showToast('↩️ Status diubah menjadi Belum Lunas.');
+    }
+
+    await loadAdminPembayaran();
+  } catch (err) {
+    showToast('❌ Gagal memperbarui pembayaran: ' + err.message);
+    renderAdminPembayaranTable();
+  }
+}
+
+// --- SISWA: LIHAT & CETAK STRUK PEMBAYARAN LUNAS ---
+let SISWA_PAY_LIST = [];
+
+async function loadSiswaPembayaran() {
+  const listEl = document.getElementById('siswaPembayaranList');
+  const strukWrap = document.getElementById('siswaStrukWrapper');
+  if (!listEl) return;
+
+  listEl.innerHTML = '<div class="lms-empty">Memuat data pembayaran...</div>';
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('pembayaran')
+      .select('*')
+      .eq('student_id', currentUser.id)
+      .order('bulan', { ascending: false });
+
+    if (error) throw error;
+
+    SISWA_PAY_LIST = data || [];
+    const lunasList = SISWA_PAY_LIST.filter(p => p.status === 'lunas');
+
+    // Jika ada pembayaran lunas, langsung tampilkan struk terbaru
+    if (lunasList.length > 0) {
+      tampilkanStrukSiswa(lunasList[0]);
+    } else if (strukWrap) {
+      strukWrap.classList.add('hidden');
+    }
+
+    if (!SISWA_PAY_LIST.length) {
+      listEl.innerHTML = `
+        <div class="lms-empty">
+          Belum ada catatan pembayaran lunas.<br>
+          <span style="font-size:0.8rem;">Biaya bimbel bulanan: <b>Rp 150.000</b>. Struk akan muncul otomatis setelah dikonfirmasi Admin.</span>
+        </div>`;
+      return;
+    }
+
+    listEl.innerHTML = SISWA_PAY_LIST.map((p, idx) => {
+      const isLunas = p.status === 'lunas';
+      return `
+        <div class="lms-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h4>Periode: ${escapeHtml(formatBulanIndo(p.bulan))}</h4>
+            <div class="lms-muted">
+              Biaya: <b>${formatRupiah(p.nominal)}</b>
+              ${isLunas ? ` • No. Struk: <b>${escapeHtml(p.no_kwitansi || '-')}</b> • Lunas pada ${formatDate(p.tanggal_bayar)}` : ''}
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            ${isLunas
+              ? `<span class="lms-status"><i class="fas fa-check-circle"></i> Lunas</span>
+                 <button class="lms-action sm primary" onclick="tampilkanStrukSiswaByIndex(${idx})">
+                   <i class="fas fa-receipt"></i> Lihat Struk
+                 </button>`
+              : '<span class="lms-status warn"><i class="fas fa-clock"></i> Belum Lunas</span>'}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error(err);
+    listEl.innerHTML = `<div class="lms-empty" style="color:var(--danger)">Gagal memuat pembayaran: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function tampilkanStrukSiswaByIndex(idx) {
+  const item = SISWA_PAY_LIST[idx];
+  if (item && item.status === 'lunas') {
+    tampilkanStrukSiswa(item);
+    document.getElementById('siswaStrukWrapper')?.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function tampilkanStrukSiswa(pay) {
+  const wrap = document.getElementById('siswaStrukWrapper');
+  if (!wrap || !pay) return;
+
+  document.getElementById('strukNoKwitansi').innerText = pay.no_kwitansi || '-';
+  document.getElementById('strukNamaSiswa').innerText = currentProfile?.full_name || currentProfile?.email || '-';
+  document.getElementById('strukKelasNisn').innerText = `${currentProfile?.kelas || '-'} / ${currentProfile?.nip_nisn || '-'}`;
+  document.getElementById('strukPeriode').innerText = formatBulanIndo(pay.bulan);
+  document.getElementById('strukTanggalBayar').innerText = formatDateTime(pay.tanggal_bayar);
+  document.getElementById('strukNominal').innerText = formatRupiah(pay.nominal || BIAYA_BIMBEL_DEFAULT);
+
+  wrap.classList.remove('hidden');
+}
+
+function cetakStrukPembayaran() {
+  window.print();
+}
 </script>
 </body>
 </html>
